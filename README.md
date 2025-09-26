@@ -7,7 +7,7 @@ Centralized logistics system for Collmepro and Collme Beauty.
 ## Roadmap / TODOs
 
 ### Setup
-- [ ] Setup Laravel + Vue project  
+- [x] Setup Laravel + Vue project  
 - [ ] Configure MySQL database  
 - [ ] Setup Pest/PHPUnit for testing  
 
