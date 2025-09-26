@@ -4,6 +4,11 @@ Centralized logistics system for Collmepro and Collme Beauty.
 
 ---
 
+> **Note:** To view the database diagram, open the [`docs/00-database-uml.md`](docs/00-database-uml.md) file in a viewer that supports [Mermaid](https://mermaid-js.github.io/mermaid/#/).  
+Tools like [VSCode with the Mermaid extension](https://marketplace.visualstudio.com/items?itemName=bierner.markdown-mermaid) or the [Mermaid Live Editor](https://mermaid.live/) can be used to render the diagram.
+
+--
+
 ## Roadmap / TODOs
 
 ### Setup
