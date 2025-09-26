@@ -13,7 +13,7 @@ Tools like [VSCode with the Mermaid extension](https://marketplace.visualstudio.
 
 ### Setup
 - [x] Setup Laravel + Vue project  
-- [ ] Configure MySQL database  
+- [x] Configure MySQL database  
 - [ ] Setup Pest/PHPUnit for testing  
 
 ### Users & Authentication
