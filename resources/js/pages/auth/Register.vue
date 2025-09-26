@@ -13,10 +13,10 @@ import { LoaderCircle } from 'lucide-vue-next';
 
 <template>
     <AuthBase
-        title="Create an account"
-        description="Enter your details below to create your account"
+        title="Criar uma conta"
+        description="Digite seus detalhes abaixo para criar sua conta"
     >
-        <Head title="Register" />
+        <Head title="Cadastrar" />
 
         <Form
             v-bind="RegisteredUserController.store.form()"
@@ -26,7 +26,7 @@ import { LoaderCircle } from 'lucide-vue-next';
         >
             <div class="grid gap-6">
                 <div class="grid gap-2">
-                    <Label for="name">Name</Label>
+                    <Label for="name">Nome</Label>
                     <Input
                         id="name"
                         type="text"
@@ -35,13 +35,13 @@ import { LoaderCircle } from 'lucide-vue-next';
                         :tabindex="1"
                         autocomplete="name"
                         name="name"
-                        placeholder="Full name"
+                        placeholder="Nome completo"
                     />
                     <InputError :message="errors.name" />
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="email">Email address</Label>
+                    <Label for="email">Endereço de email</Label>
                     <Input
                         id="email"
                         type="email"
@@ -49,13 +49,13 @@ import { LoaderCircle } from 'lucide-vue-next';
                         :tabindex="2"
                         autocomplete="email"
                         name="email"
-                        placeholder="email@example.com"
+                        placeholder="email@exemplo.com"
                     />
                     <InputError :message="errors.email" />
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="password">Password</Label>
+                    <Label for="password">Senha</Label>
                     <Input
                         id="password"
                         type="password"
@@ -63,13 +63,13 @@ import { LoaderCircle } from 'lucide-vue-next';
                         :tabindex="3"
                         autocomplete="new-password"
                         name="password"
-                        placeholder="Password"
+                        placeholder="Senha"
                     />
                     <InputError :message="errors.password" />
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="password_confirmation">Confirm password</Label>
+                    <Label for="password_confirmation">Confirmar senha</Label>
                     <Input
                         id="password_confirmation"
                         type="password"
@@ -77,7 +77,7 @@ import { LoaderCircle } from 'lucide-vue-next';
                         :tabindex="4"
                         autocomplete="new-password"
                         name="password_confirmation"
-                        placeholder="Confirm password"
+                        placeholder="Confirmar senha"
                     />
                     <InputError :message="errors.password_confirmation" />
                 </div>
@@ -93,17 +93,17 @@ import { LoaderCircle } from 'lucide-vue-next';
                         v-if="processing"
                         class="h-4 w-4 animate-spin"
                     />
-                    Create account
+                    Criar conta
                 </Button>
             </div>
 
             <div class="text-center text-sm text-muted-foreground">
-                Already have an account?
+                Já tem uma conta?
                 <TextLink
                     :href="login()"
                     class="underline underline-offset-4"
                     :tabindex="6"
-                    >Log in</TextLink
+                    >Entrar</TextLink
                 >
             </div>
         </Form>
