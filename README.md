@@ -29,19 +29,19 @@ Tools like [VSCode with the Mermaid extension](https://marketplace.visualstudio.
 - [ ] Implement Shopify orders import (Collme Beauty)  
 - [ ] Write tests for orders storage and search/filter  
 - [ ] Implement Orders screen with columns:  
-  - System  
-  - Order Number  
-  - Customer  
-  - Date  
-  - Invoice (NFE)  
-  - Tracking (popup with history)  
-  - Logistics  
-  - Tracking Status  
-  - Seller  
-  - Picking (checkbox)  
-  - Packing (checkbox)  
-  - Picked-up (checkbox)  
-- [ ] Implement filters and search on Orders screen  
+  - [x] System  
+  - [x] Order Number  
+  - [x] Customer  
+  - [x] Date  
+  - [ ] Invoice (NFE)  
+  - [ ] Tracking (popup with history)  
+  - [ ] Logistics  
+  - [ ] Tracking Status  
+  - [x] Seller  
+  - [x] Picking (checkbox)  
+  - [x] Packing (checkbox)  
+  - [x] Picked-up (checkbox)  
+- [x] Implement filters and search on Orders screen  
 - [ ] Display totals by filters  
 
 ### Invoices (Bling)
@@ -78,11 +78,11 @@ Tools like [VSCode with the Mermaid extension](https://marketplace.visualstudio.
 
 ### UI & Navigation
 - [ ] Implement side menu (collapsible) with:  
-  - Logo  
-  - My Account (edit name/email/password)  
-  - Orders  
-  - Dashboard  
-  - Users (Admin only)  
+  - [ ] Logo  
+  - [x] My Account (edit name/email/password)  
+  - [x] Orders  
+  - [ ] Dashboard  
+  - [x] Users (Admin only)  
 ---
 
 <div align="center">
