@@ -9,12 +9,13 @@ use App\Services\WooCommerceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class ImportWooCommerceOrdersJobTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
+    #[Test]
     public function it_can_import_woocommerce_orders()
     {
         $this->mock(WooCommerceService::class, function ($mock) {
@@ -30,7 +31,7 @@ class ImportWooCommerceOrdersJobTest extends TestCase
         $this->assertTrue(true);
     }
 
-    /** @test */
+    #[Test]
     public function it_creates_orders_in_database()
     {
         // Mock the service
@@ -77,7 +78,7 @@ class ImportWooCommerceOrdersJobTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function it_avoids_duplicate_orders()
     {
         // Create an existing order
@@ -117,7 +118,7 @@ class ImportWooCommerceOrdersJobTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_import_errors_gracefully()
     {
         $this->mock(WooCommerceService::class, function ($mock) {
@@ -133,7 +134,7 @@ class ImportWooCommerceOrdersJobTest extends TestCase
         $job->handle();
     }
 
-    /** @test */
+    #[Test]
     public function it_imports_collmepro_wholesale_orders()
     {
         $this->mock(WooCommerceService::class, function ($mock) {
@@ -162,7 +163,7 @@ class ImportWooCommerceOrdersJobTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function it_creates_order_statuses_for_new_orders()
     {
         $this->mock(WooCommerceService::class, function ($mock) {
@@ -196,7 +197,7 @@ class ImportWooCommerceOrdersJobTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function it_logs_import_activity()
     {
         $this->mock(WooCommerceService::class, function ($mock) {

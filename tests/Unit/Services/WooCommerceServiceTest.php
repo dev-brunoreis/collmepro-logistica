@@ -6,6 +6,7 @@ use App\Services\WooCommerceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class WooCommerceServiceTest extends TestCase
 {
@@ -19,7 +20,7 @@ class WooCommerceServiceTest extends TestCase
         $this->service = new WooCommerceService();
     }
 
-    /** @test */
+    #[Test]
     public function it_can_fetch_orders_from_collmepro()
     {
         // Mock response from WooCommerce API
@@ -58,7 +59,7 @@ class WooCommerceServiceTest extends TestCase
         $this->assertEquals('Andressa Messias', $orders[0]['seller_name']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_fetch_orders_from_collmepro_wholesale()
     {
         $mockResponse = [
@@ -92,7 +93,7 @@ class WooCommerceServiceTest extends TestCase
         $this->assertEquals('Maria Santos', $orders[0]['seller_name']);
     }
 
-    /** @test */
+    #[Test]
     public function it_filters_only_processing_orders()
     {
         $mockResponse = [
@@ -162,7 +163,7 @@ class WooCommerceServiceTest extends TestCase
         $this->assertCount(0, $pendingOrders);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_api_errors_gracefully()
     {
         Http::fake([
@@ -174,7 +175,7 @@ class WooCommerceServiceTest extends TestCase
         $this->assertEmpty($orders);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_network_timeout()
     {
         Http::fake([
@@ -186,7 +187,7 @@ class WooCommerceServiceTest extends TestCase
         $this->assertEmpty($orders);
     }
 
-    /** @test */
+    #[Test]
     public function it_validates_required_order_data()
     {
         $mockResponse = [
@@ -231,7 +232,7 @@ class WooCommerceServiceTest extends TestCase
         $this->assertEquals('8148', $orders[0]['number']);
     }
 
-    /** @test */
+    #[Test]
     public function it_formats_customer_name_correctly()
     {
         $mockResponse = [
@@ -262,7 +263,7 @@ class WooCommerceServiceTest extends TestCase
         $this->assertEquals('Eliane Aparecida do Nascimento', $orders[0]['customer_name']);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_missing_seller_data()
     {
         $mockResponse = [
@@ -290,7 +291,7 @@ class WooCommerceServiceTest extends TestCase
         $this->assertNull($orders[0]['seller_name']);
     }
 
-    /** @test */
+    #[Test]
     public function it_uses_correct_api_endpoints()
     {
         Http::fake([
@@ -311,7 +312,7 @@ class WooCommerceServiceTest extends TestCase
         });
     }
 
-    /** @test */
+    #[Test]
     public function it_includes_authentication_headers()
     {
         Http::fake();

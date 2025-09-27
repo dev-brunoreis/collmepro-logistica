@@ -111,7 +111,7 @@ class ImportShopifyOrdersJob implements ShouldQueue
             return true;
 
         } catch (Exception $e) {
-            Log::error("Failed to import order: {$orderData['number']}", [
+            Log::error("Failed to import order: " . ($orderData['number'] ?? 'unknown'), [
                 'error' => $e->getMessage(),
                 'order_data' => $orderData
             ]);

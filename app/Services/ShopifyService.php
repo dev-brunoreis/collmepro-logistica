@@ -117,8 +117,22 @@ class ShopifyService
                 continue;
             }
 
+            // Only process paid orders
+            if (!isset($order['financial_status']) || $order['financial_status'] !== 'paid') {
+                Log::debug("Skipping non-paid order", ['order' => $order['name'], 'status' => $order['financial_status'] ?? 'unknown']);
+                continue;
+            }
+
             // Extract seller information (if available)
-            $sellerName = $order['note_attributes']['seller'] ?? 'N/A';
+            $sellerName = 'N/A';
+            if (isset($order['note_attributes'])) {
+                foreach ($order['note_attributes'] as $attribute) {
+                    if (isset($attribute['name']) && $attribute['name'] === 'seller') {
+                        $sellerName = $attribute['value'] ?? 'N/A';
+                        break;
+                    }
+                }
+            }
 
             $validOrders[] = [
                 'number' => $order['name'],
