@@ -1,7 +1,133 @@
-# Commit message rules
+# Collmepro Logistics System - Agent Rules
+
+## Project Context
+You are working on the Collmepro Logistics System - a centralized logistics system for tracking orders from Collmepro and Collme Beauty systems.
+
+## ⚠️ URGENT TIMELINE: January 15 Deadline
+**Total available time: ~15 days**
+**Accelerated development required**
+
+## Technology Stack
+- **Backend**: Laravel 12 (PHP 8.4)
+- **Frontend**: Vue.js with Inertia.js
+- **Database**: MySQL (production) / SQLite (development)
+- **Authentication**: Laravel Fortify
+- **Testing**: PHPUnit
+- **Build**: Vite
+
+## Development Principles
+- **TDD**: Test-First Development
+- **DRY**: Don't Repeat Yourself
+- **SOLID**: Object-oriented design principles
+- **KISS**: Keep It Simple, Stupid
+- **Progressive and functional development**
+- **Implement ONLY what was requested**
+
+## Project Structure
+### User Profiles
+- **Admin**: Full access, user management
+- **Manager**: Orders, Kanban, Labels, Dashboard
+- **Sales**: Kanban, Labels, Dashboard
+
+### Main Screens
+- **Orders**: Complete order management with search and filters
+- **Kanban**: Visual flow tracking with tabs
+- **Labels**: Shipping label control with export
+- **Dashboard**: Metrics and overview
+
+### Database Tables
+- **users**: System users with roles
+- **orders**: Orders imported from external systems
+- **order_statuses**: Picking, packing and picked_up statuses
+- **invoices**: Invoices (Bling integration)
+- **labels**: Shipping labels
+
+## External Integrations
+- **WooCommerce API**: Order import (Collmepro, Collmepro Wholesale)
+- **Shopify API**: Order import (Collme Beauty)
+- **Bling API**: NFE data and shipping labels
+- **Correios API**: Tracking
+- **Total Express API**: Tracking
+- **Melhor Envio API**: Tracking
+
+## Development Phases
+1. **Authentication and Users** (2 days)
+2. **Order Import** (3 days)
+3. **Bling Integration** (2 days)
+4. **Tracking APIs** (3 days)
+5. **User Interface** (4 days)
+6. **Reports and Exports** (1 day)
+
+## Code Standards
+- PSR-12 for PHP
+- ESLint for JavaScript/Vue
+- Laravel Pint for formatting
+- Conventional Commits for messages
 - Always write commit messages in English
 - Keep commit messages concise and descriptive
 - Use conventional commit format when possible (feat:, fix:, docs:, etc.)
 - Write in present tense ("Add feature" not "Added feature")
 - Keep the first line under 50 characters
 - Use imperative mood ("Add" not "Adds" or "Adding")
+
+## Testing Requirements
+- Write tests BEFORE implementation (TDD)
+- Minimum 60% coverage (reduced for timeline)
+- Use mocks for external APIs
+- Unit tests for all functionalities
+- Integration tests for main flows
+
+## File Structure
+- `app/Http/Controllers/` - Controllers
+- `app/Models/` - Eloquent Models
+- `app/Services/` - Business logic
+- `app/Jobs/` - Background processing jobs
+- `resources/js/Pages/` - Vue.js pages
+- `resources/js/Components/` - Reusable components
+- `tests/Unit/` - Unit tests
+- `tests/Feature/` - Integration tests
+
+## Important Notes
+- System focused only on what was requested
+- Progressive and functional development
+- Priority for core functionalities
+- Maintain clean and testable code
+- Use mocks for external APIs in development
+- Focus on essential features only due to timeline
+
+## When Working on This Project
+1. Always consult the `/docs` directory for detailed information
+2. Follow the agent prompts in `docs/05-agent-prompts.md`
+3. Maintain focus on the original requirements
+4. Implement only essential features
+5. Use parallel development when possible
+6. Ensure comprehensive testing after core completion
+
+## Documentation Files to Reference
+- `docs/01-project-knowledge-base.md` - Complete project knowledge
+- `docs/02-detailed-requirements.md` - Detailed system requirements
+- `docs/03-agent-architecture.md` - Agent architecture and workflow
+- `docs/04-development-phases.md` - Development phases and schedule
+- `docs/05-agent-prompts.md` - Specific prompts for each agent type
+- `docs/00-database-uml.md` - Database structure and relationships
+
+## Commands
+```bash
+# Full development
+composer run dev
+
+# Tests only
+composer run test
+
+# Production build
+npm run build
+```
+
+## Quality Checklist
+- [ ] Code follows TDD, DRY, SOLID, KISS principles
+- [ ] Tests are written and passing
+- [ ] Code is clean and readable
+- [ ] Documentation is updated
+- [ ] Performance is adequate
+- [ ] Security is implemented correctly
+- [ ] Only requested features are implemented

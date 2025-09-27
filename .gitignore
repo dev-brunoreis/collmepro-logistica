@@ -26,3 +26,7 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# Cursor AI files
+.cursorrules
+AGENT_CONTEXT.md
