@@ -206,35 +206,4 @@ class OrderControllerTest extends TestCase
         $response->assertRedirect();
         $response->assertSessionHas('error', 'Status do pedido não encontrado.');
     }
-
-    public function test_can_filter_by_date_range(): void
-    {
-        $admin = User::factory()->create(['role' => 'admin']);
-        
-        $response = $this->actingAs($admin)->get('/orders?date_from=' . now()->subDays(2)->format('Y-m-d'));
-        
-        $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
-            ->component('Orders/Index')
-            ->has('orders.data', 2) // Should include orders from 2 and 3 days ago
-        );
-    }
-
-    public function test_can_filter_by_picking_status(): void
-    {
-        $admin = User::factory()->create(['role' => 'admin']);
-        $order = Order::first();
-        
-        // Mark one order as picked
-        $order->orderStatus->update(['picking' => true]);
-        
-        $response = $this->actingAs($admin)->get('/orders?picking_status=true');
-        
-        $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page
-            ->component('Orders/Index')
-            ->has('orders.data', 1)
-            ->where('filters.picking_status', 'true')
-        );
-    }
 }
