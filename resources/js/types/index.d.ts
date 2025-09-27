@@ -15,6 +15,7 @@ export interface NavItem {
     href: NonNullable<InertiaLinkProps['href']>;
     icon?: LucideIcon;
     isActive?: boolean;
+    visible?: boolean;
 }
 
 export type AppPageProps<
@@ -30,6 +31,8 @@ export interface User {
     id: number;
     name: string;
     email: string;
+    username: string;
+    role: string;
     avatar?: string;
     email_verified_at: string | null;
     created_at: string;

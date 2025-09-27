@@ -12,17 +12,61 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import users from '@/routes/users';
 import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid } from 'lucide-vue-next';
+import { Link, usePage } from '@inertiajs/vue3';
+import { 
+    BookOpen, 
+    Folder, 
+    LayoutGrid, 
+    Users, 
+    Package, 
+    Kanban, 
+    Tag, 
+    FileText,
+    BarChart3
+} from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
+
+const page = usePage();
+const user = page.props.auth.user;
 
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
-        href: dashboard(),
+        href: dashboard.url(),
         icon: LayoutGrid,
     },
+    // {
+    //     title: 'Pedidos',
+    //     href: '#', // TODO: Implementar rota de pedidos
+    //     icon: Package,
+    //     visible: user?.role === 'admin' || user?.role === 'manager',
+    // },
+    // {
+    //     title: 'Kanban',
+    //     href: '#', // TODO: Implementar rota de kanban
+    //     icon: Kanban,
+    //     visible: true, // Todos os perfis podem acessar
+    // },
+    // {
+    //     title: 'Etiquetas',
+    //     href: '#', // TODO: Implementar rota de etiquetas
+    //     icon: Tag,
+    //     visible: true, // Todos os perfis podem acessar
+    // },
+    {
+        title: 'Usuários',
+        href: users.index(),
+        icon: Users,
+        visible: user?.role === 'admin',
+    },
+    // {
+    //     title: 'Relatórios',
+    //     href: '#', // TODO: Implementar rota de relatórios
+    //     icon: BarChart3,
+    //     visible: user?.role === 'admin' || user?.role === 'manager',
+    // },
 ];
 
 const footerNavItems: NavItem[] = [
@@ -45,7 +89,7 @@ const footerNavItems: NavItem[] = [
             <SidebarMenu>
                 <SidebarMenuItem>
                     <SidebarMenuButton size="lg" as-child>
-                        <Link :href="dashboard()">
+                        <Link :href="dashboard.url()">
                             <AppLogo />
                         </Link>
                     </SidebarMenuButton>

@@ -7,7 +7,7 @@ Centralized logistics system for Collmepro and Collme Beauty.
 > **Note:** To view the database diagram, open the [`docs/00-database-uml.md`](docs/00-database-uml.md) file in a viewer that supports [Mermaid](https://mermaid-js.github.io/mermaid/#/).  
 Tools like [VSCode with the Mermaid extension](https://marketplace.visualstudio.com/items?itemName=bierner.markdown-mermaid) or the [Mermaid Live Editor](https://mermaid.live/) can be used to render the diagram.
 
---
+---
 
 ## Roadmap / TODOs
 
@@ -17,10 +17,10 @@ Tools like [VSCode with the Mermaid extension](https://marketplace.visualstudio.
 - [x] Setup Pest/PHPUnit for testing  
 
 ### Users & Authentication
-- [ ] Write tests for authentication (login/logout, roles)  
-- [ ] Write tests for users CRUD (admin only)  
-- [ ] Implement authentication with multi-user roles (Admin, Manager, Sales)  
-- [ ] Implement users module (CRUD)  
+- [x] Write tests for authentication (login/logout, roles)  
+- [x] Write tests for users CRUD (admin only)  
+- [x] Implement authentication with multi-user roles (Admin, Manager, Sales)  
+- [x] Implement users module (CRUD)  
 
 ### Orders
 - [ ] Write tests for WooCommerce API mock (import paid orders)  
@@ -83,7 +83,6 @@ Tools like [VSCode with the Mermaid extension](https://marketplace.visualstudio.
   - Orders  
   - Dashboard  
   - Users (Admin only)  
-
 ---
 
 <div align="center">

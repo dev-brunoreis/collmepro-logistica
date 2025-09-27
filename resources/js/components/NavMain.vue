@@ -21,7 +21,7 @@ const page = usePage();
     <SidebarGroup class="px-2 py-0">
         <SidebarGroupLabel>Menus</SidebarGroupLabel>
         <SidebarMenu>
-            <SidebarMenuItem v-for="item in items" :key="item.title">
+            <SidebarMenuItem v-for="item in items" :key="item.title" v-show="item.visible !== false">
                 <SidebarMenuButton
                     as-child
                     :is-active="urlIsActive(item.href, page.url)"
