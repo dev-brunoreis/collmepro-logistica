@@ -37,12 +37,12 @@ const mainNavItems: NavItem[] = [
         href: dashboard.url(),
         icon: LayoutGrid,
     },
-    // {
-    //     title: 'Pedidos',
-    //     href: '#', // TODO: Implementar rota de pedidos
-    //     icon: Package,
-    //     visible: user?.role === 'admin' || user?.role === 'manager',
-    // },
+    {
+        title: 'Pedidos',
+        href: '/orders',
+        icon: Package,
+        visible: user?.role === 'admin' || user?.role === 'manager',
+    },
     // {
     //     title: 'Kanban',
     //     href: '#', // TODO: Implementar rota de kanban

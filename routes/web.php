@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -16,6 +17,11 @@ Route::get('dashboard', function () {
 // User management routes (Admin only)
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::resource('users', UserController::class);
+});
+
+// Orders routes (Admin and Manager only)
+Route::middleware(['auth', 'role:admin,manager'])->group(function () {
+    Route::resource('orders', OrderController::class)->only(['index', 'show', 'update']);
 });
 
 // Profile routes (All authenticated users)

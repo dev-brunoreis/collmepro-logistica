@@ -74,6 +74,9 @@ class OrderStatus extends Model
             'picking_marked_by' => $user->id,
             'picking_marked_at' => now(),
         ]);
+
+        // Record history
+        $this->recordHistory('picking', true, $user);
     }
 
     /**
@@ -86,6 +89,9 @@ class OrderStatus extends Model
             'packing_marked_by' => $user->id,
             'packing_marked_at' => now(),
         ]);
+
+        // Record history
+        $this->recordHistory('packing', true, $user);
     }
 
     /**
@@ -98,42 +104,54 @@ class OrderStatus extends Model
             'picked_up_marked_by' => $user->id,
             'picked_up_marked_at' => now(),
         ]);
+
+        // Record history
+        $this->recordHistory('picked_up', true, $user);
     }
 
     /**
      * Unmark picking.
      */
-    public function unmarkPicking(): void
+    public function unmarkPicking(User $user): void
     {
         $this->update([
             'picking' => false,
             'picking_marked_by' => null,
             'picking_marked_at' => null,
         ]);
+
+        // Record history
+        $this->recordHistory('picking', false, $user);
     }
 
     /**
      * Unmark packing.
      */
-    public function unmarkPacking(): void
+    public function unmarkPacking(User $user): void
     {
         $this->update([
             'packing' => false,
             'packing_marked_by' => null,
             'packing_marked_at' => null,
         ]);
+
+        // Record history
+        $this->recordHistory('packing', false, $user);
     }
 
     /**
      * Unmark picked up.
      */
-    public function unmarkPickedUp(): void
+    public function unmarkPickedUp(User $user): void
     {
         $this->update([
             'picked_up' => false,
             'picked_up_marked_by' => null,
             'picked_up_marked_at' => null,
         ]);
+
+        // Record history
+        $this->recordHistory('picked_up', false, $user);
     }
 
     /**
@@ -213,5 +231,19 @@ class OrderStatus extends Model
               ->orWhere('packing', false)
               ->orWhere('picked_up', false);
         });
+    }
+
+    /**
+     * Record status change history.
+     */
+    private function recordHistory(string $statusType, bool $statusValue, User $user): void
+    {
+        \App\Models\OrderStatusHistory::create([
+            'order_id' => $this->order_id,
+            'status_type' => $statusType,
+            'status_value' => $statusValue,
+            'user_id' => $user->id,
+            'changed_at' => now(),
+        ]);
     }
 }

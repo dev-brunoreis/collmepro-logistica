@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Jobs\ImportShopifyOrdersJob;
 use App\Jobs\ImportWooCommerceOrdersJob;
 use Illuminate\Console\Command;
 
@@ -12,14 +13,14 @@ class ImportOrdersCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'orders:import {system? : Specific system (collmepro, collmepro_wholesale)}';
+    protected $signature = 'orders:import {system? : Specific system (collmepro, collmepro_wholesale, collme_beauty)}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Import orders from WooCommerce systems';
+    protected $description = 'Import orders from WooCommerce and Shopify systems';
 
     /**
      * Execute the console command.
@@ -30,13 +31,19 @@ class ImportOrdersCommand extends Command
 
         if ($system) {
             // Import specific system
-            if (!in_array($system, ['collmepro', 'collmepro_wholesale'])) {
-                $this->error("Invalid system. Use: collmepro or collmepro_wholesale");
+            if (!in_array($system, ['collmepro', 'collmepro_wholesale', 'collme_beauty'])) {
+                $this->error("Invalid system. Use: collmepro, collmepro_wholesale, or collme_beauty");
                 return 1;
             }
 
             $this->info("Starting import of system: {$system}");
-            ImportWooCommerceOrdersJob::dispatch($system);
+            
+            if (in_array($system, ['collmepro', 'collmepro_wholesale'])) {
+                ImportWooCommerceOrdersJob::dispatch($system);
+            } elseif ($system === 'collme_beauty') {
+                ImportShopifyOrdersJob::dispatch($system);
+            }
+            
             $this->info("Job sent to queue!");
         } else {
             // Import all systems
@@ -47,6 +54,9 @@ class ImportOrdersCommand extends Command
             
             $this->info("2. Importing Collmepro Wholesale...");
             ImportWooCommerceOrdersJob::dispatch('collmepro_wholesale');
+            
+            $this->info("3. Importing Collme Beauty...");
+            ImportShopifyOrdersJob::dispatch('collme_beauty');
             
             $this->info("Jobs sent to queue!");
         }
