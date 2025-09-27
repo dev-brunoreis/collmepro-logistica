@@ -35,4 +35,14 @@ return [
         ],
     ],
 
+    'woocommerce' => [
+        'collmepro' => [
+            'consumer_key' => env('WOOCOMMERCE_COLLMEPRO_CONSUMER_KEY'),
+            'consumer_secret' => env('WOOCOMMERCE_COLLMEPRO_CONSUMER_SECRET'),
+        ],
+        'collmepro_wholesale' => [
+            'consumer_key' => env('WOOCOMMERCE_COLLMEPRO_WHOLESALE_CONSUMER_KEY'),
+            'consumer_secret' => env('WOOCOMMERCE_COLLMEPRO_WHOLESALE_CONSUMER_SECRET'),
+        ],
+    ]
 ];

@@ -23,6 +23,7 @@ return new class extends Migration
             $table->boolean('picked_up')->default(false);
             $table->foreignId('picked_up_marked_by')->nullable()->constrained('users');
             $table->datetime('picked_up_marked_at')->nullable();
+            $table->timestamps();
         });
     }
 
