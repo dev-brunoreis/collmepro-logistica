@@ -71,9 +71,17 @@ interface Props {
 const props = defineProps<Props>();
 
 const search = (value: string) => {
+    const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+    
     router.get('/orders', { search: value }, {
         preserveState: true,
+        preserveScroll: true,
         replace: true,
+        onSuccess: () => {
+            setTimeout(() => {
+                window.scrollTo(0, scrollPosition);
+            }, 50);
+        },
     });
 };
 
@@ -85,17 +93,33 @@ const updateFilter = (filterName: string, value: string) => {
         filters[filterName as keyof typeof filters] = value;
     }
     
+    const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+    
     router.get('/orders', filters, {
         preserveState: true,
+        preserveScroll: true,
         replace: true,
+        onSuccess: () => {
+            setTimeout(() => {
+                window.scrollTo(0, scrollPosition);
+            }, 50);
+        },
     });
 };
 
 
 const clearFilters = () => {
+    const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+    
     router.get('/orders', {}, {
         preserveState: true,
+        preserveScroll: true,
         replace: true,
+        onSuccess: () => {
+            setTimeout(() => {
+                window.scrollTo(0, scrollPosition);
+            }, 50);
+        },
     });
 };
 
@@ -116,12 +140,21 @@ const updateOrderStatus = (orderId: number, action: string, currentStatus: boole
         return;
     }
     
+    // Store current scroll position
+    const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+    
     router.patch(`/orders/${orderId}`, {
         action,
         status: newStatus,
     }, {
         preserveState: true,
+        preserveScroll: true,
         onSuccess: () => {
+            // Restore scroll position after a short delay to ensure DOM is updated
+            setTimeout(() => {
+                window.scrollTo(0, scrollPosition);
+            }, 50);
+            
             if (typeof window !== 'undefined' && (window as any).toast) {
                 const message = newStatus ? `${actionName} marcado como concluído` : `${actionName} desmarcado`;
                 (window as any).toast.success('Status atualizado', message);

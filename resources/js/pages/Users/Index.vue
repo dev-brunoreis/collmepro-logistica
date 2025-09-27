@@ -46,8 +46,18 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 const deleteUser = (user: User) => {
     if (confirm(`Tem certeza que deseja excluir ${user.name}?`)) {
+        // Store current scroll position
+        const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+        
         router.delete(users.destroy.url({ user: user.id }), {
+            preserveState: true,
+            preserveScroll: true,
             onSuccess: (page: any) => {
+                // Restore scroll position after a short delay to ensure DOM is updated
+                setTimeout(() => {
+                    window.scrollTo(0, scrollPosition);
+                }, 50);
+                
                 if (typeof window !== 'undefined' && (window as any).toast) {
                     // Check if there's an error message in the session
                     if (page.props.flash?.error) {
@@ -68,23 +78,47 @@ const deleteUser = (user: User) => {
 };
 
 const search = (value: string) => {
+    const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+    
     router.get('/users', { search: value }, {
         preserveState: true,
+        preserveScroll: true,
         replace: true,
+        onSuccess: () => {
+            setTimeout(() => {
+                window.scrollTo(0, scrollPosition);
+            }, 50);
+        },
     });
 };
 
 const filterByRole = (role: string) => {
+    const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+    
     router.get('/users', { role: role || null }, {
         preserveState: true,
+        preserveScroll: true,
         replace: true,
+        onSuccess: () => {
+            setTimeout(() => {
+                window.scrollTo(0, scrollPosition);
+            }, 50);
+        },
     });
 };
 
 const clearFilters = () => {
+    const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+    
     router.get('/users', {}, {
         preserveState: true,
+        preserveScroll: true,
         replace: true,
+        onSuccess: () => {
+            setTimeout(() => {
+                window.scrollTo(0, scrollPosition);
+            }, 50);
+        },
     });
 };
 </script>
@@ -165,7 +199,7 @@ const clearFilters = () => {
                             <tr
                                 v-for="user in props.users.data || []"
                                 :key="user.id"
-                                class="border-b border-sidebar-border/70 dark:border-sidebar-border last:border-b-0"
+                                class="border-b border-sidebar-border/70 dark:border-sidebar-border last:border-b-0 hover:bg-sidebar-border/20"
                             >
                                 <td class="px-4 py-3">
                                     <div class="font-medium">{{ user.name }}</div>
