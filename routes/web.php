@@ -57,9 +57,12 @@ Route::middleware(['auth', 'permission:orders.status.update'])->group(function (
     Route::patch('orders/{order}', [OrderController::class, 'update'])->name('orders.update');
 });
 
-// Order import (users with orders.import permission)
+// Order import and sync (users with orders.import permission)
 Route::middleware(['auth', 'permission:orders.import'])->group(function () {
     Route::post('orders/fetch', [OrderController::class, 'fetchManual'])->name('orders.fetch');
+    Route::post('orders/import-and-sync', [OrderController::class, 'importAndSync'])->name('orders.import-and-sync');
+    Route::post('orders/sync-bling', [OrderController::class, 'syncBlingData'])->name('orders.sync-bling');
+    Route::post('orders/{order}/sync-bling', [OrderController::class, 'syncBlingDataForOrder'])->name('orders.sync-bling-order');
 });
 
 // Profile routes (All authenticated users)

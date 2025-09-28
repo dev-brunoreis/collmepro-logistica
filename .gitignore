@@ -26,6 +26,7 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+scheduler.log
 
 # Cursor AI files
 .cursorrules

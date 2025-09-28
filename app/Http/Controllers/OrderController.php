@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Jobs\ImportWooCommerceOrdersJob;
 use App\Jobs\ImportShopifyOrdersJob;
+use App\Jobs\SyncBlingDataJob;
+use App\Jobs\SyncAllBlingDataJob;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Queue;
@@ -261,6 +263,86 @@ class OrderController extends Controller
 
         } catch (\Exception $e) {
             return back()->with('error', 'Erro ao iniciar a importação: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Sincronizar dados com Bling para todos os pedidos sem NFE
+     */
+    public function syncBlingData(Request $request)
+    {
+        // Check permissions - user must have orders.import permission
+        $user = Auth::user();
+        if (!$user->hasPermission('orders.import')) {
+            return back()->with('error', 'Você não tem permissão para sincronizar dados com o Bling.');
+        }
+
+        try {
+            // Dispatch job para sincronização em lote
+            Queue::push(new SyncAllBlingDataJob());
+
+            return back()->with('success', 'Sincronização com Bling iniciada. Os dados serão atualizados em alguns minutos.');
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Erro ao iniciar sincronização com Bling: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Sincronizar dados com Bling para um pedido específico
+     */
+    public function syncBlingDataForOrder(Request $request, Order $order)
+    {
+        // Check permissions - user must have orders.import permission
+        $user = Auth::user();
+        if (!$user->hasPermission('orders.import')) {
+            return back()->with('error', 'Você não tem permissão para sincronizar dados com o Bling.');
+        }
+
+        try {
+            // Dispatch job para sincronização específica
+            Queue::push(new SyncBlingDataJob($order->id));
+
+            return back()->with('success', "Sincronização com Bling iniciada para o pedido {$order->order_number}.");
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Erro ao iniciar sincronização com Bling: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Importar pedidos e sincronizar com Bling em sequência
+     */
+    public function importAndSync(Request $request)
+    {
+        // Check permissions - user must have orders.import permission
+        $user = Auth::user();
+        if (!$user->hasPermission('orders.import')) {
+            return back()->with('error', 'Você não tem permissão para importar pedidos e sincronizar com Bling.');
+        }
+
+        try {
+            $importedSystems = [];
+            
+            // Dispatch WooCommerce import jobs
+            Queue::push(new ImportWooCommerceOrdersJob('collmepro'));
+            $importedSystems[] = 'Collmepro';
+            
+            Queue::push(new ImportWooCommerceOrdersJob('collmepro_wholesale'));
+            $importedSystems[] = 'Collmepro Atacadista';
+            
+            // Dispatch Shopify import job
+            Queue::push(new ImportShopifyOrdersJob('collme_beauty'));
+            $importedSystems[] = 'Collme Beauty';
+
+            // Dispatch Bling sync job (será executado após os imports)
+            Queue::push(new SyncAllBlingDataJob());
+
+            $systemsList = implode(', ', $importedSystems);
+            return back()->with('success', "Importação e sincronização iniciadas para os sistemas: {$systemsList}. Os dados serão atualizados em alguns minutos.");
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Erro ao iniciar importação e sincronização: ' . $e->getMessage());
         }
     }
 
