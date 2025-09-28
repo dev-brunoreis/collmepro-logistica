@@ -91,11 +91,34 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the permissions for this user's role.
+     */
+    public function permissions()
+    {
+        return \App\Models\RolePermission::where('role', $this->role)
+            ->with('permission')
+            ->get()
+            ->pluck('permission');
+    }
+
+    /**
+     * Check if user has a specific permission.
+     */
+    public function hasPermission(string $permissionName): bool
+    {
+        return \App\Models\RolePermission::where('role', $this->role)
+            ->whereHas('permission', function ($query) use ($permissionName) {
+                $query->where('name', $permissionName)->where('is_active', true);
+            })
+            ->exists();
+    }
+
+    /**
      * Check if user can access orders screen
      */
     public function canAccessOrders(): bool
     {
-        return $this->isAdmin() || $this->isManager();
+        return $this->isAdmin() || $this->isManager() || $this->isSales();
     }
 
     /**

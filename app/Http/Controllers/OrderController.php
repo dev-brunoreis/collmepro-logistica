@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Jobs\ImportWooCommerceOrdersJob;
+use App\Jobs\ImportShopifyOrdersJob;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Queue;
 use Inertia\Inertia;
 
 class OrderController extends Controller
@@ -194,8 +197,8 @@ class OrderController extends Controller
         $action = $validated['action'];
         $status = $validated['status'];
 
-        // Check permissions - only Admin and Manager can update status
-        if (!in_array($user->role, ['admin', 'manager'])) {
+        // Check permissions - user must have orders.status.update permission
+        if (!$user->hasPermission('orders.status.update')) {
             return back()->with('error', 'Você não tem permissão para alterar o status do pedido.');
         }
 
@@ -226,6 +229,39 @@ class OrderController extends Controller
         }
 
         return back()->with('success', $message);
+    }
+
+    /**
+     * Manually fetch orders from external systems.
+     */
+    public function fetchManual(Request $request)
+    {
+        // Check permissions - user must have orders.import permission
+        $user = Auth::user();
+        if (!$user->hasPermission('orders.import')) {
+            return back()->with('error', 'Você não tem permissão para importar pedidos.');
+        }
+
+        try {
+            $importedSystems = [];
+            
+            // Dispatch WooCommerce import jobs
+            Queue::push(new ImportWooCommerceOrdersJob('collmepro'));
+            $importedSystems[] = 'Collmepro';
+            
+            Queue::push(new ImportWooCommerceOrdersJob('collmepro_wholesale'));
+            $importedSystems[] = 'Collmepro Atacadista';
+            
+            // Dispatch Shopify import job
+            Queue::push(new ImportShopifyOrdersJob('collme_beauty'));
+            $importedSystems[] = 'Collme Beauty';
+
+            $systemsList = implode(', ', $importedSystems);
+            return back()->with('success', "Importação iniciada para os sistemas: {$systemsList}. Os pedidos serão atualizados em alguns segundos.");
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Erro ao iniciar a importação: ' . $e->getMessage());
+        }
     }
 
     /**

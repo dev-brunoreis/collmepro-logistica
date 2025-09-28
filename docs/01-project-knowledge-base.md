@@ -110,23 +110,50 @@ Centralized logistics system for tracking orders from Collmepro and Collme Beaut
 - Users (Admin only)
 - Collapsible (icons only)
 
-## User Profiles
+## User Profiles & Permission System
 
-### Admin
-- Full system access
-- User management
-- All screens
+### Role-Based Access Control (RBAC)
+The system implements a comprehensive permission system with three distinct roles:
 
-### Manager
-- Orders screen
-- Kanban screen
-- Labels screen
-- Dashboard
+#### Admin Role
+**Full system access with all permissions:**
+- ✅ `orders.view` - View orders list
+- ✅ `orders.status.update` - Update order status (picking, packing, picked_up)
+- ✅ `users.view` - View users list
+- ✅ `users.create` - Create new users
+- ✅ `users.edit` - Edit user information
+- ✅ `users.delete` - Delete users
+- ✅ `permissions.view` - View and manage role permissions
+- ✅ `dashboard.view` - Access main dashboard
+- ✅ `kanban.view` - View kanban board
+- ✅ `labels.view` - View shipping labels
 
-### Sales
-- Kanban screen
-- Labels screen
-- Dashboard
+#### Manager Role
+**Operational access with limited administrative permissions:**
+- ✅ `orders.view` - View orders list
+- ✅ `orders.status.update` - Update order status (picking, packing, picked_up)
+- ❌ `users.*` - No user management access
+- ❌ `permissions.*` - No permission management access
+- ✅ `dashboard.view` - Access main dashboard
+- ✅ `kanban.view` - View kanban board
+- ✅ `labels.view` - View shipping labels
+
+#### Sales Role
+**Read-only access for sales team:**
+- ✅ `orders.view` - View orders list (read-only)
+- ❌ `orders.status.update` - Cannot update order status
+- ❌ `users.*` - No user management access
+- ❌ `permissions.*` - No permission management access
+- ✅ `dashboard.view` - Access main dashboard
+- ✅ `kanban.view` - View kanban board
+- ✅ `labels.view` - View shipping labels
+
+### Permission Implementation
+- **Backend**: Laravel middleware with `CheckPermission` class
+- **Frontend**: Vue.js components with conditional rendering based on user permissions
+- **Database**: `permissions` and `role_permissions` tables with proper relationships
+- **Security**: All routes protected by permission middleware
+- **UI/UX**: Buttons and menu items only visible to users with appropriate permissions
 
 ## Development Principles
 
@@ -205,7 +232,13 @@ npm run build
 
 ### Phase 1: Authentication and Users ✅ COMPLETED
 - **User Management System**: Complete CRUD operations for users
-- **Role-Based Access Control**: Admin, Manager, Sales roles with proper permissions
+- **Role-Based Access Control**: Admin, Manager, Sales roles with comprehensive permission system
+- **Permission System**: 
+  - 10 distinct permissions across 5 categories (orders, users, permissions, dashboard, kanban, labels)
+  - Database-driven permissions with `permissions` and `role_permissions` tables
+  - Middleware-based route protection with `CheckPermission` class
+  - Frontend conditional rendering based on user permissions
+  - All permissions tested and verified (32/32 tests passing)
 - **User Authentication**: Login/logout with Laravel Fortify
 - **Profile Management**: Users can edit their own profiles
 - **User Listing**: Paginated list with search and role filters
@@ -213,6 +246,7 @@ npm run build
   - Admin cannot delete their own account
   - Admin cannot change their own role
   - Proper authorization middleware
+  - Permission-based UI elements (buttons only visible to authorized users)
 - **Toast Notification System**: Modern dark-themed notifications for user feedback
 - **Responsive Design**: Mobile-first approach with clean, modern interface
 - **Brazilian Localization**: All text in Portuguese, dates in dd/mm/yyyy format

@@ -68,28 +68,71 @@
 
 ## 2. User System and Permissions
 
-### 2.1 User Profiles
+### 2.1 Role-Based Access Control (RBAC)
 
-#### Admin
-- Full system access
-- User management (CRUD)
-- All screens and functionalities
-- System settings
+The system implements a comprehensive permission system with three distinct roles and 10 specific permissions:
 
-#### Manager
-- Orders screen (view and edit)
-- Kanban screen
-- Labels screen
-- Dashboard
-- Cannot manage users
+#### Permission Categories
+1. **Orders** (`orders.view`, `orders.status.update`)
+2. **Users** (`users.view`, `users.create`, `users.edit`, `users.delete`)
+3. **Permissions** (`permissions.view`)
+4. **Dashboard** (`dashboard.view`)
+5. **Kanban** (`kanban.view`)
+6. **Labels** (`labels.view`)
 
-#### Sales
-- Kanban screen (view only)
-- Labels screen (view only)
-- Dashboard
-- Limited access
+#### Admin Role
+**Full system access with all permissions:**
+- ✅ `orders.view` - View orders list
+- ✅ `orders.status.update` - Update order status (picking, packing, picked_up)
+- ✅ `users.view` - View users list
+- ✅ `users.create` - Create new users
+- ✅ `users.edit` - Edit user information
+- ✅ `users.delete` - Delete users
+- ✅ `permissions.view` - View and manage role permissions
+- ✅ `dashboard.view` - Access main dashboard
+- ✅ `kanban.view` - View kanban board
+- ✅ `labels.view` - View shipping labels
 
-### 2.2 User Management
+#### Manager Role
+**Operational access with limited administrative permissions:**
+- ✅ `orders.view` - View orders list
+- ✅ `orders.status.update` - Update order status (picking, packing, picked_up)
+- ❌ `users.*` - No user management access
+- ❌ `permissions.*` - No permission management access
+- ✅ `dashboard.view` - Access main dashboard
+- ✅ `kanban.view` - View kanban board
+- ✅ `labels.view` - View shipping labels
+
+#### Sales Role
+**Read-only access for sales team:**
+- ✅ `orders.view` - View orders list (read-only)
+- ❌ `orders.status.update` - Cannot update order status
+- ❌ `users.*` - No user management access
+- ❌ `permissions.*` - No permission management access
+- ✅ `dashboard.view` - Access main dashboard
+- ✅ `kanban.view` - View kanban board
+- ✅ `labels.view` - View shipping labels
+
+### 2.2 Permission Implementation
+
+#### Backend Security
+- **Middleware**: `CheckPermission` class protects all routes
+- **Database**: `permissions` and `role_permissions` tables with proper relationships
+- **Models**: `User`, `Permission`, `RolePermission` with relationship methods
+- **Controllers**: Permission checks in all sensitive operations
+
+#### Frontend Security
+- **Conditional Rendering**: UI elements only visible to authorized users
+- **Route Protection**: Inertia.js routes protected by backend middleware
+- **Component Logic**: Vue components check user permissions before showing actions
+
+#### Security Features
+- **Route Protection**: All sensitive routes protected by permission middleware
+- **UI Security**: Buttons and menu items only visible to authorized users
+- **Data Security**: Users can only access data they have permission to view
+- **Action Security**: Users cannot perform actions they don't have permission for
+
+### 2.3 User Management
 **Required fields**:
 - Full name
 - Email (unique)

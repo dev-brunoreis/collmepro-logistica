@@ -45,7 +45,7 @@ const form = useForm({
 });
 
 const submit = () => {
-    form.put(users.update.url({ user: props.user.id }), {
+    form.patch(users.update.url({ user: props.user.id }), {
         onSuccess: () => {
             if (typeof window !== 'undefined' && (window as any).toast) {
                 (window as any).toast.success('Usuário atualizado', 'O usuário foi atualizado com sucesso.');

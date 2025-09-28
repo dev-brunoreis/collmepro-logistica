@@ -12,6 +12,14 @@ class UserTest extends TestCase
 {
     use RefreshDatabase, WithFaker;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        
+        // Seed permissions first
+        $this->seed(\Database\Seeders\PermissionSeeder::class);
+    }
+
     public function test_admin_can_create_user(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
@@ -73,7 +81,7 @@ class UserTest extends TestCase
 
         $this->actingAs($admin);
 
-        $response = $this->put("/users/{$user->id}", [
+        $response = $this->patch("/users/{$user->id}", [
             'name' => 'Jane Doe',
             'email' => 'jane@example.com',
             'username' => $user->username,
@@ -186,7 +194,7 @@ class UserTest extends TestCase
 
         $this->actingAs($admin);
 
-        $response = $this->put("/users/{$admin->id}", [
+        $response = $this->patch("/users/{$admin->id}", [
             'name' => $admin->name,
             'email' => $admin->email,
             'username' => $admin->username,

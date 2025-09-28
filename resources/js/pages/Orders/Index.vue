@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import { Head, Link, router } from '@inertiajs/vue3';
-import { Search, Filter, Eye, CheckCircle, XCircle, Package, Truck, ExternalLink } from 'lucide-vue-next';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { ref } from 'vue';
+import { Search, Filter, Eye, CheckCircle, XCircle, Package, Truck, ExternalLink, RefreshCw } from 'lucide-vue-next';
 
 interface OrderStatus {
     picking: boolean;
@@ -13,6 +14,20 @@ interface OrderStatus {
     picking_marked_at?: string;
     packing_marked_at?: string;
     picked_up_marked_at?: string;
+}
+
+interface User {
+    id: number;
+    name: string;
+    email: string;
+    username: string;
+    role: string;
+    permissions?: Array<{
+        id: number;
+        name: string;
+        display_name: string;
+        description?: string;
+    }>;
 }
 
 interface Order {
@@ -69,6 +84,17 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+const page = usePage();
+const user = page.props.auth.user as User;
+
+// Check if user has permission to update order status
+const canUpdateStatus = user?.permissions?.some((p: any) => p.name === 'orders.status.update') || false;
+
+// Check if user has permission to import orders
+const canImportOrders = user?.permissions?.some((p: any) => p.name === 'orders.import') || false;
+
+// Loading state for manual fetch
+const isFetching = ref(false);
 
 const search = (value: string) => {
     const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
@@ -193,6 +219,32 @@ const formatDate = (dateString: string) => {
         minute: '2-digit',
     });
 };
+
+const fetchOrders = () => {
+    if (isFetching.value) return;
+    
+    isFetching.value = true;
+    
+    router.post('/orders/fetch', {}, {
+        preserveState: true,
+        preserveScroll: true,
+        onSuccess: () => {
+            // Reload the page to show updated orders
+            setTimeout(() => {
+                router.reload({ only: ['orders'] });
+            }, 2000); // Wait 2 seconds for jobs to process
+        },
+        onError: (errors: any) => {
+            if (typeof window !== 'undefined' && (window as any).toast) {
+                const message = errors.message || 'Erro ao buscar pedidos';
+                (window as any).toast.error('Erro', message);
+            }
+        },
+        onFinish: () => {
+            isFetching.value = false;
+        }
+    });
+};
 </script>
 
 <template>
@@ -202,6 +254,15 @@ const formatDate = (dateString: string) => {
         <div class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
             <div class="flex items-center justify-between">
                 <h1 class="text-2xl font-bold">Pedidos</h1>
+                <button
+                    v-if="canImportOrders"
+                    @click="fetchOrders"
+                    :disabled="isFetching"
+                    class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <RefreshCw :class="{ 'animate-spin': isFetching }" class="h-4 w-4" />
+                    {{ isFetching ? 'Buscando...' : 'Atualizar Pedidos' }}
+                </button>
             </div>
 
             <!-- Filters -->
@@ -371,6 +432,7 @@ const formatDate = (dateString: string) => {
                                 </td>
                                 <td class="px-4 py-3">
                                     <button
+                                        v-if="canUpdateStatus"
                                         @click="updateOrderStatus(order.id, 'picking', order.order_status?.picking || false)"
                                         class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm hover:bg-sidebar-border/70"
                                         :class="order.order_status?.picking ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'"
@@ -379,9 +441,15 @@ const formatDate = (dateString: string) => {
                                         <XCircle v-else class="h-3 w-3" />
                                         <Package class="h-3 w-3" />
                                     </button>
+                                    <div v-else class="inline-flex items-center gap-1 px-2 py-1 text-sm text-muted-foreground">
+                                        <CheckCircle v-if="order.order_status?.picking" class="h-3 w-3 text-green-600 dark:text-green-400" />
+                                        <XCircle v-else class="h-3 w-3" />
+                                        <Package class="h-3 w-3" />
+                                    </div>
                                 </td>
                                 <td class="px-4 py-3">
                                     <button
+                                        v-if="canUpdateStatus"
                                         @click="updateOrderStatus(order.id, 'packing', order.order_status?.packing || false)"
                                         class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm hover:bg-sidebar-border/70"
                                         :class="order.order_status?.packing ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'"
@@ -390,9 +458,15 @@ const formatDate = (dateString: string) => {
                                         <XCircle v-else class="h-3 w-3" />
                                         <Package class="h-3 w-3" />
                                     </button>
+                                    <div v-else class="inline-flex items-center gap-1 px-2 py-1 text-sm text-muted-foreground">
+                                        <CheckCircle v-if="order.order_status?.packing" class="h-3 w-3 text-green-600 dark:text-green-400" />
+                                        <XCircle v-else class="h-3 w-3" />
+                                        <Package class="h-3 w-3" />
+                                    </div>
                                 </td>
                                 <td class="px-4 py-3">
                                     <button
+                                        v-if="canUpdateStatus"
                                         @click="updateOrderStatus(order.id, 'picked_up', order.order_status?.picked_up || false)"
                                         class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm hover:bg-sidebar-border/70"
                                         :class="order.order_status?.picked_up ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'"
@@ -401,6 +475,11 @@ const formatDate = (dateString: string) => {
                                         <XCircle v-else class="h-3 w-3" />
                                         <Truck class="h-3 w-3" />
                                     </button>
+                                    <div v-else class="inline-flex items-center gap-1 px-2 py-1 text-sm text-muted-foreground">
+                                        <CheckCircle v-if="order.order_status?.picked_up" class="h-3 w-3 text-green-600 dark:text-green-400" />
+                                        <XCircle v-else class="h-3 w-3" />
+                                        <Truck class="h-3 w-3" />
+                                    </div>
                                 </td>
                                 <td class="px-4 py-3">
                                     <Link

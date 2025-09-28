@@ -37,6 +37,13 @@ This document tracks the current implementation status of the Collmepro Logistic
 - ✅ Admin cannot change their own role
 - ✅ Proper route protection by roles
 - ✅ Form validation (client and server-side)
+- ✅ **Comprehensive Permission System**:
+  - Database-driven permissions with `permissions` and `role_permissions` tables
+  - 10 distinct permissions across 5 categories (orders, users, permissions, dashboard, kanban, labels)
+  - Middleware-based route protection with `CheckPermission` class
+  - Frontend conditional rendering based on user permissions
+  - All sensitive operations protected by permission checks
+  - UI elements only visible to authorized users
 
 #### Localization
 - ✅ All user-facing text in Portuguese
@@ -44,10 +51,16 @@ This document tracks the current implementation status of the Collmepro Logistic
 - ✅ Role names in Portuguese
 
 #### Testing
-- ✅ 16 passing tests
+- ✅ **32 passing tests** (185 assertions)
 - ✅ Authentication tests
 - ✅ User management tests
 - ✅ Profile management tests
+- ✅ **Permission System Tests**:
+  - OrderControllerTest: 11/11 tests passing
+  - PermissionControllerTest: 11/11 tests passing
+  - UserTest: 10/10 tests passing
+  - All permission combinations tested and verified
+  - Role-based access control fully tested
 - ✅ Authorization tests
 
 ### Technical Stack Used

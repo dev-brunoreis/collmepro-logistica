@@ -53,6 +53,14 @@ Specific prompts for each agent type, including:
 - Agent Frontend (Vue.js Specialist)
 - Agent Integration (API Specialist)
 
+### 🔒 [09-permission-system.md](09-permission-system.md)
+Comprehensive permission system documentation, including:
+- Role-Based Access Control (RBAC) architecture
+- Permission definitions and categories
+- Role assignments (Admin, Manager, Sales)
+- Backend and frontend security implementation
+- Testing and maintenance procedures
+
 ## How to Use This Documentation
 
 ### For Developers
@@ -110,10 +118,11 @@ Specific prompts for each agent type, including:
 
 ## System Structure
 
-### User Profiles
-- **Admin**: Full access
-- **Manager**: Order and logistics management
-- **Sales**: Viewing and monitoring
+### User Profiles & Permissions
+- **Admin**: Full system access with all 10 permissions
+- **Manager**: Operational access with 6 permissions (orders, dashboard, kanban, labels)
+- **Sales**: Read-only access with 4 permissions (orders view, dashboard, kanban, labels)
+- **Security**: Role-Based Access Control (RBAC) with database-driven permissions
 
 ### Main Screens
 - **Orders**: Complete order management

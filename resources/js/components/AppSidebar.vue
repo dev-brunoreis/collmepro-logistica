@@ -41,7 +41,7 @@ const mainNavItems: NavItem[] = [
         title: 'Pedidos',
         href: '/orders',
         icon: Package,
-        visible: user?.role === 'admin' || user?.role === 'manager',
+        visible: user?.permissions?.some(p => p.name === 'orders.view') || false,
     },
     // {
     //     title: 'Kanban',
@@ -59,7 +59,13 @@ const mainNavItems: NavItem[] = [
         title: 'Usuários',
         href: users.index(),
         icon: Users,
-        visible: user?.role === 'admin',
+        visible: user?.permissions?.some(p => p.name === 'users.view') || false,
+    },
+    {
+        title: 'Permissões',
+        href: '/permissions',
+        icon: FileText,
+        visible: user?.permissions?.some(p => p.name === 'permissions.view') || false,
     },
     // {
     //     title: 'Relatórios',

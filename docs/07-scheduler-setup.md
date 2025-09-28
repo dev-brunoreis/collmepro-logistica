@@ -2,16 +2,17 @@
 
 ## 📋 Overview
 
-The system is configured to automatically import orders every 10 minutes from:
+The system is configured to automatically import orders every 5 minutes from:
 - **Collmepro** (pro.collmepro.com.br)
 - **Collmepro Wholesale** (atacadista.collmepro.com.br)
+- **Collme Beauty** (collmebeauty.com.br)
 
 ## ⚙️ Current Configuration
 
 ### ✅ Scheduler Configured
-- **Frequency**: Every 10 minutes
+- **Frequency**: Every 5 minutes
 - **Overlap prevention**: `withoutOverlapping()`
-- **Systems**: Both (collmepro and collmepro_wholesale)
+- **Systems**: All three (collmepro, collmepro_wholesale, collme_beauty)
 
 ### ✅ Duplicate Prevention
 The system prevents duplicates by checking if the order already exists:
@@ -25,7 +26,24 @@ if (Order::where('system', $this->system)->where('order_number', $orderData['num
 
 ## 🚀 Production Setup
 
-### 1. Cron Job Configuration
+### 0. Quick Setup (Recommended)
+Use the provided setup script for automatic configuration:
+
+```bash
+# Make the script executable (if not already)
+chmod +x setup-cron.sh
+
+# Run the setup script
+./setup-cron.sh
+```
+
+This script will:
+- Install cron if not present
+- Configure the cron job automatically
+- Start the cron service
+- Verify the configuration
+
+### 1. Manual Cron Job Configuration
 To make the scheduler work automatically, you need to configure a cron job on the server:
 
 #### Edit Crontab

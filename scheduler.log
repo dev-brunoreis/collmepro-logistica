@@ -1,0 +1,22 @@
+2025-09-28 17:20:15 - Running scheduler...
+
+  2025-09-28 20:20:15 Running [App\Jobs\ImportWooCommerceOrdersJob]  31.75ms DONE
+  2025-09-28 20:20:15 Running [App\Jobs\ImportWooCommerceOrdersJob]  21.84ms DONE
+  2025-09-28 20:20:15 Running [App\Jobs\ImportShopifyOrdersJob] . 23.46ms DONE
+
+2025-09-28 17:20:15 - Scheduler completed
+2025-09-28 17:21:15 - Running scheduler...
+
+   INFO  No scheduled commands are ready to run.  
+
+2025-09-28 17:21:15 - Scheduler completed
+2025-09-28 17:22:15 - Running scheduler...
+
+   INFO  No scheduled commands are ready to run.  
+
+2025-09-28 17:22:15 - Scheduler completed
+2025-09-28 17:23:15 - Running scheduler...
+
+   INFO  No scheduled commands are ready to run.  
+
+2025-09-28 17:23:16 - Scheduler completed

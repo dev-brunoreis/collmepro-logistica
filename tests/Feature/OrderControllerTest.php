@@ -17,6 +17,9 @@ class OrderControllerTest extends TestCase
     {
         parent::setUp();
         
+        // Seed permissions first
+        $this->seed(\Database\Seeders\PermissionSeeder::class);
+        
         // Create test orders with statuses
         $this->createTestOrders();
     }
@@ -87,13 +90,17 @@ class OrderControllerTest extends TestCase
         );
     }
 
-    public function test_sales_cannot_view_orders(): void
+    public function test_sales_can_view_orders(): void
     {
         $sales = User::factory()->create(['role' => 'sales']);
         
         $response = $this->actingAs($sales)->get('/orders');
         
-        $response->assertStatus(403);
+        $response->assertStatus(200);
+        $response->assertInertia(fn ($page) => $page
+            ->component('Orders/Index')
+            ->has('orders.data', 3)
+        );
     }
 
     public function test_guest_cannot_view_orders(): void
