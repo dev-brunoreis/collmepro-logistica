@@ -315,6 +315,32 @@ class SyncBlingDataJobTest extends TestCase
     }
 
     /** @test */
+    public function it_skips_orders_that_already_have_nfe()
+    {
+        // Create test order that already has NFE
+        $order = Order::factory()->create([
+            'order_number' => '88888888',
+            'nfe_number' => '1234',
+            'nfe_pdf_url' => 'https://example.com/nfe/1234.pdf'
+        ]);
+
+        // Mock BlingService - should not be called
+        $mockBlingService = $this->mock(BlingService::class);
+        $mockBlingService->shouldNotReceive('fetchInvoiceByOrderNumber');
+
+        $this->app->instance(BlingService::class, $mockBlingService);
+
+        // Execute job
+        $job = new SyncBlingDataJob($order->id);
+        $job->handle();
+
+        // Assert order was not updated (NFE data remains the same)
+        $order->refresh();
+        $this->assertEquals('1234', $order->nfe_number);
+        $this->assertEquals('https://example.com/nfe/1234.pdf', $order->nfe_pdf_url);
+    }
+
+    /** @test */
     public function it_creates_invoice_record_correctly()
     {
         // Create test order

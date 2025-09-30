@@ -149,6 +149,15 @@ class SyncBlingDataJob implements ShouldQueue
                 'order_number' => $order->order_number
             ]);
 
+            if ($order->nfe_number && $order->nfe_pdf_url) {
+                Log::debug('Order already has NFE, skipping sync', [
+                    'order_id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'nfe_number' => $order->nfe_number
+                ]);
+                return false;
+            }
+
             // Busca nota fiscal no Bling pelo número do pedido
             $invoice = $blingService->fetchInvoiceByOrderNumber($order->order_number);
 
