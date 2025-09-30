@@ -233,9 +233,34 @@ class BlingService
         try {
             $this->logRequest('getInvoicePdfUrl', ['invoiceId' => $invoiceId]);
 
-            // Nota: A API do Bling v3 pode ter endpoint específico para PDF
-            // Por enquanto, retornamos null até confirmar o endpoint correto
-            $this->logInfo('PDF URL not implemented yet for invoice: ' . $invoiceId);
+            // API v3 do Bling - endpoint para download de PDF
+            $endpoint = "/nfe/{$invoiceId}/pdf";
+            $response = $this->makeRequest($endpoint);
+
+            if (!$response['success']) {
+                $this->logError('Failed to get PDF URL from Bling API', [
+                    'invoiceId' => $invoiceId,
+                    'status_code' => $response['status_code'],
+                    'body' => $response['body']
+                ]);
+                return null;
+            }
+
+            $data = json_decode($response['body'], true);
+            
+            if (isset($data['data']['url'])) {
+                $pdfUrl = $data['data']['url'];
+                $this->logInfo('PDF URL retrieved successfully', [
+                    'invoiceId' => $invoiceId,
+                    'pdfUrl' => $pdfUrl
+                ]);
+                return $pdfUrl;
+            }
+
+            $this->logInfo('PDF URL not found in response', [
+                'invoiceId' => $invoiceId,
+                'response' => $data
+            ]);
             return null;
 
         } catch (Exception $e) {

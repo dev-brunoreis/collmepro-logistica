@@ -50,6 +50,7 @@ Route::middleware(['auth', 'permission:permissions.view'])->group(function () {
 Route::middleware(['auth', 'permission:orders.view'])->group(function () {
     Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+    Route::get('orders/{order}/invoice/download', [OrderController::class, 'downloadInvoice'])->name('orders.invoice.download');
 });
 
 // Order status update (users with orders.status.update permission)

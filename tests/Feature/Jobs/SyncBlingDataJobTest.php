@@ -53,6 +53,11 @@ class SyncBlingDataJobTest extends TestCase
                 'raw_data' => []
             ]);
 
+        $mockBlingService->shouldReceive('getInvoicePdfUrl')
+            ->twice()
+            ->with(12345678)
+            ->andReturn('https://api.bling.com.br/Api/v3/nfe/12345678/pdf/download');
+
         $this->app->instance(BlingService::class, $mockBlingService);
 
         // Execute job
@@ -106,6 +111,11 @@ class SyncBlingDataJobTest extends TestCase
                 'type' => 1,
                 'raw_data' => []
             ]);
+
+        $mockBlingService->shouldReceive('getInvoicePdfUrl')
+            ->twice()
+            ->with(87654321)
+            ->andReturn('https://api.bling.com.br/Api/v3/nfe/87654321/pdf/download');
 
         $this->app->instance(BlingService::class, $mockBlingService);
 
@@ -222,6 +232,11 @@ class SyncBlingDataJobTest extends TestCase
                 'raw_data' => []
             ]);
 
+        $mockBlingService->shouldReceive('getInvoicePdfUrl')
+            ->twice()
+            ->with(12345678)
+            ->andReturn('https://api.bling.com.br/Api/v3/nfe/12345678/pdf/download');
+
         // Second and third orders have no invoice
         $mockBlingService->shouldReceive('fetchInvoiceByOrderNumber')
             ->with($orders[1]->order_number)
@@ -318,6 +333,11 @@ class SyncBlingDataJobTest extends TestCase
         $mockBlingService->shouldReceive('extractInvoiceData')
             ->once()
             ->andReturn($invoiceData);
+
+        $mockBlingService->shouldReceive('getInvoicePdfUrl')
+            ->twice()
+            ->with(77777777)
+            ->andReturn('https://api.bling.com.br/Api/v3/nfe/77777777/pdf/download');
 
         $this->app->instance(BlingService::class, $mockBlingService);
 

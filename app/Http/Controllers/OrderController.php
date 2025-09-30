@@ -347,6 +347,46 @@ class OrderController extends Controller
     }
 
     /**
+     * Download PDF da nota fiscal
+     */
+    public function downloadInvoice(Request $request, Order $order)
+    {
+        // Check permissions - user must have orders.view permission
+        $user = Auth::user();
+        if (!$user->hasPermission('orders.view')) {
+            return back()->with('error', 'Você não tem permissão para visualizar pedidos.');
+        }
+
+        try {
+            // Busca a invoice mais recente do pedido
+            $invoice = $order->invoices()->latest()->first();
+            
+            if (!$invoice) {
+                return back()->with('error', 'Nota fiscal não encontrada para este pedido.');
+            }
+
+            if (!$invoice->invoice_pdf_url) {
+                return back()->with('error', 'PDF da nota fiscal não está disponível. Tente sincronizar novamente.');
+            }
+
+            // Se a URL for um link direto, redireciona
+            if (filter_var($invoice->invoice_pdf_url, FILTER_VALIDATE_URL)) {
+                return redirect($invoice->invoice_pdf_url);
+            }
+
+            // Se for um caminho local, faz download
+            if (file_exists($invoice->invoice_pdf_url)) {
+                return response()->download($invoice->invoice_pdf_url, "NFE-{$invoice->invoice_number}.pdf");
+            }
+
+            return back()->with('error', 'Arquivo PDF não encontrado.');
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Erro ao baixar PDF: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Get system display name.
      */
     private function getSystemDisplayName(string $system): string

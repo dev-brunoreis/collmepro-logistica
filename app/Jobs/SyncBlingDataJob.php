@@ -172,10 +172,10 @@ class SyncBlingDataJob implements ShouldQueue
             $invoiceData = $blingService->extractInvoiceData($invoice);
 
             // Atualiza o pedido com dados da NFE
-            $this->updateOrderWithInvoiceData($order, $invoiceData);
+            $this->updateOrderWithInvoiceData($order, $invoiceData, $blingService);
 
             // Cria/atualiza registro de invoice
-            $this->createOrUpdateInvoice($order, $invoiceData);
+            $this->createOrUpdateInvoice($order, $invoiceData, $blingService);
 
             Log::info('Order synced successfully with Bling', [
                 'order_id' => $order->id,
@@ -198,26 +198,33 @@ class SyncBlingDataJob implements ShouldQueue
     /**
      * Atualiza o pedido com dados da nota fiscal
      */
-    private function updateOrderWithInvoiceData(Order $order, array $invoiceData): void
+    private function updateOrderWithInvoiceData(Order $order, array $invoiceData, BlingService $blingService): void
     {
+        // Tenta obter URL do PDF
+        $pdfUrl = $blingService->getInvoicePdfUrl($invoiceData['bling_id']);
+
         $updateData = [
             'nfe_number' => $invoiceData['invoice_number'],
-            'nfe_pdf_url' => null, // Será implementado quando tivermos o endpoint de PDF
+            'nfe_pdf_url' => $pdfUrl,
         ];
 
         $order->update($updateData);
 
         Log::debug('Order updated with invoice data', [
             'order_id' => $order->id,
-            'nfe_number' => $invoiceData['invoice_number']
+            'nfe_number' => $invoiceData['invoice_number'],
+            'pdf_url' => $pdfUrl ? 'available' : 'not_available'
         ]);
     }
 
     /**
      * Cria ou atualiza registro de invoice
      */
-    private function createOrUpdateInvoice(Order $order, array $invoiceData): void
+    private function createOrUpdateInvoice(Order $order, array $invoiceData, BlingService $blingService): void
     {
+        // Tenta obter URL do PDF
+        $pdfUrl = $blingService->getInvoicePdfUrl($invoiceData['bling_id']);
+
         $invoice = Invoice::updateOrCreate(
             [
                 'order_id' => $order->id,
@@ -225,7 +232,7 @@ class SyncBlingDataJob implements ShouldQueue
             ],
             [
                 'invoice_number' => $invoiceData['invoice_number'],
-                'invoice_pdf_url' => null, // Será implementado quando tivermos o endpoint de PDF
+                'invoice_pdf_url' => $pdfUrl,
                 'issued_at' => $invoiceData['issue_date'],
                 'raw_data' => json_encode($invoiceData['raw_data'])
             ]
@@ -234,7 +241,8 @@ class SyncBlingDataJob implements ShouldQueue
         Log::debug('Invoice record created/updated', [
             'invoice_id' => $invoice->id,
             'order_id' => $order->id,
-            'invoice_number' => $invoiceData['invoice_number']
+            'invoice_number' => $invoiceData['invoice_number'],
+            'pdf_url' => $pdfUrl ? 'available' : 'not_available'
         ]);
     }
 

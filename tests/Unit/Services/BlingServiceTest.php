@@ -343,4 +343,51 @@ class BlingServiceTest extends TestCase
         $this->assertIsArray($invoices);
         $this->assertEmpty($invoices);
     }
+
+    /** @test */
+    public function it_can_get_invoice_pdf_url()
+    {
+        $mockResponse = [
+            'data' => [
+                'url' => 'https://api.bling.com.br/Api/v3/nfe/12345678/pdf/download'
+            ]
+        ];
+
+        Http::fake([
+            'api.bling.com.br/Api/v3/nfe/12345678/pdf*' => Http::response($mockResponse, 200)
+        ]);
+
+        $pdfUrl = $this->blingService->getInvoicePdfUrl('12345678');
+
+        $this->assertEquals('https://api.bling.com.br/Api/v3/nfe/12345678/pdf/download', $pdfUrl);
+
+        Http::assertSent(function ($request) {
+            return str_contains($request->url(), 'https://api.bling.com.br/Api/v3/nfe/12345678/pdf') &&
+                   $request->hasHeader('Authorization', 'Bearer test_api_key');
+        });
+    }
+
+    /** @test */
+    public function it_returns_null_when_pdf_url_not_found()
+    {
+        Http::fake([
+            'api.bling.com.br/Api/v3/nfe/12345678/pdf*' => Http::response(['data' => []], 200)
+        ]);
+
+        $pdfUrl = $this->blingService->getInvoicePdfUrl('12345678');
+
+        $this->assertNull($pdfUrl);
+    }
+
+    /** @test */
+    public function it_handles_pdf_url_api_errors()
+    {
+        Http::fake([
+            'api.bling.com.br/Api/v3/nfe/12345678/pdf*' => Http::response(['error' => 'Not Found'], 404)
+        ]);
+
+        $pdfUrl = $this->blingService->getInvoicePdfUrl('12345678');
+
+        $this->assertNull($pdfUrl);
+    }
 }
