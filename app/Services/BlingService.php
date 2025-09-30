@@ -7,6 +7,11 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use Exception;
 
+/**
+ * BlingService - Integration with Bling API v3
+ * 
+ * @see https://developer.bling.com.br/build/assets/openapi-Dyv70kbC.json
+ */
 class BlingService
 {
     private string $baseUrl;
@@ -39,7 +44,7 @@ class BlingService
             $this->logRequest('fetchInvoices', $filters);
 
             $params = $this->buildInvoiceParams($filters);
-            $response = $this->makeRequest('/nfe', $params);
+            $response = $this->makeRequest('/notas-fiscais', $params);
 
             if (!$response['success']) {
                 $this->logError('Failed to fetch invoices', [
@@ -82,7 +87,7 @@ class BlingService
             $this->logRequest('fetchInvoiceByOrderNumber', ['orderNumber' => $orderNumber]);
 
             $filters = [
-                'numeroLoja' => $orderNumber,
+                'numero' => $orderNumber,
                 'limite' => 10
             ];
 
@@ -233,8 +238,7 @@ class BlingService
         try {
             $this->logRequest('getInvoicePdfUrl', ['invoiceId' => $invoiceId]);
 
-            // API v3 do Bling - endpoint para download de PDF
-            $endpoint = "/nfe/{$invoiceId}/pdf";
+            $endpoint = "/notas-fiscais/{$invoiceId}/pdf";
             $response = $this->makeRequest($endpoint);
 
             if (!$response['success']) {
@@ -379,7 +383,7 @@ class BlingService
     }
 
     /**
-     * Constrói parâmetros para busca de notas fiscais
+     * Build parameters for invoice search
      */
     private function buildInvoiceParams(array $filters): array
     {

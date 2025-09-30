@@ -33,7 +33,7 @@ Tools like [VSCode with the Mermaid extension](https://marketplace.visualstudio.
   - [x] Order Number  
   - [x] Customer  
   - [x] Date  
-  - [ ] Invoice (NFE)  
+  - [x] Invoice (NFE)  
   - [ ] Tracking (popup with history)  
   - [ ] Logistics  
   - [ ] Tracking Status  
@@ -45,8 +45,8 @@ Tools like [VSCode with the Mermaid extension](https://marketplace.visualstudio.
 - [ ] Display totals by filters  
 
 ### Invoices (Bling)
-- [ ] Write tests for Bling API mock (fetch invoices, link PDF)  
-- [ ] Implement Bling integration (invoices/NFE link)  
+- [x] Write tests for Bling API mock (fetch invoices, link PDF)  
+- [x] Implement Bling integration (invoices/NFE link)  
 
 ### Logistics
 - [ ] Write tests for Correios API mock (tracking flow)  

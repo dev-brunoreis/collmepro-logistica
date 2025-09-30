@@ -57,7 +57,7 @@ class BlingServiceTest extends TestCase
         ];
 
         Http::fake([
-            'api.bling.com.br/Api/v3/nfe*' => Http::response($mockResponse, 200)
+            'api.bling.com.br/Api/v3/notas-fiscais*' => Http::response($mockResponse, 200)
         ]);
 
         $invoices = $this->blingService->fetchInvoices();
@@ -84,7 +84,7 @@ class BlingServiceTest extends TestCase
         ];
 
         Http::fake([
-            'api.bling.com.br/Api/v3/nfe*' => Http::response($mockResponse, 200)
+            'api.bling.com.br/Api/v3/notas-fiscais*' => Http::response($mockResponse, 200)
         ]);
 
         $invoice = $this->blingService->fetchInvoiceByOrderNumber('12345678');
@@ -94,8 +94,8 @@ class BlingServiceTest extends TestCase
         $this->assertEquals('6541', $invoice['numero']);
 
         Http::assertSent(function ($request) {
-            return str_contains($request->url(), 'https://api.bling.com.br/Api/v3/nfe') &&
-                   str_contains($request->url(), 'numeroLoja=12345678');
+            return str_contains($request->url(), 'https://api.bling.com.br/Api/v3/notas-fiscais') &&
+                   str_contains($request->url(), 'numero=12345678');
         });
     }
 
@@ -103,7 +103,7 @@ class BlingServiceTest extends TestCase
     public function it_returns_null_when_no_invoice_found_by_order_number()
     {
         Http::fake([
-            'api.bling.com.br/Api/v3/nfe*' => Http::response(['data' => []], 200)
+            'api.bling.com.br/Api/v3/notas-fiscais*' => Http::response(['data' => []], 200)
         ]);
 
         $invoice = $this->blingService->fetchInvoiceByOrderNumber('99999999');
@@ -132,7 +132,7 @@ class BlingServiceTest extends TestCase
         ];
 
         Http::fake([
-            'api.bling.com.br/Api/v3/nfe*' => Http::response($mockResponse, 200)
+            'api.bling.com.br/Api/v3/notas-fiscais*' => Http::response($mockResponse, 200)
         ]);
 
         $invoices = $this->blingService->fetchInvoicesByDateRange(
@@ -144,7 +144,7 @@ class BlingServiceTest extends TestCase
         $this->assertCount(2, $invoices);
 
         Http::assertSent(function ($request) {
-            return str_contains($request->url(), 'https://api.bling.com.br/Api/v3/nfe') &&
+            return str_contains($request->url(), 'https://api.bling.com.br/Api/v3/notas-fiscais') &&
                    str_contains($request->url(), 'dataEmissaoInicial=2023-01-01+00%3A00%3A00') &&
                    str_contains($request->url(), 'dataEmissaoFinal=2023-01-31+23%3A59%3A59');
         });
@@ -165,7 +165,7 @@ class BlingServiceTest extends TestCase
         ];
 
         Http::fake([
-            'api.bling.com.br/Api/v3/nfe*' => Http::response($mockResponse, 200)
+            'api.bling.com.br/Api/v3/notas-fiscais*' => Http::response($mockResponse, 200)
         ]);
 
         $invoices = $this->blingService->fetchInvoicesByStatus(5);
@@ -174,7 +174,7 @@ class BlingServiceTest extends TestCase
         $this->assertCount(1, $invoices);
 
         Http::assertSent(function ($request) {
-            return str_contains($request->url(), 'https://api.bling.com.br/Api/v3/nfe') &&
+            return str_contains($request->url(), 'https://api.bling.com.br/Api/v3/notas-fiscais') &&
                    str_contains($request->url(), 'situacao=5');
         });
     }
@@ -194,7 +194,7 @@ class BlingServiceTest extends TestCase
         ];
 
         Http::fake([
-            'api.bling.com.br/Api/v3/nfe*' => Http::response($mockResponse, 200)
+            'api.bling.com.br/Api/v3/notas-fiscais*' => Http::response($mockResponse, 200)
         ]);
 
         $invoices = $this->blingService->fetchAuthorizedInvoices();
@@ -203,7 +203,7 @@ class BlingServiceTest extends TestCase
         $this->assertCount(1, $invoices);
 
         Http::assertSent(function ($request) {
-            return str_contains($request->url(), 'https://api.bling.com.br/Api/v3/nfe') &&
+            return str_contains($request->url(), 'https://api.bling.com.br/Api/v3/notas-fiscais') &&
                    str_contains($request->url(), 'situacao=5'); // Status autorizada
         });
     }
@@ -212,7 +212,7 @@ class BlingServiceTest extends TestCase
     public function it_handles_api_errors_gracefully()
     {
         Http::fake([
-            'api.bling.com.br/Api/v3/nfe*' => Http::response(['error' => 'Unauthorized'], 401)
+            'api.bling.com.br/Api/v3/notas-fiscais*' => Http::response(['error' => 'Unauthorized'], 401)
         ]);
 
         $invoices = $this->blingService->fetchInvoices();
@@ -225,7 +225,7 @@ class BlingServiceTest extends TestCase
     public function it_handles_network_timeout()
     {
         Http::fake([
-            'api.bling.com.br/Api/v3/nfe*' => Http::response('', 408)
+            'api.bling.com.br/Api/v3/notas-fiscais*' => Http::response('', 408)
         ]);
 
         $invoices = $this->blingService->fetchInvoices();
@@ -292,7 +292,7 @@ class BlingServiceTest extends TestCase
     public function it_handles_invalid_json_response()
     {
         Http::fake([
-            'api.bling.com.br/Api/v3/nfe*' => Http::response('invalid json', 200)
+            'api.bling.com.br/Api/v3/notas-fiscais*' => Http::response('invalid json', 200)
         ]);
 
         $invoices = $this->blingService->fetchInvoices();
@@ -305,13 +305,13 @@ class BlingServiceTest extends TestCase
     public function it_uses_correct_api_endpoint()
     {
         Http::fake([
-            'api.bling.com.br/Api/v3/nfe*' => Http::response(['data' => []], 200)
+            'api.bling.com.br/Api/v3/notas-fiscais*' => Http::response(['data' => []], 200)
         ]);
 
         $this->blingService->fetchInvoices();
 
         Http::assertSent(function ($request) {
-            return str_starts_with($request->url(), 'https://api.bling.com.br/Api/v3/nfe');
+            return str_starts_with($request->url(), 'https://api.bling.com.br/Api/v3/notas-fiscais');
         });
     }
 
@@ -319,7 +319,7 @@ class BlingServiceTest extends TestCase
     public function it_includes_authentication_headers()
     {
         Http::fake([
-            'api.bling.com.br/Api/v3/nfe*' => Http::response(['data' => []], 200)
+            'api.bling.com.br/Api/v3/notas-fiscais*' => Http::response(['data' => []], 200)
         ]);
 
         $this->blingService->fetchInvoices();
@@ -335,7 +335,7 @@ class BlingServiceTest extends TestCase
     public function it_handles_empty_response()
     {
         Http::fake([
-            'api.bling.com.br/Api/v3/nfe*' => Http::response(['data' => []], 200)
+            'api.bling.com.br/Api/v3/notas-fiscais*' => Http::response(['data' => []], 200)
         ]);
 
         $invoices = $this->blingService->fetchInvoices();
@@ -349,20 +349,20 @@ class BlingServiceTest extends TestCase
     {
         $mockResponse = [
             'data' => [
-                'url' => 'https://api.bling.com.br/Api/v3/nfe/12345678/pdf/download'
+                'url' => 'https://api.bling.com.br/Api/v3/notas-fiscais/12345678/pdf/download'
             ]
         ];
 
         Http::fake([
-            'api.bling.com.br/Api/v3/nfe/12345678/pdf*' => Http::response($mockResponse, 200)
+            'api.bling.com.br/Api/v3/notas-fiscais/12345678/pdf*' => Http::response($mockResponse, 200)
         ]);
 
         $pdfUrl = $this->blingService->getInvoicePdfUrl('12345678');
 
-        $this->assertEquals('https://api.bling.com.br/Api/v3/nfe/12345678/pdf/download', $pdfUrl);
+        $this->assertEquals('https://api.bling.com.br/Api/v3/notas-fiscais/12345678/pdf/download', $pdfUrl);
 
         Http::assertSent(function ($request) {
-            return str_contains($request->url(), 'https://api.bling.com.br/Api/v3/nfe/12345678/pdf') &&
+            return str_contains($request->url(), 'https://api.bling.com.br/Api/v3/notas-fiscais/12345678/pdf') &&
                    $request->hasHeader('Authorization', 'Bearer test_api_key');
         });
     }
@@ -371,7 +371,7 @@ class BlingServiceTest extends TestCase
     public function it_returns_null_when_pdf_url_not_found()
     {
         Http::fake([
-            'api.bling.com.br/Api/v3/nfe/12345678/pdf*' => Http::response(['data' => []], 200)
+            'api.bling.com.br/Api/v3/notas-fiscais/12345678/pdf*' => Http::response(['data' => []], 200)
         ]);
 
         $pdfUrl = $this->blingService->getInvoicePdfUrl('12345678');
@@ -383,7 +383,7 @@ class BlingServiceTest extends TestCase
     public function it_handles_pdf_url_api_errors()
     {
         Http::fake([
-            'api.bling.com.br/Api/v3/nfe/12345678/pdf*' => Http::response(['error' => 'Not Found'], 404)
+            'api.bling.com.br/Api/v3/notas-fiscais/12345678/pdf*' => Http::response(['error' => 'Not Found'], 404)
         ]);
 
         $pdfUrl = $this->blingService->getInvoicePdfUrl('12345678');
