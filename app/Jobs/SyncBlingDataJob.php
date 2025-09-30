@@ -200,12 +200,15 @@ class SyncBlingDataJob implements ShouldQueue
      */
     private function updateOrderWithInvoiceData(Order $order, array $invoiceData, BlingService $blingService): void
     {
-        // Tenta obter URL do PDF
-        $pdfUrl = $blingService->getInvoicePdfUrl($invoiceData['bling_id']);
+        // Usa link_pdf diretamente dos dados extraídos, ou busca via API se não disponível
+        $pdfUrl = $invoiceData['link_pdf'] ?? $blingService->getInvoicePdfUrl($invoiceData['bling_id']);
 
         $updateData = [
             'nfe_number' => $invoiceData['invoice_number'],
             'nfe_pdf_url' => $pdfUrl,
+            'nfe_access_key' => $invoiceData['access_key'],
+            'nfe_issue_date' => $invoiceData['issue_date'],
+            'nfe_value' => $invoiceData['valor_nota'],
         ];
 
         $order->update($updateData);
@@ -213,7 +216,9 @@ class SyncBlingDataJob implements ShouldQueue
         Log::debug('Order updated with invoice data', [
             'order_id' => $order->id,
             'nfe_number' => $invoiceData['invoice_number'],
-            'pdf_url' => $pdfUrl ? 'available' : 'not_available'
+            'pdf_url' => $pdfUrl ? 'available' : 'not_available',
+            'access_key' => $invoiceData['access_key'] ? 'available' : 'not_available',
+            'value' => $invoiceData['valor_nota'] ?? 'not_available'
         ]);
     }
 
@@ -222,8 +227,8 @@ class SyncBlingDataJob implements ShouldQueue
      */
     private function createOrUpdateInvoice(Order $order, array $invoiceData, BlingService $blingService): void
     {
-        // Tenta obter URL do PDF
-        $pdfUrl = $blingService->getInvoicePdfUrl($invoiceData['bling_id']);
+        // Usa link_pdf diretamente dos dados extraídos, ou busca via API se não disponível
+        $pdfUrl = $invoiceData['link_pdf'] ?? $blingService->getInvoicePdfUrl($invoiceData['bling_id']);
 
         $invoice = Invoice::updateOrCreate(
             [
@@ -233,7 +238,15 @@ class SyncBlingDataJob implements ShouldQueue
             [
                 'invoice_number' => $invoiceData['invoice_number'],
                 'invoice_pdf_url' => $pdfUrl,
+                'danfe_url' => $invoiceData['link_danfe'],
+                'access_key' => $invoiceData['access_key'],
                 'issued_at' => $invoiceData['issue_date'],
+                'operation_date' => $invoiceData['operation_date'],
+                'status' => $invoiceData['status'],
+                'invoice_type' => $invoiceData['type'],
+                'invoice_value' => $invoiceData['valor_nota'],
+                'freight_value' => $invoiceData['valor_frete'],
+                'series' => $invoiceData['serie'],
                 'raw_data' => json_encode($invoiceData['raw_data'])
             ]
         );
@@ -242,7 +255,9 @@ class SyncBlingDataJob implements ShouldQueue
             'invoice_id' => $invoice->id,
             'order_id' => $order->id,
             'invoice_number' => $invoiceData['invoice_number'],
-            'pdf_url' => $pdfUrl ? 'available' : 'not_available'
+            'pdf_url' => $pdfUrl ? 'available' : 'not_available',
+            'danfe_url' => $invoiceData['link_danfe'] ? 'available' : 'not_available',
+            'value' => $invoiceData['valor_nota'] ?? 'not_available'
         ]);
     }
 

@@ -19,6 +19,9 @@ class Order extends Model
         'order_date',
         'nfe_number',
         'nfe_pdf_url',
+        'nfe_access_key',
+        'nfe_issue_date',
+        'nfe_value',
         'tracking_code',
         'logistics_provider',
         'tracking_status',
@@ -26,6 +29,8 @@ class Order extends Model
 
     protected $casts = [
         'order_date' => 'datetime',
+        'nfe_issue_date' => 'datetime',
+        'nfe_value' => 'decimal:2',
     ];
 
     /**

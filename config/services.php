@@ -51,5 +51,9 @@ return [
             'access_token' => env('SHOPIFY_COLLME_BEAUTY_ACCESS_TOKEN'),
             'shop_domain' => env('SHOPIFY_COLLME_BEAUTY_SHOP_DOMAIN', 'collmebeauty.myshopify.com'),
         ],
-    ]
+    ],
+
+    'bling' => [
+        'bearer_token' => env('BLING_BEARER_TOKEN'),
+    ],
 ];

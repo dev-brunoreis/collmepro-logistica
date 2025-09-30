@@ -14,11 +14,24 @@ class Invoice extends Model
         'order_id',
         'invoice_number',
         'invoice_pdf_url',
+        'danfe_url',
+        'access_key',
         'issued_at',
+        'operation_date',
+        'status',
+        'invoice_type',
+        'invoice_value',
+        'freight_value',
+        'series',
+        'raw_data',
     ];
 
     protected $casts = [
         'issued_at' => 'datetime',
+        'operation_date' => 'datetime',
+        'invoice_value' => 'decimal:2',
+        'freight_value' => 'decimal:2',
+        'raw_data' => 'array',
     ];
 
     /**

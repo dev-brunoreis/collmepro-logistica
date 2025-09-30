@@ -401,12 +401,22 @@ const fetchOrders = () => {
                                 </td>
                                 <td class="px-4 py-3">
                                     <div v-if="order.has_nfe" class="flex items-center gap-2">
-                                        <span class="text-sm">{{ order.nfe_number }}</span>
+                                        <a
+                                            v-if="order.nfe_pdf_url"
+                                            :href="order.nfe_pdf_url"
+                                            target="_blank"
+                                            class="text-sm font-medium text-primary hover:text-primary/80 hover:underline"
+                                            :title="`Baixar PDF da NFE ${order.nfe_number}`"
+                                        >
+                                            {{ order.nfe_number }}
+                                        </a>
+                                        <span v-else class="text-sm">{{ order.nfe_number }}</span>
                                         <a
                                             v-if="order.nfe_pdf_url"
                                             :href="order.nfe_pdf_url"
                                             target="_blank"
                                             class="text-primary hover:text-primary/80"
+                                            :title="`Baixar PDF da NFE ${order.nfe_number}`"
                                         >
                                             <ExternalLink class="h-3 w-3" />
                                         </a>

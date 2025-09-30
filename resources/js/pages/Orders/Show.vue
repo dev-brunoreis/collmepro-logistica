@@ -161,7 +161,18 @@ const getStatusValueClass = (statusValue: boolean) => {
                         <div v-if="props.order.nfe_number" class="flex items-center gap-4">
                             <div>
                                 <label class="text-sm font-medium text-muted-foreground">Número da NFE</label>
-                                <div class="mt-1 text-sm font-medium">{{ props.order.nfe_number }}</div>
+                                <div class="mt-1">
+                                    <a
+                                        v-if="props.order.nfe_pdf_url"
+                                        :href="props.order.nfe_pdf_url"
+                                        target="_blank"
+                                        class="text-sm font-medium text-primary hover:text-primary/80 hover:underline"
+                                        :title="`Baixar PDF da NFE ${props.order.nfe_number}`"
+                                    >
+                                        {{ props.order.nfe_number }}
+                                    </a>
+                                    <span v-else class="text-sm font-medium">{{ props.order.nfe_number }}</span>
+                                </div>
                             </div>
                             <div v-if="props.order.nfe_pdf_url">
                                 <a

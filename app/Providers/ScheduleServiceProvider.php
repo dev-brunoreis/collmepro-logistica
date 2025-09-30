@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Jobs\ImportWooCommerceOrdersJob;
 use App\Jobs\ImportShopifyOrdersJob;
+use App\Jobs\SyncAllBlingDataJob;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\ServiceProvider;
 
@@ -28,16 +29,21 @@ class ScheduleServiceProvider extends ServiceProvider
                 
                 // Import orders from WooCommerce every 5 minutes
                 $schedule->job(new ImportWooCommerceOrdersJob('collmepro'))
-                    ->everyFiveMinutes()
+                    ->everyMinute()
                     ->withoutOverlapping();
 
                 $schedule->job(new ImportWooCommerceOrdersJob('collmepro_wholesale'))
-                    ->everyFiveMinutes()
+                    ->everyMinute()
                     ->withoutOverlapping();
 
                 // Import orders from Shopify every 5 minutes
                 $schedule->job(new ImportShopifyOrdersJob('collme_beauty'))
-                    ->everyFiveMinutes()
+                    ->everyMinute()
+                    ->withoutOverlapping();
+
+                // Sync Bling NFE data every 15 minutes
+                $schedule->job(new SyncAllBlingDataJob())
+                    ->everyMinute()
                     ->withoutOverlapping();
             });
         }

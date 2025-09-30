@@ -48,8 +48,14 @@ class SyncBlingDataJobTest extends TestCase
                 'invoice_number' => '6541',
                 'access_key' => '35250145752681000182650010000266371238060760',
                 'issue_date' => '2023-01-12 09:52:12',
+                'operation_date' => '2023-01-12 09:52:12',
                 'status' => 5,
                 'type' => 1,
+                'valor_nota' => 100.00,
+                'valor_frete' => 10.00,
+                'link_pdf' => null,
+                'link_danfe' => null,
+                'serie' => null,
                 'raw_data' => []
             ]);
 
@@ -106,9 +112,16 @@ class SyncBlingDataJobTest extends TestCase
             ->andReturn([
                 'bling_id' => 87654321,
                 'invoice_number' => '7654',
+                'access_key' => '35250145752681000182650010000266371238060760',
                 'issue_date' => '2023-01-12 09:52:12',
+                'operation_date' => '2023-01-12 09:52:12',
                 'status' => 5,
                 'type' => 1,
+                'valor_nota' => 150.00,
+                'valor_frete' => 15.00,
+                'link_pdf' => null,
+                'link_danfe' => null,
+                'serie' => null,
                 'raw_data' => []
             ]);
 
@@ -226,9 +239,16 @@ class SyncBlingDataJobTest extends TestCase
             ->andReturn([
                 'bling_id' => 12345678,
                 'invoice_number' => '6541',
+                'access_key' => '35250145752681000182650010000266371238060760',
                 'issue_date' => '2023-01-12 09:52:12',
+                'operation_date' => '2023-01-12 09:52:12',
                 'status' => 5,
                 'type' => 1,
+                'valor_nota' => 200.00,
+                'valor_frete' => 20.00,
+                'link_pdf' => null,
+                'link_danfe' => null,
+                'serie' => null,
                 'raw_data' => []
             ]);
 
@@ -309,8 +329,14 @@ class SyncBlingDataJobTest extends TestCase
             'invoice_number' => '7777',
             'access_key' => '35250145752681000182650010000266371238060760',
             'issue_date' => '2023-01-12 09:52:12',
+            'operation_date' => '2023-01-12 09:52:12',
             'status' => 5,
             'type' => 1,
+            'valor_nota' => 300.00,
+            'valor_frete' => 30.00,
+            'link_pdf' => null,
+            'link_danfe' => null,
+            'serie' => null,
             'raw_data' => ['test' => 'data']
         ];
 
