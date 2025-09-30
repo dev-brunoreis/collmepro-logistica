@@ -82,14 +82,21 @@ class BlingIntegrationTest extends TestCase
         foreach ($invoices as $invoice) {
             // Test if invoice is valid according to our validation
             $isValid = $this->blingService->isValidInvoice($invoice);
-            $this->assertTrue($isValid, 'Invoice should be valid: ' . json_encode($invoice));
             
-            // Test data extraction
-            $extractedData = $this->blingService->extractInvoiceData($invoice);
-            $this->assertArrayHasKey('bling_id', $extractedData);
-            $this->assertArrayHasKey('invoice_number', $extractedData);
-            $this->assertArrayHasKey('status', $extractedData);
-            $this->assertContains($extractedData['status'], [1, 2, 3, 4, 5]); // Should be valid status
+            // Only status 5 (Autorizada) and 6 (Emitida DANFE) are considered valid for processing
+            if (in_array($invoice['situacao'], [5, 6])) {
+                $this->assertTrue($isValid, 'Invoice with valid status should be valid: ' . json_encode($invoice));
+                
+                // Test data extraction for valid invoices
+                $extractedData = $this->blingService->extractInvoiceData($invoice);
+                $this->assertArrayHasKey('bling_id', $extractedData);
+                $this->assertArrayHasKey('invoice_number', $extractedData);
+                $this->assertArrayHasKey('status', $extractedData);
+                $this->assertContains($extractedData['status'], [5, 6]); // Only authorized and DANFE emitted
+            } else {
+                // Status 1-4, 7-11 should be invalid for processing
+                $this->assertFalse($isValid, 'Invoice with invalid status should be invalid: ' . json_encode($invoice));
+            }
         }
     }
 

@@ -27,23 +27,24 @@ class ScheduleServiceProvider extends ServiceProvider
             $this->app->booted(function () {
                 $schedule = $this->app->make(Schedule::class);
                 
-                // Import orders from WooCommerce every 5 minutes
+                // Import orders from WooCommerce every 10 minutes
                 $schedule->job(new ImportWooCommerceOrdersJob('collmepro'))
-                    ->everyMinute()
+                    ->everyTenMinutes()
                     ->withoutOverlapping();
 
+                // Import orders from WooCommerce every 10 minutes
                 $schedule->job(new ImportWooCommerceOrdersJob('collmepro_wholesale'))
-                    ->everyMinute()
+                    ->everyTenMinutes()
                     ->withoutOverlapping();
 
                 // Import orders from Shopify every 5 minutes
-                $schedule->job(new ImportShopifyOrdersJob('collme_beauty'))
-                    ->everyMinute()
-                    ->withoutOverlapping();
+                // $schedule->job(new ImportShopifyOrdersJob('collme_beauty'))
+                //     ->everyTenMinutes()
+                //     ->withoutOverlapping();
 
-                // Sync Bling NFE data every 15 minutes
+                // Sync Bling NFE data every 10 minutes
                 $schedule->job(new SyncAllBlingDataJob())
-                    ->everyMinute()
+                    ->everyTenMinutes()
                     ->withoutOverlapping();
             });
         }

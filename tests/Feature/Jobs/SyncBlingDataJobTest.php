@@ -188,13 +188,13 @@ class SyncBlingDataJobTest extends TestCase
             ->andReturn([
                 'id' => 11111111,
                 'numero' => '1111',
-                'situacao' => 1, // Status pendente, não autorizada
+                'situacao' => 1, // Status pendente (em elaboração), não autorizada
                 'dataEmissao' => '2023-01-12 09:52:12'
             ]);
 
         $mockBlingService->shouldReceive('isValidInvoice')
             ->once()
-            ->andReturn(false); // Invalid invoice
+            ->andReturn(false); // Invalid invoice (status 1 não é processado)
 
         $this->app->instance(BlingService::class, $mockBlingService);
 
@@ -312,6 +312,75 @@ class SyncBlingDataJobTest extends TestCase
         $order->refresh();
         $this->assertNull($order->nfe_number);
         $this->assertNull($order->nfe_pdf_url);
+    }
+
+    /** @test */
+    public function it_processes_invoices_with_status_6_emitida_danfe()
+    {
+        // Create test order
+        $order = Order::factory()->create([
+            'order_number' => '88888889',
+            'nfe_number' => null,
+            'nfe_pdf_url' => null
+        ]);
+
+        // Mock BlingService
+        $mockBlingService = $this->mock(BlingService::class);
+        $mockBlingService->shouldReceive('fetchInvoiceByOrderNumber')
+            ->with('88888889')
+            ->once()
+            ->andReturn([
+                'id' => 88888889,
+                'numero' => '8888',
+                'situacao' => 6, // Status Emitida DANFE
+                'dataEmissao' => '2023-01-12 09:52:12',
+                'chaveAcesso' => '35250145752681000182650010000888812345678901'
+            ]);
+
+        $mockBlingService->shouldReceive('isValidInvoice')
+            ->once()
+            ->andReturn(true); // Status 6 é válido (Emitida DANFE)
+
+        $mockBlingService->shouldReceive('extractInvoiceData')
+            ->once()
+            ->andReturn([
+                'bling_id' => 88888889,
+                'invoice_number' => '8888',
+                'access_key' => '35250145752681000182650010000888812345678901',
+                'issue_date' => '2023-01-12 09:52:12',
+                'operation_date' => '2023-01-12 09:52:12',
+                'status' => 6,
+                'type' => 1,
+                'valor_nota' => 50.00,
+                'valor_frete' => 5.00,
+                'link_pdf' => null,
+                'link_danfe' => null,
+                'serie' => null,
+                'raw_data' => []
+            ]);
+
+        $mockBlingService->shouldReceive('getInvoicePdfUrl')
+            ->twice()
+            ->with(88888889)
+            ->andReturn('https://api.bling.com.br/Api/v3/nfe/88888889/pdf/download');
+
+        $this->app->instance(BlingService::class, $mockBlingService);
+
+        // Execute job
+        $job = new SyncBlingDataJob($order->id);
+        $job->handle();
+
+        // Assert order was updated with DANFE emitted invoice
+        $order->refresh();
+        $this->assertEquals('8888', $order->nfe_number);
+        $this->assertNotNull($order->nfe_pdf_url);
+
+        // Assert invoice was created
+        $this->assertDatabaseHas('invoices', [
+            'order_id' => $order->id,
+            'invoice_number' => '8888',
+            'status' => 6 // Status Emitida DANFE
+        ]);
     }
 
     /** @test */

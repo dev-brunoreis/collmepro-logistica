@@ -353,9 +353,11 @@ class BlingService
             }
         }
 
-        // Só processa notas autorizadas (situação 5)
-        // Mas também aceita outras situações válidas para testes
-        $validStatuses = [1, 2, 3, 4, 5]; // 1=Em elaboração, 2=Emitida, 3=Autorizada, 4=Rejeitada, 5=Autorizada
+        // Status válidos das notas fiscais no Bling:
+        // 1=Pendente, 2=Cancelada, 3=Aguardando recibo, 4=Rejeitada, 5=Autorizada, 6=Emitida DANFE
+        // 7=Registrada, 8=Aguardando protocolo, 9=Denegada, 10=Consulta situação, 11=Bloqueada
+        // Processamos apenas notas autorizadas (5) e emitidas DANFE (6) - status finais válidos
+        $validStatuses = [5, 6]; // 5=Autorizada, 6=Emitida DANFE
         if (!in_array($invoice['situacao'], $validStatuses)) {
             return false;
         }
