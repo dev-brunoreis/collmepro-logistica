@@ -55,7 +55,8 @@ class User extends Authenticatable
     public const ROLES = [
         'admin' => 'Administrador',
         'manager' => 'Gerente',
-        'sales' => 'Vendas',
+        'sales' => 'Vendedor',
+        'developer' => 'Desenvolvedor',
     ];
 
     /**
@@ -80,6 +81,14 @@ class User extends Authenticatable
     public function isSales(): bool
     {
         return $this->role === 'sales';
+    }
+
+    /**
+     * Check if user is developer
+     */
+    public function isDeveloper(): bool
+    {
+        return $this->role === 'developer';
     }
 
     /**

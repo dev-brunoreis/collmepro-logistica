@@ -44,6 +44,7 @@ interface Order {
     tracking_code?: string;
     logistics_provider?: string;
     tracking_status?: string;
+    tracking_url?: string;
     has_nfe: boolean;
     has_tracking_code: boolean;
     order_status?: OrderStatus;
@@ -151,9 +152,9 @@ const clearFilters = () => {
 
 const updateOrderStatus = (orderId: number, action: string, currentStatus: boolean) => {
     const actionNames = {
-        picking: 'Picking',
-        packing: 'Packing',
-        picked_up: 'Retirado'
+        picking: 'Separado',
+        packing: 'Embalado',
+        picked_up: 'Coletado'
     };
     
     const actionName = actionNames[action as keyof typeof actionNames] || action;
@@ -261,7 +262,7 @@ const fetchOrders = () => {
                     class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <RefreshCw :class="{ 'animate-spin': isFetching }" class="h-4 w-4" />
-                    {{ isFetching ? 'Buscando...' : 'Atualizar Pedidos' }}
+                    {{ isFetching ? 'Buscando...' : 'Sincronizar pedidos' }}
                 </button>
             </div>
 
@@ -370,9 +371,9 @@ const fetchOrders = () => {
                                 <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Transportadora</th>
                                 <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Status</th>
                                 <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Vendedor</th>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Picking</th>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Packing</th>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Retirado</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Separado</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Embalado</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Coletado</th>
                                 <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Ações</th>
                             </tr>
                         </thead>
@@ -426,7 +427,15 @@ const fetchOrders = () => {
                                 <td class="px-4 py-3">
                                     <div v-if="order.has_tracking_code" class="flex items-center gap-2">
                                         <span class="text-sm">{{ order.tracking_code }}</span>
-                                        <Truck class="h-3 w-3 text-muted-foreground" />
+                                        <a 
+                                            v-if="order.tracking_url" 
+                                            :href="order.tracking_url" 
+                                            target="_blank" 
+                                            class="inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-xs hover:bg-sidebar-border/70 text-blue-600 dark:text-blue-400"
+                                            title="Abrir rastreamento"
+                                        >
+                                            <ExternalLink class="h-3 w-3" />
+                                        </a>
                                     </div>
                                     <span v-else class="text-sm text-muted-foreground">-</span>
                                 </td>

@@ -92,6 +92,7 @@ class OrderController extends Controller
                     'tracking_code' => $order->tracking_code,
                     'logistics_provider' => $order->logistics_provider,
                     'tracking_status' => $order->tracking_status,
+                    'tracking_url' => $order->tracking_url,
                     'has_nfe' => $order->hasNfe(),
                     'has_tracking_code' => $order->hasTrackingCode(),
                     'order_status' => $order->orderStatus ? [
@@ -139,7 +140,7 @@ class OrderController extends Controller
      */
     public function show(Order $order)
     {
-        $order->load(['orderStatus.pickingMarkedBy', 'orderStatus.packingMarkedBy', 'orderStatus.pickedUpMarkedBy', 'invoices', 'labels']);
+        $order->load(['orderStatus.pickingMarkedBy', 'orderStatus.packingMarkedBy', 'orderStatus.pickedUpMarkedBy', 'invoices', 'labels', 'syncLogs']);
         
         // Load status history
         $statusHistory = \App\Models\OrderStatusHistory::with('user')
@@ -158,6 +159,21 @@ class OrderController extends Controller
                 ];
             });
 
+        // Format sync logs
+        $syncLogs = $order->syncLogs->map(function ($log) {
+            return [
+                'id' => $log->id,
+                'sync_type' => $log->sync_type,
+                'status' => $log->status,
+                'message' => $log->message,
+                'error_message' => $log->error_message,
+                'started_at' => $log->started_at?->format('d/m/Y H:i:s'),
+                'completed_at' => $log->completed_at?->format('d/m/Y H:i:s'),
+                'duration_ms' => $log->duration_ms,
+                'attempts' => $log->attempts,
+            ];
+        });
+
         return Inertia::render('Orders/Show', [
             'order' => [
                 'id' => $order->id,
@@ -170,13 +186,19 @@ class OrderController extends Controller
                 'formatted_order_date' => $order->formatted_order_date,
                 'nfe_number' => $order->nfe_number,
                 'nfe_pdf_url' => $order->nfe_pdf_url,
+                'nfe_access_key' => $order->nfe_access_key,
+                'nfe_issue_date' => $order->nfe_issue_date,
+                'nfe_value' => $order->nfe_value,
                 'tracking_code' => $order->tracking_code,
                 'logistics_provider' => $order->logistics_provider,
                 'tracking_status' => $order->tracking_status,
+                'tracking_url' => $order->tracking_url,
                 'order_status' => $order->orderStatus,
                 'invoices' => $order->invoices,
                 'labels' => $order->labels,
                 'status_history' => $statusHistory,
+                'sync_logs' => $syncLogs,
+                'raw_data' => $order->toArray(), // Dados brutos do pedido
             ],
         ]);
     }

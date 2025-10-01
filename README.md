@@ -28,15 +28,15 @@ Tools like [VSCode with the Mermaid extension](https://marketplace.visualstudio.
 - [x] Implement WooCommerce orders import (Collmepro, Wholesale)  
 - [ ] Implement Shopify orders import (Collme Beauty)  
 - [ ] Write tests for orders storage and search/filter  
-- [ ] Implement Orders screen with columns:  
+- [x] Implement Orders screen with columns:  
   - [x] System  
   - [x] Order Number  
   - [x] Customer  
   - [x] Date  
   - [x] Invoice (NFE)  
-  - [ ] Tracking (popup with history)  
-  - [ ] Logistics  
-  - [ ] Tracking Status  
+  - [x] Tracking (popup with history)  
+  - [x] Logistics  
+  - [x] Tracking Status  
   - [x] Seller  
   - [x] Picking (checkbox)  
   - [x] Packing (checkbox)  
@@ -47,14 +47,15 @@ Tools like [VSCode with the Mermaid extension](https://marketplace.visualstudio.
 ### Invoices (Bling)
 - [x] Write tests for Bling API mock (fetch invoices, link PDF)  
 - [x] Implement Bling integration (invoices/NFE link)  
+- [x] Implement sequential sync flow (Order → NFE → Tracking)
+- [x] Implement reprocessing for pending invoices
+- [x] Automatic tracking extraction from NFE transport data  
 
 ### Logistics
-- [ ] Write tests for Correios API mock (tracking flow)  
-- [ ] Write tests for Total Express API mock (tracking flow)  
-- [ ] Write tests for Melhor Envio API mock (tracking flow)  
-- [ ] Implement Correios integration (tracking)  
-- [ ] Implement Total Express integration (tracking)  
-- [ ] Implement Melhor Envio integration (tracking)  
+- [x] Tracking extraction from Bling NFE transport data
+- [x] Support for Correios, Total Express, Melhor Envio
+- [x] Automatic tracking fetch for orders with DANFE
+- [NOTE] Direct carrier API integration skipped (using Bling integration instead)  
 
 ### Kanban
 - [ ] Write tests for order progression through statuses  
@@ -77,8 +78,8 @@ Tools like [VSCode with the Mermaid extension](https://marketplace.visualstudio.
   - Export to XLS or PDF  
 
 ### UI & Navigation
-- [ ] Implement side menu (collapsible) with:  
-  - [ ] Logo  
+- [x] Implement side menu (collapsible) with:  
+  - [x] Logo  
   - [x] My Account (edit name/email/password)  
   - [x] Orders  
   - [ ] Dashboard  

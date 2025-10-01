@@ -49,7 +49,8 @@ class UserController extends Controller
             'roles' => [
                 'admin' => 'Administrador',
                 'manager' => 'Gerente',
-                'sales' => 'Vendas',
+                'sales' => 'Vendedor',
+                'developer' => 'Desenvolvedor',
             ],
         ]);
     }
@@ -63,7 +64,8 @@ class UserController extends Controller
             'roles' => [
                 'admin' => 'Administrador',
                 'manager' => 'Gerente',
-                'sales' => 'Vendas',
+                'sales' => 'Vendedor',
+                'developer' => 'Desenvolvedor',
             ],
         ]);
     }
@@ -107,7 +109,8 @@ class UserController extends Controller
             'roles' => [
                 'admin' => 'Administrador',
                 'manager' => 'Gerente',
-                'sales' => 'Vendas',
+                'sales' => 'Vendedor',
+                'developer' => 'Desenvolvedor',
             ],
         ]);
     }

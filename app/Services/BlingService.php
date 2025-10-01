@@ -370,6 +370,9 @@ class BlingService
      */
     public function extractInvoiceData(array $invoice): array
     {
+        // Extrai informações de transporte/rastreamento
+        $transportInfo = $this->extractTransportData($invoice);
+        
         return [
             'bling_id' => $invoice['id'],
             'invoice_number' => $invoice['numero'],
@@ -386,7 +389,70 @@ class BlingService
             'valor_frete' => $invoice['valorFrete'] ?? null,
             'numero_pedido_loja' => $invoice['numeroPedidoLoja'] ?? null,
             'serie' => $invoice['serie'] ?? null,
+            'transport' => $transportInfo,
             'raw_data' => $invoice
+        ];
+    }
+
+    /**
+     * Extrai dados de transporte/rastreamento da nota fiscal
+     */
+    private function extractTransportData(array $invoice): array
+    {
+        $transport = $invoice['transporte'] ?? null;
+        
+        if (!$transport) {
+            return [
+                'logistics_provider' => null,
+                'tracking_code' => null,
+                'frete_por_conta' => null,
+                'volumes' => null,
+                'etiqueta' => null,
+                'logistics_object_id' => null
+            ];
+        }
+
+        // Extrai transportadora
+        $logisticsProvider = null;
+        if (isset($transport['transportador']['nome'])) {
+            $logisticsProvider = $transport['transportador']['nome'];
+        }
+
+        // Extrai código de rastreamento dos volumes
+        $trackingCode = null;
+        if (isset($transport['volumes']) && is_array($transport['volumes'])) {
+            foreach ($transport['volumes'] as $volume) {
+                // Procura por código de rastreamento nos volumes
+                if (isset($volume['codigoRastreamento'])) {
+                    $trackingCode = $volume['codigoRastreamento'];
+                    break;
+                }
+                // Se não tiver codigoRastreamento, pode estar em outro campo
+                if (isset($volume['numero'])) {
+                    $trackingCode = $volume['numero'];
+                    break;
+                }
+            }
+        }
+
+        // Extrai ID do objeto logístico (usado para buscar detalhes de rastreamento)
+        // O ID está dentro de volumes[0].id
+        $logisticsObjectId = null;
+        if (isset($transport['volumes'][0]['id'])) {
+            $logisticsObjectId = $transport['volumes'][0]['id'];
+        } elseif (isset($transport['idObjetoLogistico'])) {
+            // Fallback para formato antigo
+            $logisticsObjectId = $transport['idObjetoLogistico'];
+        }
+
+        return [
+            'logistics_provider' => $logisticsProvider,
+            'tracking_code' => $trackingCode,
+            'frete_por_conta' => $transport['fretePorConta'] ?? null,
+            'volumes' => $transport['volumes'] ?? null,
+            'etiqueta' => $transport['etiqueta'] ?? null,
+            'transportador_documento' => $transport['transportador']['numeroDocumento'] ?? null,
+            'logistics_object_id' => $logisticsObjectId
         ];
     }
 
@@ -500,6 +566,123 @@ class BlingService
         if (!$this->loggingEnabled) return;
         
         Log::info("BlingService: $message", $context);
+    }
+
+    /**
+     * Busca detalhes de objeto logístico por ID
+     */
+    public function fetchLogisticsObjectById($objectId): ?array
+    {
+        try {
+            $this->logRequest('fetchLogisticsObjectById', ['objectId' => $objectId]);
+
+            $endpoint = "/logisticas/objetos/{$objectId}";
+            $response = $this->makeRequest($endpoint);
+            
+            if (!$response['success']) {
+                $this->logError('Failed to fetch logistics object details', [
+                    'object_id' => $objectId,
+                    'status_code' => $response['status_code'],
+                    'body' => $response['body']
+                ]);
+                return null;
+            }
+
+            $data = json_decode($response['body'], true);
+            
+            if (isset($data['data'])) {
+                $this->logResponse('fetchLogisticsObjectById', 'Logistics object details retrieved for ID: ' . $objectId);
+                return $data['data'];
+            }
+            
+            $this->logInfo('Logistics object data not found in response', [
+                'object_id' => $objectId,
+                'response' => $data
+            ]);
+            return null;
+
+        } catch (Exception $e) {
+            $this->logError('Exception in fetchLogisticsObjectById', [
+                'object_id' => $objectId,
+                'error' => $e->getMessage()
+            ]);
+            
+            return null;
+        }
+    }
+
+    /**
+     * Extrai informações de rastreamento do objeto logístico
+     */
+    public function extractTrackingData($logisticsObject): array
+    {
+        $data = [
+            'tracking_code' => null,
+            'status' => null,
+            'description' => null,
+            'last_update' => null,
+            'tracking_url' => null,
+            'service' => null,
+            'delivery_date' => null,
+            'estimated_delivery' => null,
+            'freight_value' => null
+        ];
+
+        if (!isset($logisticsObject['rastreamento'])) {
+            return $data;
+        }
+
+        $rastreamento = $logisticsObject['rastreamento'];
+
+        // Código de rastreamento
+        if (isset($rastreamento['codigo'])) {
+            $data['tracking_code'] = $rastreamento['codigo'];
+        }
+
+        // Status e descrição
+        if (isset($rastreamento['situacao'])) {
+            $data['status'] = $rastreamento['situacao'];
+        }
+
+        if (isset($rastreamento['descricao'])) {
+            $data['description'] = $rastreamento['descricao'];
+        }
+
+        // Última alteração
+        if (isset($rastreamento['ultimaAlteracao'])) {
+            $data['last_update'] = $rastreamento['ultimaAlteracao'];
+        }
+
+        // URL de rastreamento
+        if (isset($rastreamento['url'])) {
+            $data['tracking_url'] = $rastreamento['url'];
+        }
+
+        // Informações do serviço
+        if (isset($logisticsObject['servico'])) {
+            $servico = $logisticsObject['servico'];
+            $data['service'] = [
+                'name' => $servico['nome'] ?? null,
+                'code' => $servico['codigo'] ?? null
+            ];
+        }
+
+        // Data de saída
+        if (isset($logisticsObject['dataSaida'])) {
+            $data['delivery_date'] = $logisticsObject['dataSaida'];
+        }
+
+        // Prazo de entrega previsto
+        if (isset($logisticsObject['prazoEntregaPrevisto'])) {
+            $data['estimated_delivery'] = $logisticsObject['prazoEntregaPrevisto'];
+        }
+
+        // Valor do frete
+        if (isset($logisticsObject['fretePrevisto'])) {
+            $data['freight_value'] = $logisticsObject['fretePrevisto'];
+        }
+
+        return $data;
     }
 
     /**

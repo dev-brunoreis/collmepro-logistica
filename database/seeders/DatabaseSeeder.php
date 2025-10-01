@@ -17,12 +17,15 @@ class DatabaseSeeder extends Seeder
         // Seed permissions first
         $this->call(PermissionSeeder::class);
 
-        User::factory()->create([
-            'name' => 'admin',
-            'email' => 'admin@admin.com',
-            'username' => 'admin',
-            'password' => Hash::make('admin123@'),
-            'role' => 'admin',
-        ]);
+        // Create or update admin user
+        User::updateOrCreate(
+            ['username' => 'admin'],
+            [
+                'name' => 'admin',
+                'email' => 'admin@admin.com',
+                'password' => Hash::make('admin123@'),
+                'role' => 'admin',
+            ]
+        );
     }
 }

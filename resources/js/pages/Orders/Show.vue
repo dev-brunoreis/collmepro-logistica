@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, usePage } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import { ArrowLeft, ExternalLink, Package, Truck, CheckCircle, XCircle } from 'lucide-vue-next';
 
 interface OrderStatus {
@@ -25,6 +26,18 @@ interface StatusHistoryItem {
     formatted_changed_at: string;
 }
 
+interface SyncLog {
+    id: number;
+    sync_type: string;
+    status: string;
+    message?: string;
+    error_message?: string;
+    started_at?: string;
+    completed_at?: string;
+    duration_ms?: number;
+    attempts: number;
+}
+
 interface Order {
     id: number;
     system: string;
@@ -39,10 +52,21 @@ interface Order {
     tracking_code?: string;
     logistics_provider?: string;
     tracking_status?: string;
+    tracking_url?: string;
     order_status?: OrderStatus;
     invoices?: any[];
     labels?: any[];
     status_history?: StatusHistoryItem[];
+    sync_logs?: SyncLog[];
+    raw_data?: any;
+}
+
+interface User {
+    id: number;
+    name: string;
+    email: string;
+    username: string;
+    role: string;
 }
 
 interface Props {
@@ -50,6 +74,12 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+const page = usePage();
+const user = page.props.auth.user as User;
+
+// Estado para controlar a expansão das seções JSON
+const showRawData = ref(false);
+const showSyncLogs = ref(false);
 
 const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR', {
@@ -77,11 +107,11 @@ const getSystemBadgeClass = (system: string) => {
 const getStatusTypeDisplayName = (statusType: string) => {
     switch (statusType) {
         case 'picking':
-            return 'Picking';
+            return 'Separação';   
         case 'packing':
-            return 'Packing';
+            return 'Embalagem';   
         case 'picked_up':
-            return 'Retirado';
+            return 'Coletado';    
         default:
             return statusType;
     }
@@ -196,7 +226,19 @@ const getStatusValueClass = (statusValue: boolean) => {
                         <div v-if="props.order.tracking_code" class="space-y-4">
                             <div>
                                 <label class="text-sm font-medium text-muted-foreground">Código de Rastreamento</label>
-                                <div class="mt-1 text-sm font-medium">{{ props.order.tracking_code }}</div>
+                                <div class="mt-1 flex items-center gap-2">
+                                    <span class="text-sm font-medium">{{ props.order.tracking_code }}</span>
+                                    <a
+                                        v-if="props.order.tracking_url"
+                                        :href="props.order.tracking_url"
+                                        target="_blank"
+                                        class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs hover:bg-sidebar-border/70 text-blue-600 dark:text-blue-400"
+                                        title="Abrir rastreamento"
+                                    >
+                                        <ExternalLink class="h-4 w-4" />
+                                        Rastrear
+                                    </a>
+                                </div>
                             </div>
                             <div v-if="props.order.logistics_provider">
                                 <label class="text-sm font-medium text-muted-foreground">Transportadora</label>
@@ -222,7 +264,7 @@ const getStatusValueClass = (statusValue: boolean) => {
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-2">
                                     <Package class="h-4 w-4 text-muted-foreground" />
-                                    <span class="text-sm font-medium">Picking</span>
+                                    <span class="text-sm font-medium">Separado</span>
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <CheckCircle v-if="props.order.order_status?.picking" class="h-4 w-4 text-green-600" />
@@ -236,7 +278,7 @@ const getStatusValueClass = (statusValue: boolean) => {
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-2">
                                     <Package class="h-4 w-4 text-muted-foreground" />
-                                    <span class="text-sm font-medium">Packing</span>
+                                    <span class="text-sm font-medium">Embalado</span>
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <CheckCircle v-if="props.order.order_status?.packing" class="h-4 w-4 text-green-600" />
@@ -250,7 +292,7 @@ const getStatusValueClass = (statusValue: boolean) => {
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-2">
                                     <Truck class="h-4 w-4 text-muted-foreground" />
-                                    <span class="text-sm font-medium">Retirado</span>
+                                    <span class="text-sm font-medium">Coletado</span>
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <CheckCircle v-if="props.order.order_status?.picked_up" class="h-4 w-4 text-green-600" />
@@ -339,6 +381,86 @@ const getStatusValueClass = (statusValue: boolean) => {
                                     </span>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Sync Logs -->
+                    <div v-if="props.order.sync_logs && props.order.sync_logs.length > 0" class="rounded-lg border border-sidebar-border/70 p-6 dark:border-sidebar-border">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-lg font-semibold">Histórico de Sincronização</h2>
+                            <button
+                                @click="showSyncLogs = !showSyncLogs"
+                                class="text-sm text-primary hover:text-primary/80"
+                            >
+                                {{ showSyncLogs ? 'Ocultar' : 'Mostrar' }}
+                            </button>
+                        </div>
+                        <div v-if="showSyncLogs" class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="border-b border-sidebar-border/70">
+                                        <th class="pb-2 text-left font-medium">Tipo</th>
+                                        <th class="pb-2 text-left font-medium">Status</th>
+                                        <th class="pb-2 text-left font-medium">Mensagem</th>
+                                        <th class="pb-2 text-left font-medium">Data</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr
+                                        v-for="log in props.order.sync_logs"
+                                        :key="log.id"
+                                        class="border-b border-sidebar-border/70 last:border-0"
+                                    >
+                                        <td class="py-2">
+                                            <span
+                                                class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                                                :class="{
+                                                    'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300': log.sync_type === 'order_import',
+                                                    'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300': log.sync_type === 'invoice_sync',
+                                                    'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300': log.sync_type === 'tracking_fetch',
+                                                }"
+                                            >
+                                                {{ log.sync_type === 'order_import' ? 'Importação' : log.sync_type === 'invoice_sync' ? 'NFE' : 'Rastreio' }}
+                                            </span>
+                                        </td>
+                                        <td class="py-2">
+                                            <span
+                                                class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                                                :class="{
+                                                    'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300': log.status === 'success',
+                                                    'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300': log.status === 'failed',
+                                                    'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300': log.status === 'skipped',
+                                                    'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300': log.status === 'pending' || log.status === 'processing',
+                                                }"
+                                            >
+                                                {{ log.status === 'success' ? 'Sucesso' : log.status === 'failed' ? 'Falha' : log.status === 'skipped' ? 'Pulado' : log.status }}
+                                            </span>
+                                        </td>
+                                        <td class="py-2 text-muted-foreground max-w-xs truncate">
+                                            {{ log.error_message || log.message || '-' }}
+                                        </td>
+                                        <td class="py-2 text-muted-foreground text-xs">
+                                            {{ log.completed_at || log.started_at || '-' }}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Raw Data (JSON) - Developer Only -->
+                    <div v-if="user?.role === 'developer'" class="rounded-lg border border-sidebar-border/70 p-6 dark:border-sidebar-border">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-lg font-semibold">Dados Brutos (JSON)</h2>
+                            <button
+                                @click="showRawData = !showRawData"
+                                class="text-sm text-primary hover:text-primary/80"
+                            >
+                                {{ showRawData ? 'Ocultar' : 'Mostrar' }}
+                            </button>
+                        </div>
+                        <div v-if="showRawData" class="overflow-x-auto">
+                            <pre class="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto"><code>{{ JSON.stringify(props.order.raw_data, null, 2) }}</code></pre>
                         </div>
                     </div>
                 </div>

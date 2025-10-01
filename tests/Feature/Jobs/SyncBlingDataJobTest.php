@@ -6,6 +6,7 @@ use App\Jobs\SyncBlingDataJob;
 use App\Models\Order;
 use App\Models\Invoice;
 use App\Services\BlingService;
+use App\Services\BlingLogisticsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
@@ -41,6 +42,17 @@ class SyncBlingDataJobTest extends TestCase
             ->once()
             ->andReturn(true);
 
+        $mockBlingService->shouldReceive('fetchInvoiceById')
+            ->with(12345678)
+            ->once()
+            ->andReturn([
+                'id' => 12345678,
+                'numero' => '6541',
+                'situacao' => 5,
+                'dataEmissao' => '2023-01-12 09:52:12',
+                'chaveAcesso' => '35250145752681000182650010000266371238060760'
+            ]);
+
         $mockBlingService->shouldReceive('extractInvoiceData')
             ->once()
             ->andReturn([
@@ -56,7 +68,8 @@ class SyncBlingDataJobTest extends TestCase
                 'link_pdf' => null,
                 'link_danfe' => null,
                 'serie' => null,
-                'raw_data' => []
+                'raw_data' => [],
+                'transport' => []
             ]);
 
         $mockBlingService->shouldReceive('getInvoicePdfUrl')
@@ -107,6 +120,16 @@ class SyncBlingDataJobTest extends TestCase
             ->once()
             ->andReturn(true);
 
+        $mockBlingService->shouldReceive('fetchInvoiceById')
+            ->with(87654321)
+            ->once()
+            ->andReturn([
+                'id' => 87654321,
+                'numero' => '7654',
+                'situacao' => 5,
+                'dataEmissao' => '2023-01-12 09:52:12'
+            ]);
+
         $mockBlingService->shouldReceive('extractInvoiceData')
             ->once()
             ->andReturn([
@@ -122,7 +145,8 @@ class SyncBlingDataJobTest extends TestCase
                 'link_pdf' => null,
                 'link_danfe' => null,
                 'serie' => null,
-                'raw_data' => []
+                'raw_data' => [],
+                'transport' => []
             ]);
 
         $mockBlingService->shouldReceive('getInvoicePdfUrl')
@@ -133,7 +157,7 @@ class SyncBlingDataJobTest extends TestCase
         $this->app->instance(BlingService::class, $mockBlingService);
 
         // Execute job
-        $job = new SyncBlingDataJob(null, '87654321');
+        $job = new SyncBlingDataJob($order->id);
         $job->handle();
 
         // Assert order was updated
@@ -234,6 +258,16 @@ class SyncBlingDataJobTest extends TestCase
             ->once()
             ->andReturn(true);
 
+        $mockBlingService->shouldReceive('fetchInvoiceById')
+            ->with(12345678)
+            ->once()
+            ->andReturn([
+                'id' => 12345678,
+                'numero' => '6541',
+                'situacao' => 5,
+                'dataEmissao' => '2023-01-12 09:52:12'
+            ]);
+
         $mockBlingService->shouldReceive('extractInvoiceData')
             ->once()
             ->andReturn([
@@ -249,7 +283,8 @@ class SyncBlingDataJobTest extends TestCase
                 'link_pdf' => null,
                 'link_danfe' => null,
                 'serie' => null,
-                'raw_data' => []
+                'raw_data' => [],
+                'transport' => []
             ]);
 
         $mockBlingService->shouldReceive('getInvoicePdfUrl')
@@ -257,12 +292,13 @@ class SyncBlingDataJobTest extends TestCase
             ->with(12345678)
             ->andReturn('https://api.bling.com.br/Api/v3/nfe/12345678/pdf/download');
 
-        // Second and third orders have no invoice
+        // Second order has no invoice
         $mockBlingService->shouldReceive('fetchInvoiceByOrderNumber')
             ->with($orders[1]->order_number)
             ->once()
             ->andReturn(null);
 
+        // Third order has no invoice
         $mockBlingService->shouldReceive('fetchInvoiceByOrderNumber')
             ->with($orders[2]->order_number)
             ->once()
@@ -270,9 +306,15 @@ class SyncBlingDataJobTest extends TestCase
 
         $this->app->instance(BlingService::class, $mockBlingService);
 
-        // Execute job for bulk sync (no specific order ID)
-        $job = new SyncBlingDataJob();
-        $job->handle();
+        // Execute jobs for each order individually
+        $job1 = new SyncBlingDataJob($orders[0]->id);
+        $job1->handle();
+
+        $job2 = new SyncBlingDataJob($orders[1]->id);
+        $job2->handle();
+
+        $job3 = new SyncBlingDataJob($orders[2]->id);
+        $job3->handle();
 
         // Assert first order was updated
         $orders[0]->refresh();
@@ -341,6 +383,27 @@ class SyncBlingDataJobTest extends TestCase
             ->once()
             ->andReturn(true); // Status 6 é válido (Emitida DANFE)
 
+        $mockBlingService->shouldReceive('fetchInvoiceById')
+            ->with(88888889)
+            ->once()
+            ->andReturn([
+                'id' => 88888889,
+                'numero' => '8888',
+                'situacao' => 6,
+                'dataEmissao' => '2023-01-12 09:52:12',
+                'chaveAcesso' => '35250145752681000182650010000888812345678901',
+                'transporte' => [
+                    'volumes' => [
+                        [
+                            'codigoRastreamento' => 'AN008645069BR'
+                        ]
+                    ],
+                    'etiqueta' => [
+                        'nome' => 'Correios'
+                    ]
+                ]
+            ]);
+
         $mockBlingService->shouldReceive('extractInvoiceData')
             ->once()
             ->andReturn([
@@ -356,7 +419,11 @@ class SyncBlingDataJobTest extends TestCase
                 'link_pdf' => null,
                 'link_danfe' => null,
                 'serie' => null,
-                'raw_data' => []
+                'raw_data' => [],
+                'transport' => [
+                    'logistics_provider' => 'Correios',
+                    'tracking_code' => 'AN008645069BR'
+                ]
             ]);
 
         $mockBlingService->shouldReceive('getInvoicePdfUrl')
@@ -384,13 +451,122 @@ class SyncBlingDataJobTest extends TestCase
     }
 
     /** @test */
+    public function it_fetches_tracking_info_when_invoice_has_danfe()
+    {
+        // Create test order
+        $order = Order::factory()->create([
+            'order_number' => '99999999',
+            'nfe_number' => null,
+            'nfe_pdf_url' => null,
+            'tracking_code' => null,
+            'logistics_provider' => null,
+            'tracking_status' => null
+        ]);
+
+        // Mock BlingService
+        $mockBlingService = $this->mock(BlingService::class);
+        $mockBlingService->shouldReceive('fetchInvoiceByOrderNumber')
+            ->with('99999999')
+            ->once()
+            ->andReturn([
+                'id' => 99999999,
+                'numero' => '9999',
+                'situacao' => 6, // Status Emitida DANFE
+                'dataEmissao' => '2023-01-12 09:52:12',
+                'chaveAcesso' => '35250145752681000182650010000999912345678901'
+            ]);
+
+        $mockBlingService->shouldReceive('isValidInvoice')
+            ->once()
+            ->andReturn(true);
+
+        $mockBlingService->shouldReceive('fetchInvoiceById')
+            ->with(99999999)
+            ->once()
+            ->andReturn([
+                'id' => 99999999,
+                'numero' => '9999',
+                'situacao' => 6,
+                'dataEmissao' => '2023-01-12 09:52:12',
+                'chaveAcesso' => '35250145752681000182650010000999912345678901',
+                'transporte' => [
+                    'volumes' => [
+                        [
+                            'codigoRastreamento' => 'AN008645069BR'
+                        ]
+                    ],
+                    'etiqueta' => [
+                        'nome' => 'Correios'
+                    ]
+                ]
+            ]);
+
+        $mockBlingService->shouldReceive('extractInvoiceData')
+            ->once()
+            ->andReturn([
+                'bling_id' => 99999999,
+                'invoice_number' => '9999',
+                'access_key' => '35250145752681000182650010000999912345678901',
+                'issue_date' => '2023-01-12 09:52:12',
+                'operation_date' => '2023-01-12 09:52:12',
+                'status' => 6, // Emitida DANFE
+                'type' => 1,
+                'valor_nota' => 75.00,
+                'valor_frete' => 8.00,
+                'link_pdf' => null,
+                'link_danfe' => null,
+                'serie' => null,
+                'raw_data' => [],
+                'transport' => [
+                    'logistics_provider' => 'Correios',
+                    'tracking_code' => 'AN008645069BR'
+                ]
+            ]);
+
+        $mockBlingService->shouldReceive('getInvoicePdfUrl')
+            ->twice()
+            ->with(99999999)
+            ->andReturn('https://api.bling.com.br/Api/v3/nfe/99999999/pdf/download');
+
+        $this->app->instance(BlingService::class, $mockBlingService);
+
+        // Execute job
+        $job = new SyncBlingDataJob($order->id);
+        $job->handle();
+
+        // Assert order was updated with NFE and tracking data from transport info
+        $order->refresh();
+        $this->assertEquals('9999', $order->nfe_number);
+        $this->assertNotNull($order->nfe_pdf_url);
+        $this->assertEquals('AN008645069BR', $order->tracking_code);
+        $this->assertEquals('Correios', $order->logistics_provider);
+
+        // Assert invoice was created
+        $this->assertDatabaseHas('invoices', [
+            'order_id' => $order->id,
+            'invoice_number' => '9999',
+            'status' => 6
+        ]);
+    }
+
+    /** @test */
     public function it_skips_orders_that_already_have_nfe()
     {
-        // Create test order that already has NFE
+        // Create test order that already has NFE with tracking
         $order = Order::factory()->create([
             'order_number' => '88888888',
             'nfe_number' => '1234',
-            'nfe_pdf_url' => 'https://example.com/nfe/1234.pdf'
+            'nfe_pdf_url' => 'https://example.com/nfe/1234.pdf',
+            'tracking_code' => 'AB123456789BR',
+            'logistics_provider' => 'Correios'
+        ]);
+
+        // Create authorized invoice (status 6) for the order
+        Invoice::create([
+            'order_id' => $order->id,
+            'invoice_number' => '1234',
+            'status' => 6, // Authorized
+            'issued_at' => now()
         ]);
 
         // Mock BlingService - should not be called
@@ -432,7 +608,8 @@ class SyncBlingDataJobTest extends TestCase
             'link_pdf' => null,
             'link_danfe' => null,
             'serie' => null,
-            'raw_data' => ['test' => 'data']
+            'raw_data' => ['test' => 'data'],
+            'transport' => []
         ];
 
         // Mock BlingService
@@ -450,6 +627,16 @@ class SyncBlingDataJobTest extends TestCase
         $mockBlingService->shouldReceive('isValidInvoice')
             ->once()
             ->andReturn(true);
+
+        $mockBlingService->shouldReceive('fetchInvoiceById')
+            ->with(77777777)
+            ->once()
+            ->andReturn([
+                'id' => 77777777,
+                'numero' => '7777',
+                'situacao' => 5,
+                'dataEmissao' => '2023-01-12 09:52:12'
+            ]);
 
         $mockBlingService->shouldReceive('extractInvoiceData')
             ->once()

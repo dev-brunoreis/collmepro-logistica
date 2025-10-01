@@ -37,12 +37,12 @@ defineProps<Props>();
                 Meu Perfil
             </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem :as-child="true">
+        <!-- <DropdownMenuItem :as-child="true">
             <Link class="block w-full" :href="edit.url()" prefetch as="button">
                 <Settings class="mr-2 h-4 w-4" />
                 Configurações
             </Link>
-        </DropdownMenuItem>
+        </DropdownMenuItem> -->
     </DropdownMenuGroup>
     <DropdownMenuSeparator />
     <DropdownMenuItem :as-child="true">

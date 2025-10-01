@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Order;
 use App\Models\Invoice;
+use App\Models\SyncLog;
 use App\Services\BlingService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -17,18 +18,16 @@ class SyncBlingDataJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public ?int $orderId;
-    public ?string $orderNumber;
+    public int $orderId;
     public int $tries = 3;
-    public int $timeout = 300;
+    public int $timeout = 120;
 
     /**
      * Create a new job instance.
      */
-    public function __construct(?int $orderId = null, ?string $orderNumber = null)
+    public function __construct(int $orderId)
     {
         $this->orderId = $orderId;
-        $this->orderNumber = $orderNumber;
     }
 
     /**
@@ -36,149 +35,92 @@ class SyncBlingDataJob implements ShouldQueue
      */
     public function handle(): void
     {
+        $syncLog = null;
+        
         try {
-            Log::info('Starting Bling data sync', [
-                'order_id' => $this->orderId,
-                'order_number' => $this->orderNumber
-            ]);
-
-            $blingService = app(BlingService::class);
-
-            if ($this->orderId) {
-                // Sincronizar pedido específico
-                $this->syncSpecificOrder($blingService);
-            } elseif ($this->orderNumber) {
-                // Sincronizar por número do pedido
-                $this->syncByOrderNumber($blingService);
-            } else {
-                // Sincronizar todos os pedidos sem NFE
-                $this->syncAllOrdersWithoutInvoice($blingService);
-            }
-
-            Log::info('Bling data sync completed successfully');
-
-        } catch (Exception $e) {
-            Log::error('Bling data sync failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'order_id' => $this->orderId,
-                'order_number' => $this->orderNumber
-            ]);
-
-            throw $e;
-        }
-    }
-
-    /**
-     * Sincroniza um pedido específico
-     */
-    private function syncSpecificOrder(BlingService $blingService): void
-    {
         $order = Order::find($this->orderId);
         
         if (!$order) {
-            Log::warning('Order not found for sync', ['order_id' => $this->orderId]);
+                Log::warning('Order not found for Bling sync', ['order_id' => $this->orderId]);
             return;
         }
 
-        $this->syncOrderWithBling($order, $blingService);
-    }
-
-    /**
-     * Sincroniza por número do pedido
-     */
-    private function syncByOrderNumber(BlingService $blingService): void
-    {
-        $order = Order::where('order_number', $this->orderNumber)->first();
-        
-        if (!$order) {
-            Log::warning('Order not found for sync', ['order_number' => $this->orderNumber]);
-            return;
-        }
-
-        $this->syncOrderWithBling($order, $blingService);
-    }
-
-    /**
-     * Sincroniza todos os pedidos sem NFE
-     */
-    private function syncAllOrdersWithoutInvoice(BlingService $blingService): void
-    {
-        $batchSize = config('bling.sync.batch_size', 50);
-        
-        $orders = Order::whereNull('nfe_number')
-            ->whereNull('nfe_pdf_url')
-            ->limit($batchSize)
-            ->get();
-
-        if ($orders->isEmpty()) {
-            Log::info('No orders without invoice found for sync');
-            return;
-        }
-
-        Log::info('Syncing orders without invoice', [
-            'count' => $orders->count()
-        ]);
-
-        $syncedCount = 0;
-        $skippedCount = 0;
-
-        foreach ($orders as $order) {
-            if ($this->syncOrderWithBling($order, $blingService)) {
-                $syncedCount++;
-            } else {
-                $skippedCount++;
-            }
-        }
-
-        Log::info('Bulk sync completed', [
-            'synced' => $syncedCount,
-            'skipped' => $skippedCount,
-            'total' => $orders->count()
-        ]);
-    }
-
-    /**
-     * Sincroniza um pedido específico com o Bling
-     */
-    private function syncOrderWithBling(Order $order, BlingService $blingService): bool
-    {
-        try {
-            Log::debug('Syncing order with Bling', [
+            Log::info('Starting Bling NFE sync for order', [
                 'order_id' => $order->id,
                 'order_number' => $order->order_number
             ]);
 
-            if ($order->nfe_number && $order->nfe_pdf_url) {
-                Log::debug('Order already has NFE, skipping sync', [
+            // Cria log de sincronização de NFE
+            $syncLog = SyncLog::create([
+                'order_id' => $order->id,
+                'sync_type' => SyncLog::TYPE_INVOICE_SYNC,
+                'status' => SyncLog::STATUS_PROCESSING,
+                'started_at' => now(),
+                'external_id' => $order->order_number,
+            ]);
+
+            // Verifica se já tem NFE autorizada (status 6) E rastreio
+            // Se tiver NFE mas for status 5, reprocessa para verificar se foi autorizada
+            $invoice = $order->invoices()->first();
+            $shouldReprocess = $invoice && $invoice->status === 5;
+            
+            // Pula apenas se já tem NFE autorizada (status 6) COM rastreio
+            if ($order->nfe_number && $order->tracking_code && !$shouldReprocess) {
+                $message = 'Order already has authorized NFE with tracking, skipping sync';
+                Log::debug($message, [
                     'order_id' => $order->id,
-                    'order_number' => $order->order_number,
-                    'nfe_number' => $order->nfe_number
+                    'nfe_number' => $order->nfe_number,
+                    'tracking_code' => $order->tracking_code
                 ]);
-                return false;
+                $syncLog->markAsSkipped($message);
+                return;
+            }
+            
+            if ($shouldReprocess) {
+                Log::info('Reprocessing invoice to check if authorized', [
+                    'order_id' => $order->id,
+                    'nfe_number' => $order->nfe_number,
+                    'current_status' => $invoice->status
+                ]);
             }
 
-            // Busca nota fiscal no Bling pelo número do pedido
-            $invoice = $blingService->fetchInvoiceByOrderNumber($order->order_number);
+            $blingService = app(BlingService::class);
 
-            if (!$invoice) {
-                Log::debug('No invoice found in Bling for order', [
-                    'order_number' => $order->order_number
-                ]);
-                return false;
+            // Busca nota fiscal no Bling pelo número do pedido
+            $invoiceBasic = $blingService->fetchInvoiceByOrderNumber($order->order_number);
+
+            if (!$invoiceBasic) {
+                $message = 'No invoice found in Bling for this order yet';
+                Log::debug($message, ['order_number' => $order->order_number]);
+                $syncLog->markAsSkipped($message);
+                return;
             }
 
             // Valida se a nota é válida
-            if (!$blingService->isValidInvoice($invoice)) {
-                Log::warning('Invalid invoice found in Bling', [
+            if (!$blingService->isValidInvoice($invoiceBasic)) {
+                $message = 'Invalid invoice found in Bling';
+                Log::warning($message, [
                     'order_number' => $order->order_number,
-                    'invoice_data' => $invoice
+                    'invoice_data' => $invoiceBasic
                 ]);
-                return false;
+                $syncLog->markAsSkipped($message);
+                return;
             }
 
-            // Extrai dados da nota fiscal
-            $invoiceData = $blingService->extractInvoiceData($invoice);
+            // Busca dados COMPLETOS da invoice (com transporte) usando o ID
+            $invoiceFull = $blingService->fetchInvoiceById($invoiceBasic['id']);
+            
+            if (!$invoiceFull) {
+                Log::warning('Could not fetch full invoice details', [
+                    'order_number' => $order->order_number,
+                    'invoice_id' => $invoiceBasic['id']
+                ]);
+                // Usa dados básicos se não conseguir buscar completos
+                $invoiceFull = $invoiceBasic;
+            }
+
+            // Extrai dados da nota fiscal (com transporte se disponível)
+            $invoiceData = $blingService->extractInvoiceData($invoiceFull);
 
             // Atualiza o pedido com dados da NFE
             $this->updateOrderWithInvoiceData($order, $invoiceData, $blingService);
@@ -186,21 +128,48 @@ class SyncBlingDataJob implements ShouldQueue
             // Cria/atualiza registro de invoice
             $this->createOrUpdateInvoice($order, $invoiceData, $blingService);
 
-            Log::info('Order synced successfully with Bling', [
-                'order_id' => $order->id,
-                'order_number' => $order->order_number,
-                'invoice_number' => $invoiceData['invoice_number']
+            // Marca log como sucesso
+            $syncLog->markAsSuccess('Nota fiscal sincronizada com sucesso', [
+                'invoice_number' => $invoiceData['invoice_number'],
+                'has_danfe' => $invoiceData['status'] === 6,
+                'has_transport_info' => !empty($invoiceData['transport']),
             ]);
 
-            return true;
+            Log::info('Bling NFE sync completed successfully', [
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'invoice_number' => $invoiceData['invoice_number'],
+            ]);
+
+            // 🔥 ENCADEIA: Se tem DANFE (status 6) e transporte, dispara job de rastreio
+            // Status 6 = NFE autorizada com DANFE, pronta para transporte
+            if ($invoiceData['status'] === 6 && !empty($invoiceData['transport'])) {
+                Log::info('Invoice has DANFE and transport info, dispatching tracking job', [
+                    'order_id' => $order->id,
+                ]);
+                
+                FetchTrackingDataJob::dispatch($order->id)
+                    ->delay(now()->addSeconds(5)); // Aguarda 5 segundos antes de buscar rastreio
+            } else {
+                Log::debug('Invoice not ready for tracking yet', [
+                    'order_id' => $order->id,
+                    'invoice_status' => $invoiceData['status'],
+                    'has_transport' => !empty($invoiceData['transport']),
+                ]);
+            }
 
         } catch (Exception $e) {
-            Log::error('Failed to sync order with Bling', [
-                'order_id' => $order->id,
-                'order_number' => $order->order_number,
+            Log::error('Bling NFE sync failed', [
+                'order_id' => $this->orderId,
                 'error' => $e->getMessage()
             ]);
-            return false;
+
+            if ($syncLog) {
+                $syncLog->markAsFailed($e->getMessage(), $e);
+            }
+
+            // Não lança exceção para não bloquear a fila, apenas registra o erro
+            // O retry será feito pelo schedule se necessário
         }
     }
 
@@ -209,7 +178,6 @@ class SyncBlingDataJob implements ShouldQueue
      */
     private function updateOrderWithInvoiceData(Order $order, array $invoiceData, BlingService $blingService): void
     {
-        // Usa link_pdf diretamente dos dados extraídos, ou busca via API se não disponível
         $pdfUrl = $invoiceData['link_pdf'] ?? $blingService->getInvoicePdfUrl($invoiceData['bling_id']);
 
         $updateData = [
@@ -220,14 +188,25 @@ class SyncBlingDataJob implements ShouldQueue
             'nfe_value' => $invoiceData['valor_nota'],
         ];
 
+        // Se tem informações de transporte, já atualiza também
+        if (!empty($invoiceData['transport'])) {
+            $transport = $invoiceData['transport'];
+            
+            if (!empty($transport['logistics_provider'])) {
+                $updateData['logistics_provider'] = $transport['logistics_provider'];
+            }
+            
+            if (!empty($transport['tracking_code'])) {
+                $updateData['tracking_code'] = $transport['tracking_code'];
+            }
+        }
+
         $order->update($updateData);
 
         Log::debug('Order updated with invoice data', [
             'order_id' => $order->id,
             'nfe_number' => $invoiceData['invoice_number'],
-            'pdf_url' => $pdfUrl ? 'available' : 'not_available',
-            'access_key' => $invoiceData['access_key'] ? 'available' : 'not_available',
-            'value' => $invoiceData['valor_nota'] ?? 'not_available'
+            'has_transport_info' => !empty($invoiceData['transport']),
         ]);
     }
 
@@ -236,7 +215,6 @@ class SyncBlingDataJob implements ShouldQueue
      */
     private function createOrUpdateInvoice(Order $order, array $invoiceData, BlingService $blingService): void
     {
-        // Usa link_pdf diretamente dos dados extraídos, ou busca via API se não disponível
         $pdfUrl = $invoiceData['link_pdf'] ?? $blingService->getInvoicePdfUrl($invoiceData['bling_id']);
 
         $invoice = Invoice::updateOrCreate(
@@ -264,9 +242,6 @@ class SyncBlingDataJob implements ShouldQueue
             'invoice_id' => $invoice->id,
             'order_id' => $order->id,
             'invoice_number' => $invoiceData['invoice_number'],
-            'pdf_url' => $pdfUrl ? 'available' : 'not_available',
-            'danfe_url' => $invoiceData['link_danfe'] ? 'available' : 'not_available',
-            'value' => $invoiceData['valor_nota'] ?? 'not_available'
         ]);
     }
 
@@ -278,7 +253,6 @@ class SyncBlingDataJob implements ShouldQueue
         Log::error('SyncBlingDataJob failed permanently', [
             'error' => $exception->getMessage(),
             'order_id' => $this->orderId,
-            'order_number' => $this->orderNumber,
             'attempts' => $this->attempts()
         ]);
     }

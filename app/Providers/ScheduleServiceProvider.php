@@ -4,7 +4,8 @@ namespace App\Providers;
 
 use App\Jobs\ImportWooCommerceOrdersJob;
 use App\Jobs\ImportShopifyOrdersJob;
-use App\Jobs\SyncAllBlingDataJob;
+use App\Jobs\ReprocessPendingInvoicesJob;
+use App\Jobs\FetchMissingTrackingJob;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\ServiceProvider;
 
@@ -27,25 +28,35 @@ class ScheduleServiceProvider extends ServiceProvider
             $this->app->booted(function () {
                 $schedule = $this->app->make(Schedule::class);
                 
-                // Import orders from WooCommerce every 10 minutes
+                // Import orders from WooCommerce Collmepro every 15 minutes
                 $schedule->job(new ImportWooCommerceOrdersJob('collmepro'))
-                    ->everyTenMinutes()
-                    ->withoutOverlapping();
+                    ->everyMinute()
+                    ->withoutOverlapping()
+                    ->description('Import orders from Collmepro WooCommerce');
 
-                // Import orders from WooCommerce every 10 minutes
+                // Import orders from WooCommerce Wholesale every 15 minutes
                 $schedule->job(new ImportWooCommerceOrdersJob('collmepro_wholesale'))
-                    ->everyTenMinutes()
-                    ->withoutOverlapping();
+                    ->everyMinute()
+                    ->withoutOverlapping()
+                    ->description('Import orders from Collmepro Wholesale WooCommerce');
 
-                // Import orders from Shopify every 5 minutes
+                // Import orders from Shopify Collme Beauty every 15 minutes
+                // Uncomment when ready to use
                 // $schedule->job(new ImportShopifyOrdersJob('collme_beauty'))
-                //     ->everyTenMinutes()
-                //     ->withoutOverlapping();
+                //     ->everyFifteenMinutes()
+                //     ->withoutOverlapping()
+                //     ->description('Import orders from Collme Beauty Shopify');
 
-                // Sync Bling NFE data every 10 minutes
-                $schedule->job(new SyncAllBlingDataJob())
-                    ->everyTenMinutes()
-                    ->withoutOverlapping();
+                $schedule->job(new ReprocessPendingInvoicesJob())
+                    ->everyMinute()
+                    ->withoutOverlapping()
+                    ->description('Reprocess pending invoices (status 5 → 6)');
+
+                // Busca rastreios faltantes para pedidos que têm NFE mas não têm tracking
+                $schedule->job(new FetchMissingTrackingJob())
+                    ->everyMinute()
+                    ->withoutOverlapping()
+                    ->description('Fetch missing tracking codes for orders with NFE');
             });
         }
     }

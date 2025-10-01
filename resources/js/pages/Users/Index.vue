@@ -213,6 +213,7 @@ const clearFilters = () => {
                                             'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300': user.role === 'admin',
                                             'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300': user.role === 'manager',
                                             'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300': user.role === 'sales',
+                                            'bg-purple-100 text-white dark:bg-purple-900 dark:text-purple-300 animate-pulse duration-300': user.role === 'developer',
                                         }"
                                     >
                                         {{ user.role_display_name }}

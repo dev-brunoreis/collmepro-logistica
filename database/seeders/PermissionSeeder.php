@@ -17,7 +17,7 @@ class PermissionSeeder extends Seeder
         RolePermission::truncate();
         Permission::truncate();
 
-        // Define permissions - simplified for 3 roles only
+        // Define permissions - developer has same permissions as admin
         $permissions = [
             // Orders permissions
             [
@@ -25,21 +25,21 @@ class PermissionSeeder extends Seeder
                 'display_name' => 'Visualizar Pedidos',
                 'description' => 'Permite visualizar a lista de pedidos',
                 'category' => 'orders',
-                'roles' => ['admin', 'manager', 'sales'],
+                'roles' => ['admin', 'developer', 'manager', 'sales'],
             ],
             [
                 'name' => 'orders.status.update',
                 'display_name' => 'Atualizar Status dos Pedidos',
-                'description' => 'Permite alterar o status dos pedidos (picking, packing, picked_up)',
+                'description' => 'Permite alterar o status dos pedidos (separado, embalado, coletado)',
                 'category' => 'orders',
-                'roles' => ['admin', 'manager'],
+                'roles' => ['admin', 'developer', 'manager'],
             ],
             [
                 'name' => 'orders.import',
                 'display_name' => 'Importar Pedidos',
                 'description' => 'Permite importar pedidos manualmente dos sistemas externos',
                 'category' => 'orders',
-                'roles' => ['admin', 'manager'],
+                'roles' => ['admin', 'developer', 'manager'],
             ],
 
             // Users permissions
@@ -48,28 +48,28 @@ class PermissionSeeder extends Seeder
                 'display_name' => 'Visualizar Usuários',
                 'description' => 'Permite visualizar a lista de usuários',
                 'category' => 'users',
-                'roles' => ['admin'],
+                'roles' => ['admin', 'developer'],
             ],
             [
                 'name' => 'users.create',
                 'display_name' => 'Criar Usuários',
                 'description' => 'Permite criar novos usuários',
                 'category' => 'users',
-                'roles' => ['admin'],
+                'roles' => ['admin', 'developer'],
             ],
             [
                 'name' => 'users.edit',
                 'display_name' => 'Editar Usuários',
                 'description' => 'Permite editar informações dos usuários',
                 'category' => 'users',
-                'roles' => ['admin'],
+                'roles' => ['admin', 'developer'],
             ],
             [
                 'name' => 'users.delete',
                 'display_name' => 'Excluir Usuários',
                 'description' => 'Permite excluir usuários',
                 'category' => 'users',
-                'roles' => ['admin'],
+                'roles' => ['admin', 'developer'],
             ],
 
             // Permissions management (only admin)
@@ -78,7 +78,7 @@ class PermissionSeeder extends Seeder
                 'display_name' => 'Visualizar Permissões',
                 'description' => 'Permite visualizar e gerenciar permissões dos roles',
                 'category' => 'permissions',
-                'roles' => ['admin'],
+                'roles' => ['admin', 'developer'],
             ],
 
             // Dashboard permissions
@@ -87,7 +87,7 @@ class PermissionSeeder extends Seeder
                 'display_name' => 'Visualizar Dashboard',
                 'description' => 'Permite acessar o dashboard principal',
                 'category' => 'dashboard',
-                'roles' => ['admin', 'manager', 'sales'],
+                'roles' => ['admin', 'developer', 'manager', 'sales'],
             ],
 
             // Kanban permissions
@@ -96,7 +96,7 @@ class PermissionSeeder extends Seeder
                 'display_name' => 'Visualizar Kanban',
                 'description' => 'Permite visualizar o kanban de pedidos',
                 'category' => 'kanban',
-                'roles' => ['admin', 'manager', 'sales'],
+                'roles' => ['admin', 'developer', 'manager', 'sales'],
             ],
 
             // Labels permissions
@@ -105,7 +105,7 @@ class PermissionSeeder extends Seeder
                 'display_name' => 'Visualizar Etiquetas',
                 'description' => 'Permite visualizar etiquetas de envio',
                 'category' => 'labels',
-                'roles' => ['admin', 'manager', 'sales'],
+                'roles' => ['admin', 'developer', 'manager', 'sales'],
             ],
         ];
 

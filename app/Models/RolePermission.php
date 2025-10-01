@@ -29,7 +29,8 @@ class RolePermission extends Model
     public const ROLES = [
         'admin' => 'Administrador',
         'manager' => 'Gerente',
-        'sales' => 'Vendas',
+        'sales' => 'Vendedor',
+        'developer' => 'Desenvolvedor',
     ];
 
     /**

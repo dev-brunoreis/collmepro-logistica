@@ -133,7 +133,7 @@ const submit = () => {
                                 class="mt-1 block w-full rounded-md border border-sidebar-border/70 bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-sidebar-border disabled:opacity-50 disabled:cursor-not-allowed"
                                 :class="{ 'border-red-500': form.errors.role }"
                             >
-                                <option v-for="(label, value) in props.roles" :key="value" :value="value">
+                                <option v-for="(label, value) in props.roles" :key="value" :value="value" :disabled="value === 'developer'">
                                     {{ label }}
                                 </option>
                             </select>

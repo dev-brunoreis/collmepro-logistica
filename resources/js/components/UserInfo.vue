@@ -19,6 +19,17 @@ const { getInitials } = useInitials();
 const showAvatar = computed(
     () => props.user.avatar && props.user.avatar !== '',
 );
+
+// Map role to Portuguese display name
+const roleDisplayName = computed(() => {
+    const roleMap: Record<string, string> = {
+        admin: 'Administrador',
+        manager: 'Gerente',
+        sales: 'Vendedor',
+        developer: 'Desenvolvedor',
+    };
+    return roleMap[props.user.role] || props.user.role;
+});
 </script>
 
 <template>
@@ -34,8 +45,8 @@ const showAvatar = computed(
         <span v-if="showEmail" class="truncate text-xs text-muted-foreground">{{
             user.email
         }}</span>
-        <span v-else class="truncate text-xs text-muted-foreground capitalize">{{
-            user.role
+        <span v-else class="truncate text-xs text-muted-foreground">{{
+            roleDisplayName
         }}</span>
     </div>
 </template>

@@ -25,6 +25,7 @@ class Order extends Model
         'tracking_code',
         'logistics_provider',
         'tracking_status',
+        'tracking_url',
     ];
 
     protected $casts = [
@@ -55,6 +56,14 @@ class Order extends Model
     public function labels(): HasMany
     {
         return $this->hasMany(Label::class);
+    }
+
+    /**
+     * Get the sync logs for the order.
+     */
+    public function syncLogs(): HasMany
+    {
+        return $this->hasMany(SyncLog::class);
     }
 
     /**
