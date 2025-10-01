@@ -6,6 +6,7 @@ use App\Jobs\ImportWooCommerceOrdersJob;
 use App\Jobs\ImportShopifyOrdersJob;
 use App\Jobs\ReprocessPendingInvoicesJob;
 use App\Jobs\FetchMissingTrackingJob;
+use App\Jobs\UpdateTrackingStatusJob;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\ServiceProvider;
 
@@ -57,6 +58,13 @@ class ScheduleServiceProvider extends ServiceProvider
                     ->everyMinute()
                     ->withoutOverlapping()
                     ->description('Fetch missing tracking codes for orders with NFE');
+
+                // Atualiza status de rastreamento para pedidos que já têm tracking code
+                // Roda a cada 2 horas para não sobrecarregar a API
+                $schedule->job(new UpdateTrackingStatusJob())
+                    ->everyTwoHours()
+                    ->withoutOverlapping()
+                    ->description('Update tracking status for orders with tracking codes');
             });
         }
     }

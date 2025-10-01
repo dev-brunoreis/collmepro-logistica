@@ -7,9 +7,11 @@ use App\Jobs\ImportWooCommerceOrdersJob;
 use App\Jobs\ImportShopifyOrdersJob;
 use App\Jobs\SyncBlingDataJob;
 use App\Jobs\SyncAllBlingDataJob;
+use App\Jobs\FetchTrackingDataJob;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class OrderController extends Controller
@@ -365,6 +367,55 @@ class OrderController extends Controller
 
         } catch (\Exception $e) {
             return back()->with('error', 'Erro ao iniciar importação e sincronização: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Refresh tracking status for a specific order (async call)
+     */
+    public function refreshTracking(Request $request, Order $order)
+    {
+        // Check permissions - user must have orders.view permission
+        $user = Auth::user();
+        if (!$user->hasPermission('orders.view')) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        try {
+            // Check if order has NFE number (required for tracking)
+            if (!$order->nfe_number) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Order does not have NFE yet',
+                    'tracking_status' => null
+                ], 200);
+            }
+
+            // Dispatch tracking job to fetch latest status
+            FetchTrackingDataJob::dispatchSync($order->id);
+
+            // Reload order to get updated tracking info
+            $order->refresh();
+
+            return response()->json([
+                'success' => true,
+                'tracking_code' => $order->tracking_code,
+                'logistics_provider' => $order->logistics_provider,
+                'tracking_status' => $order->tracking_status,
+                'last_updated' => now()->toIso8601String()
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error refreshing tracking for order', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching tracking status',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 

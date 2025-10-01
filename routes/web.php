@@ -51,6 +51,7 @@ Route::middleware(['auth', 'permission:orders.view'])->group(function () {
     Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
     Route::get('orders/{order}/invoice/download', [OrderController::class, 'downloadInvoice'])->name('orders.invoice.download');
+    Route::post('orders/{order}/refresh-tracking', [OrderController::class, 'refreshTracking'])->name('orders.refresh-tracking');
 });
 
 // Order status update (users with orders.status.update permission)

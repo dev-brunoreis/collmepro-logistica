@@ -3,6 +3,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import { Search, Filter, Eye, CheckCircle, XCircle, Package, Truck, ExternalLink, RefreshCw } from 'lucide-vue-next';
+import axios from '@/lib/axios';
 
 interface OrderStatus {
     picking: boolean;
@@ -96,6 +97,40 @@ const canImportOrders = user?.permissions?.some((p: any) => p.name === 'orders.i
 
 // Loading state for manual fetch
 const isFetching = ref(false);
+
+// Loading state for tracking refresh (by order ID)
+const trackingRefreshLoading = ref<Record<number, boolean>>({});
+
+// Refresh tracking status for a specific order
+const refreshTracking = async (order: Order) => {
+    if (!order.tracking_code || trackingRefreshLoading.value[order.id]) {
+        return; // Skip if no tracking code or already loading
+    }
+
+    trackingRefreshLoading.value[order.id] = true;
+
+    try {
+        // Use axios which has CSRF token configured automatically
+        const response = await axios.post(`/orders/${order.id}/refresh-tracking`);
+        
+        const data = response.data;
+
+        if (data.success) {
+            // Update order in place
+            order.tracking_code = data.tracking_code;
+            order.logistics_provider = data.logistics_provider;
+            order.tracking_status = data.tracking_status;
+
+            console.log('Tracking updated successfully for order', order.order_number);
+        } else {
+            console.warn('Failed to refresh tracking:', data.message);
+        }
+    } catch (error: any) {
+        console.error('Error refreshing tracking:', error.response?.data || error.message);
+    } finally {
+        trackingRefreshLoading.value[order.id] = false;
+    }
+};
 
 const search = (value: string) => {
     const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
@@ -443,8 +478,26 @@ const fetchOrders = () => {
                                     {{ order.logistics_provider || '-' }}
                                 </td>
                                 <td class="px-4 py-3">
-                                    <span v-if="order.tracking_status" class="text-sm">{{ order.tracking_status }}</span>
-                                    <span v-else class="text-sm text-muted-foreground">-</span>
+                                    <div class="flex items-center gap-2">
+                                        <span v-if="order.tracking_status" class="text-sm">{{ order.tracking_status }}</span>
+                                        <span v-else class="text-sm text-muted-foreground">-</span>
+                                        
+                                        <!-- Refresh tracking button - only show if order has actual tracking code -->
+                                        <button
+                                            v-if="order.tracking_code"
+                                            @click="refreshTracking(order)"
+                                            :disabled="trackingRefreshLoading[order.id]"
+                                            class="p-1 rounded hover:bg-sidebar-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                            :title="trackingRefreshLoading[order.id] ? 'Atualizando...' : 'Atualizar status de rastreamento'"
+                                        >
+                                            <RefreshCw 
+                                                :class="[
+                                                    'h-4 w-4 text-muted-foreground hover:text-foreground transition-colors',
+                                                    trackingRefreshLoading[order.id] ? 'animate-spin' : ''
+                                                ]"
+                                            />
+                                        </button>
+                                    </div>
                                 </td>
                                 <td class="px-4 py-3 text-sm text-muted-foreground">
                                     {{ order.seller_name || '-' }}

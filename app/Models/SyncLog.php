@@ -42,6 +42,7 @@ class SyncLog extends Model
     const TYPE_ORDER_IMPORT = 'order_import';
     const TYPE_INVOICE_SYNC = 'invoice_sync';
     const TYPE_TRACKING_FETCH = 'tracking_fetch';
+    const TYPE_TRACKING_UPDATE = 'tracking_update';
 
     /**
      * Status constants
