@@ -62,7 +62,7 @@ class ScheduleServiceProvider extends ServiceProvider
                 // Atualiza status de rastreamento para pedidos que já têm tracking code
                 // Roda a cada 2 horas para não sobrecarregar a API
                 $schedule->job(new UpdateTrackingStatusJob())
-                    ->everyTwoHours()
+                    ->everyMinute()
                     ->withoutOverlapping()
                     ->description('Update tracking status for orders with tracking codes');
             });
