@@ -35,7 +35,7 @@ class OrderControllerTest extends TestCase
                 'order_date' => now()->subDays(1),
             ],
             [
-                'system' => 'collmepro_wholesale',
+                'system' => 'collmepro_atacadista',
                 'order_number' => 'WH001',
                 'customer_name' => 'Ana Costa',
                 'seller_name' => 'Pedro Lima',

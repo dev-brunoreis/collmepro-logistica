@@ -60,7 +60,7 @@ class WooCommerceServiceTest extends TestCase
     }
 
     #[Test]
-    public function it_can_fetch_orders_from_collmepro_wholesale()
+    public function it_can_fetch_orders_from_collmepro_atacadista()
     {
         $mockResponse = [
             [
@@ -85,7 +85,7 @@ class WooCommerceServiceTest extends TestCase
             'atacadista.collmepro.com.br/app/wp-json/wc/v3/orders*' => Http::response($mockResponse, 200)
         ]);
 
-        $orders = $this->service->fetchOrders('collmepro_wholesale');
+        $orders = $this->service->fetchOrders('collmepro_atacadista');
 
         $this->assertCount(1, $orders);
         $this->assertEquals('1001', $orders[0]['number']);
@@ -305,7 +305,7 @@ class WooCommerceServiceTest extends TestCase
                    $request->hasHeader('Authorization');
         });
 
-        $this->service->fetchOrders('collmepro_wholesale');
+        $this->service->fetchOrders('collmepro_atacadista');
         Http::assertSent(function ($request) {
             return str_contains($request->url(), 'atacadista.collmepro.com.br/app/wp-json/wc/v3/orders') &&
                    $request->hasHeader('Authorization');

@@ -24,7 +24,7 @@ class OrderFactory extends Factory
      */
     public function definition(): array
     {
-        $systems = ['collmepro', 'collmepro_wholesale', 'collme_beauty'];
+        $systems = ['collmepro', 'collmepro_atacadista', 'collme_beauty'];
         $logisticsProviders = ['correios_pac', 'correios_sedex', 'total_express', 'melhor_envio'];
         $trackingStatuses = ['label_issued', 'dispatched', 'in_transit', 'delivered'];
 
@@ -53,12 +53,12 @@ class OrderFactory extends Factory
     }
 
     /**
-     * Indicate that the order is from Collmepro Wholesale.
+     * Indicate that the order is from Collmepro Atacadista.
      */
-    public function collmeproWholesale(): static
+    public function collmeproAtacadista(): static
     {
         return $this->state(fn (array $attributes) => [
-            'system' => 'collmepro_wholesale',
+            'system' => 'collmepro_atacadista',
         ]);
     }
 

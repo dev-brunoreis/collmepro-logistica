@@ -135,11 +135,11 @@ class ImportWooCommerceOrdersJobTest extends TestCase
     }
 
     #[Test]
-    public function it_imports_collmepro_wholesale_orders()
+    public function it_imports_collmepro_atacadista_orders()
     {
         $this->mock(WooCommerceService::class, function ($mock) {
             $mock->shouldReceive('fetchOrders')
-                ->with('collmepro_wholesale')
+                ->with('collmepro_atacadista')
                 ->andReturn([
                     [
                         'id' => 1001,
@@ -152,11 +152,11 @@ class ImportWooCommerceOrdersJobTest extends TestCase
                 ]);
         });
 
-        $job = new ImportWooCommerceOrdersJob('collmepro_wholesale');
+        $job = new ImportWooCommerceOrdersJob('collmepro_atacadista');
         $job->handle();
 
         $this->assertDatabaseHas('orders', [
-            'system' => 'collmepro_wholesale',
+            'system' => 'collmepro_atacadista',
             'order_number' => '1001',
             'customer_name' => 'João Silva',
             'seller_name' => 'Maria Santos'

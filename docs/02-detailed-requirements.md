@@ -3,7 +3,7 @@
 ## 1. External Integrations
 
 ### 1.1 WooCommerce API
-**Objective**: Capture orders from Collmepro and Collmepro Wholesale systems
+**Objective**: Capture orders from Collmepro and Collmepro Atacadista systems
 
 **Data to extract**:
 - Order number
@@ -153,7 +153,7 @@ The system implements a comprehensive permission system with three distinct role
 
 #### SYSTEM
 - Order origin
-- Values: Collmepro, Wholesale (WooCommerce), Collme Beauty (Shopify)
+- Values: Collmepro, Atacadista (WooCommerce), Collme Beauty (Shopify)
 - Filter by system
 
 #### ORDER NUMBER
@@ -195,7 +195,7 @@ The system implements a comprehensive permission system with three distinct role
 
 #### SELLER
 - Seller name
-- Only for WooCommerce (Collmepro/Wholesale)
+- Only for WooCommerce (Collmepro/Atacadista)
 - Filter by seller
 
 #### CHECKOUT PICKING

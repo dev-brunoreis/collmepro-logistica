@@ -6,6 +6,7 @@ use App\Services\BlingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Config;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class BlingServiceTest extends TestCase
@@ -33,7 +34,7 @@ class BlingServiceTest extends TestCase
         $this->blingService = new BlingService();
     }
 
-    /** @test */
+    #[Test]
     public function it_can_fetch_invoices_with_default_parameters()
     {
         $mockResponse = [
@@ -68,7 +69,7 @@ class BlingServiceTest extends TestCase
         $this->assertEquals('6541', $invoices[0]['numero']);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_fetch_invoice_by_order_number()
     {
         $mockResponse = [
@@ -99,7 +100,7 @@ class BlingServiceTest extends TestCase
         });
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_null_when_no_invoice_found_by_order_number()
     {
         Http::fake([
@@ -111,7 +112,7 @@ class BlingServiceTest extends TestCase
         $this->assertNull($invoice);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_fetch_invoices_by_date_range()
     {
         $mockResponse = [
@@ -148,7 +149,7 @@ class BlingServiceTest extends TestCase
         });
     }
 
-    /** @test */
+    #[Test]
     public function it_can_fetch_invoices_by_status()
     {
         $mockResponse = [
@@ -176,7 +177,7 @@ class BlingServiceTest extends TestCase
         });
     }
 
-    /** @test */
+    #[Test]
     public function it_can_fetch_authorized_invoices()
     {
         $mockResponse = [
@@ -204,7 +205,7 @@ class BlingServiceTest extends TestCase
         });
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_api_errors_gracefully()
     {
         Http::fake([
@@ -217,7 +218,7 @@ class BlingServiceTest extends TestCase
         $this->assertEmpty($invoices);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_network_timeout()
     {
         Http::fake([
@@ -230,7 +231,7 @@ class BlingServiceTest extends TestCase
         $this->assertEmpty($invoices);
     }
 
-    /** @test */
+    #[Test]
     public function it_validates_invoice_data_correctly()
     {
         $validInvoice = [
@@ -251,7 +252,7 @@ class BlingServiceTest extends TestCase
         $this->assertFalse($this->blingService->isValidInvoice($invalidInvoice));
     }
 
-    /** @test */
+    #[Test]
     public function it_extracts_invoice_data_correctly()
     {
         $rawInvoice = [
@@ -284,7 +285,7 @@ class BlingServiceTest extends TestCase
         $this->assertIsArray($extractedData['raw_data']);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_invalid_json_response()
     {
         Http::fake([
@@ -297,7 +298,7 @@ class BlingServiceTest extends TestCase
         $this->assertEmpty($invoices);
     }
 
-    /** @test */
+    #[Test]
     public function it_uses_correct_api_endpoint()
     {
         Http::fake([
@@ -311,7 +312,7 @@ class BlingServiceTest extends TestCase
         });
     }
 
-    /** @test */
+    #[Test]
     public function it_includes_authentication_headers()
     {
         Http::fake([
@@ -327,7 +328,7 @@ class BlingServiceTest extends TestCase
         });
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_empty_response()
     {
         Http::fake([
@@ -340,7 +341,7 @@ class BlingServiceTest extends TestCase
         $this->assertEmpty($invoices);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_get_invoice_pdf_url()
     {
         $mockResponse = [
@@ -363,7 +364,7 @@ class BlingServiceTest extends TestCase
         });
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_null_when_pdf_url_not_found()
     {
         Http::fake([
@@ -375,7 +376,7 @@ class BlingServiceTest extends TestCase
         $this->assertNull($pdfUrl);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_pdf_url_api_errors()
     {
         Http::fake([
@@ -387,7 +388,7 @@ class BlingServiceTest extends TestCase
         $this->assertNull($pdfUrl);
     }
 
-    /** @test */
+    #[Test]
     public function it_throws_exception_when_bearer_token_not_configured()
     {
         Config::set('bling.api.bearer_token', null);
@@ -398,7 +399,7 @@ class BlingServiceTest extends TestCase
         new BlingService();
     }
 
-    /** @test */
+    #[Test]
     public function it_throws_exception_when_bearer_token_is_empty()
     {
         Config::set('bling.api.bearer_token', '');

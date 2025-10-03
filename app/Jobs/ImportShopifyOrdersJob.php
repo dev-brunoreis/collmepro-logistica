@@ -38,7 +38,7 @@ class ImportShopifyOrdersJob implements ShouldQueue
             Log::info("Starting Shopify orders import for system: {$this->system}");
 
             $shopifyService = app(ShopifyService::class);
-            $orders = $shopifyService->fetchOrders($this->system);
+            $orders = $shopifyService->fetchOrders('collme_beauty'); // Use 'collme_beauty' for the service
 
             if (empty($orders)) {
                 Log::info("No orders found for system: {$this->system}");
@@ -79,7 +79,7 @@ class ImportShopifyOrdersJob implements ShouldQueue
     {
         try {
             // Check if order already exists
-            $existingOrder = Order::where('system', $this->system)
+            $existingOrder = Order::where('system', 'collme_beauty')
                 ->where('order_number', $orderData['number'])
                 ->first();
 
@@ -90,7 +90,7 @@ class ImportShopifyOrdersJob implements ShouldQueue
 
             // Create new order
             $order = Order::create([
-                'system' => $this->system,
+                'system' => 'collme_beauty', // Always use collme_beauty for Shopify orders
                 'order_number' => $orderData['number'],
                 'customer_name' => $orderData['customer_name'],
                 'seller_name' => $orderData['seller_name'],

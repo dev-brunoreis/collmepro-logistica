@@ -9,7 +9,8 @@ use Exception;
 class ShopifyService
 {
     private array $endpoints = [
-        'collme_beauty' => 'https://collmebeauty.myshopify.com/admin/api/2024-01/orders.json',
+        'shopify' => '/admin/api/2024-01/orders.json',
+        'collme_beauty' => '/admin/api/2024-01/orders.json',
     ];
 
     private array $credentials = [
@@ -38,7 +39,7 @@ class ShopifyService
     /**
      * Fetch orders from Shopify API.
      */
-    public function fetchOrders(string $system): array
+    public function fetchOrders(string $system = 'shopify'): array
     {
         try {
             if (!isset($this->endpoints[$system])) {
@@ -58,6 +59,11 @@ class ShopifyService
             $data = $response->json();
             $orders = $data['orders'] ?? [];
             
+            Log::info("Shopify orders fetched", [
+                'system' => $system,
+                'total_orders' => count($orders)
+            ]);
+            
             // Filter only paid orders and validate data
             return $this->filterAndValidateOrders($orders);
 
@@ -76,26 +82,43 @@ class ShopifyService
     private function makeApiRequest(string $system)
     {
         $endpoint = $this->endpoints[$system];
-        $credentials = $this->credentials[$system];
+        
+        // Reload credentials to ensure fresh config values
+        $this->loadCredentials();
+        $credentials = $this->credentials['collme_beauty']; // Always use collme_beauty credentials for Shopify
 
         // Em ambiente de teste, usar credenciais mock
         if (app()->environment('testing')) {
             $credentials = [
                 'access_token' => 'test_token',
-                'shop_domain' => 'test.myshopify.com'
+                'shop_domain' => 'https://collmebeauty.myshopify.com'
             ];
         }
 
         if (!$credentials['access_token'] || !$credentials['shop_domain']) {
-            throw new Exception("Missing credentials for {$system}");
+            throw new Exception("Missing credentials for {$system}. Please check SHOPIFY_COLLME_BEAUTY_ACCESS_TOKEN and SHOPIFY_COLLME_BEAUTY_SHOP_DOMAIN environment variables.");
         }
+
+        // Construir URL completa com domínio da loja
+        $shopDomain = $credentials['shop_domain'];
+        if (!str_starts_with($shopDomain, 'https://')) {
+            $shopDomain = 'https://' . $shopDomain;
+        }
+        
+        $fullUrl = $shopDomain . $endpoint;
+
+        Log::info("Making Shopify API request", [
+            'system' => $system,
+            'url' => $fullUrl,
+            'shop_domain' => $shopDomain
+        ]);
 
         return Http::timeout(30)
             ->withHeaders([
                 'X-Shopify-Access-Token' => $credentials['access_token'],
                 'Content-Type' => 'application/json',
             ])
-            ->get($endpoint, [
+            ->get($fullUrl, [
                 'financial_status' => 'paid',
                 'status' => 'open',
                 'limit' => 100,

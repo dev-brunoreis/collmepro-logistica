@@ -40,16 +40,16 @@ return [
             'consumer_key' => env('WOOCOMMERCE_COLLMEPRO_CONSUMER_KEY'),
             'consumer_secret' => env('WOOCOMMERCE_COLLMEPRO_CONSUMER_SECRET'),
         ],
-        'collmepro_wholesale' => [
-            'consumer_key' => env('WOOCOMMERCE_COLLMEPRO_WHOLESALE_CONSUMER_KEY'),
-            'consumer_secret' => env('WOOCOMMERCE_COLLMEPRO_WHOLESALE_CONSUMER_SECRET'),
+        'collmepro_atacadista' => [
+            'consumer_key' => env('WOOCOMMERCE_COLLMEPRO_ATACADISTA_CONSUMER_KEY'),
+            'consumer_secret' => env('WOOCOMMERCE_COLLMEPRO_ATACADISTA_CONSUMER_SECRET'),
         ],
     ],
 
     'shopify' => [
         'collme_beauty' => [
             'access_token' => env('SHOPIFY_COLLME_BEAUTY_ACCESS_TOKEN'),
-            'shop_domain' => env('SHOPIFY_COLLME_BEAUTY_SHOP_DOMAIN', 'collmebeauty.myshopify.com'),
+            'shop_domain' => env('SHOPIFY_COLLME_BEAUTY_SHOP_DOMAIN'),
         ],
     ],
 

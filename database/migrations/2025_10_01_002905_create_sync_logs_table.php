@@ -21,7 +21,7 @@ return new class extends Migration
             $table->enum('sync_type', ['order_import', 'invoice_sync', 'tracking_fetch'])->index();
             
             // Sistema origem (para imports de pedidos)
-            $table->string('system')->nullable()->index(); // collmepro, collmepro_wholesale, collme_beauty
+            $table->string('system')->nullable()->index(); // collmepro, collmepro_atacadista, collme_beauty
             
             // Status da sincronização
             $table->enum('status', ['pending', 'processing', 'success', 'failed', 'skipped'])->default('pending')->index();

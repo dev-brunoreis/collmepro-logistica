@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Services\BlingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class BlingIntegrationTest extends TestCase
@@ -25,7 +26,7 @@ class BlingIntegrationTest extends TestCase
         $this->blingService = app(BlingService::class);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_connect_to_bling_api()
     {
         // Test with a simple request to check connectivity
@@ -35,7 +36,7 @@ class BlingIntegrationTest extends TestCase
         $this->assertIsArray($invoices);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_fetch_authorized_invoices()
     {
         $invoices = $this->blingService->fetchAuthorizedInvoices();
@@ -52,7 +53,7 @@ class BlingIntegrationTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function it_can_fetch_invoices_by_date_range()
     {
         // Test with last 30 days
@@ -72,7 +73,7 @@ class BlingIntegrationTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function it_validates_invoice_data_structure()
     {
         $invoices = $this->blingService->fetchInvoices(['limite' => 5]);
@@ -100,7 +101,7 @@ class BlingIntegrationTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_api_errors_gracefully()
     {
         // This test ensures our service handles API errors without crashing
@@ -110,7 +111,7 @@ class BlingIntegrationTest extends TestCase
         $this->assertIsArray($invoices);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_get_pdf_url_for_existing_invoice()
     {
         // First, get an invoice
@@ -132,7 +133,7 @@ class BlingIntegrationTest extends TestCase
         }
     }
 
-    /** @test */
+    #[Test]
     public function it_respects_rate_limiting()
     {
         $startTime = microtime(true);

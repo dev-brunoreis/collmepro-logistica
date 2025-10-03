@@ -4,7 +4,7 @@
 
 The system is configured to automatically import orders every 5 minutes from:
 - **Collmepro** (pro.collmepro.com.br)
-- **Collmepro Wholesale** (atacadista.collmepro.com.br)
+- **Collmepro Atacadista** (atacadista.collmepro.com.br)
 - **Collme Beauty** (collmebeauty.com.br)
 
 ## ⚙️ Current Configuration
@@ -12,7 +12,7 @@ The system is configured to automatically import orders every 5 minutes from:
 ### ✅ Scheduler Configured
 - **Frequency**: Every 5 minutes
 - **Overlap prevention**: `withoutOverlapping()`
-- **Systems**: All three (collmepro, collmepro_wholesale, collme_beauty)
+- **Systems**: All three (collmepro, collmepro_atacadista, collme_beauty)
 
 ### ✅ Duplicate Prevention
 The system prevents duplicates by checking if the order already exists:
@@ -114,7 +114,7 @@ php artisan orders:import
 
 # Import specific system
 php artisan orders:import collmepro
-php artisan orders:import collmepro_wholesale
+php artisan orders:import collmepro_atacadista
 ```
 
 ### Scheduler Management
@@ -175,7 +175,7 @@ Logs are saved in `storage/logs/laravel.log`:
 
 ### Last Execution
 - **Collmepro**: 100 orders (0 new, 100 duplicates)
-- **Wholesale**: 4 orders (0 new, 4 duplicates)
+- **Atacadista**: 4 orders (0 new, 4 duplicates)
 - **Total**: 104 unique orders
 
 ### Performance

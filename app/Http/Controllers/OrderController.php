@@ -119,7 +119,7 @@ class OrderController extends Controller
             ]),
             'systems' => [
                 'collmepro' => 'Collmepro',
-                'collmepro_wholesale' => 'Collmepro Atacadista',
+                'collmepro_atacadista' => 'Collmepro Atacadista',
                 'collme_beauty' => 'Collme Beauty', // Preparado para Shopify
             ],
             'tracking_statuses' => [
@@ -275,7 +275,7 @@ class OrderController extends Controller
             Queue::push(new ImportWooCommerceOrdersJob('collmepro'));
             $importedSystems[] = 'Collmepro';
             
-            Queue::push(new ImportWooCommerceOrdersJob('collmepro_wholesale'));
+            Queue::push(new ImportWooCommerceOrdersJob('collmepro_atacadista'));
             $importedSystems[] = 'Collmepro Atacadista';
             
             // Dispatch Shopify import job
@@ -352,7 +352,7 @@ class OrderController extends Controller
             Queue::push(new ImportWooCommerceOrdersJob('collmepro'));
             $importedSystems[] = 'Collmepro';
             
-            Queue::push(new ImportWooCommerceOrdersJob('collmepro_wholesale'));
+            Queue::push(new ImportWooCommerceOrdersJob('collmepro_atacadista'));
             $importedSystems[] = 'Collmepro Atacadista';
             
             // Dispatch Shopify import job
@@ -466,7 +466,7 @@ class OrderController extends Controller
     {
         return match ($system) {
             'collmepro' => 'Collmepro',
-            'collmepro_wholesale' => 'Collmepro Atacadista',
+            'collmepro_atacadista' => 'Collmepro Atacadista',
             'collme_beauty' => 'Collme Beauty',
             default => ucfirst(str_replace('_', ' ', $system)),
         };

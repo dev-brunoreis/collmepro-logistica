@@ -24,9 +24,9 @@ Tools like [VSCode with the Mermaid extension](https://marketplace.visualstudio.
 
 ### Orders
 - [x] Write tests for WooCommerce API mock (import paid orders)  
-- [ ] Write tests for Shopify API mock (import paid orders)  
-- [x] Implement WooCommerce orders import (Collmepro, Wholesale)  
-- [ ] Implement Shopify orders import (Collme Beauty)  
+- [X] Write tests for Shopify API mock (import paid orders)  
+- [x] Implement WooCommerce orders import (Collmepro, Atacadista)  
+- [X] Implement Shopify orders import (Collme Beauty)  
 - [ ] Write tests for orders storage and search/filter  
 - [x] Implement Orders screen with columns:  
   - [x] System  

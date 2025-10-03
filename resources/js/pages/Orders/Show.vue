@@ -95,7 +95,7 @@ const getSystemBadgeClass = (system: string) => {
     switch (system) {
         case 'collmepro':
             return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
-        case 'collmepro_wholesale':
+        case 'collmepro_atacadista':
             return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300';
         case 'collme_beauty':
             return 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-300';

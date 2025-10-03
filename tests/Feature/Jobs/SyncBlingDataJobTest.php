@@ -9,13 +9,14 @@ use App\Services\BlingService;
 use App\Services\BlingLogisticsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class SyncBlingDataJobTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
+    #[Test]
     public function it_can_sync_specific_order_with_bling()
     {
         // Create test order
@@ -94,7 +95,7 @@ class SyncBlingDataJobTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_sync_by_order_number()
     {
         // Create test order
@@ -165,7 +166,7 @@ class SyncBlingDataJobTest extends TestCase
         $this->assertEquals('7654', $order->nfe_number);
     }
 
-    /** @test */
+    #[Test]
     public function it_skips_orders_without_invoice_in_bling()
     {
         // Create test order
@@ -194,7 +195,7 @@ class SyncBlingDataJobTest extends TestCase
         $this->assertNull($order->nfe_pdf_url);
     }
 
-    /** @test */
+    #[Test]
     public function it_skips_invalid_invoices()
     {
         // Create test order
@@ -231,7 +232,7 @@ class SyncBlingDataJobTest extends TestCase
         $this->assertNull($order->nfe_number);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_orders_without_invoice_for_bulk_sync()
     {
         // Create multiple test orders without NFE
@@ -327,7 +328,7 @@ class SyncBlingDataJobTest extends TestCase
         $this->assertNull($orders[2]->nfe_number);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_job_failures_gracefully()
     {
         // Create test order
@@ -356,7 +357,7 @@ class SyncBlingDataJobTest extends TestCase
         $this->assertNull($order->nfe_pdf_url);
     }
 
-    /** @test */
+    #[Test]
     public function it_processes_invoices_with_status_6_emitida_danfe()
     {
         // Create test order
@@ -450,7 +451,7 @@ class SyncBlingDataJobTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function it_fetches_tracking_info_when_invoice_has_danfe()
     {
         // Create test order
@@ -549,7 +550,7 @@ class SyncBlingDataJobTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function it_skips_orders_that_already_have_nfe()
     {
         // Create test order that already has NFE with tracking
@@ -585,7 +586,7 @@ class SyncBlingDataJobTest extends TestCase
         $this->assertEquals('https://example.com/nfe/1234.pdf', $order->nfe_pdf_url);
     }
 
-    /** @test */
+    #[Test]
     public function it_creates_invoice_record_correctly()
     {
         // Create test order

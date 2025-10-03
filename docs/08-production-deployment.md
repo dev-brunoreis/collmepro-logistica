@@ -340,7 +340,7 @@ cd /var/www/collmepro-logistica
 sudo -u collmepro php artisan tinker --execute="
 \$service = app(App\Services\WooCommerceService::class);
 echo 'Collmepro: ' . (\$service->testConnection('collmepro') ? 'OK' : 'FAILED') . PHP_EOL;
-echo 'Wholesale: ' . (\$service->testConnection('collmepro_wholesale') ? 'OK' : 'FAILED') . PHP_EOL;
+echo 'Atacadista: ' . (\$service->testConnection('collmepro_atacadista') ? 'OK' : 'FAILED') . PHP_EOL;
 "
 ```
 

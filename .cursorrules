@@ -43,7 +43,7 @@ You are working on the Collmepro Logistics System - a centralized logistics syst
 - **labels**: Shipping labels
 
 ## External Integrations
-- **WooCommerce API**: Order import (Collmepro, Collmepro Wholesale)
+- **WooCommerce API**: Order import (Collmepro, Collmepro Atacadista)
 - **Shopify API**: Order import (Collme Beauty)
 - **Bling API**: NFE data and shipping labels
 - **Correios API**: Tracking

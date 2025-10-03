@@ -10,7 +10,7 @@ class WooCommerceService
 {
     private array $endpoints = [
         'collmepro' => 'https://pro.collmepro.com.br/app/wp-json/wc/v3/orders',
-        'collmepro_wholesale' => 'https://atacadista.collmepro.com.br/app/wp-json/wc/v3/orders',
+        'collmepro_atacadista' => 'https://atacadista.collmepro.com.br/app/wp-json/wc/v3/orders',
     ];
 
     private array $credentials = [
@@ -18,7 +18,7 @@ class WooCommerceService
             'consumer_key' => null,
             'consumer_secret' => null,
         ],
-        'collmepro_wholesale' => [
+        'collmepro_atacadista' => [
             'consumer_key' => null,
             'consumer_secret' => null,
         ],
@@ -39,9 +39,9 @@ class WooCommerceService
             'consumer_secret' => config('services.woocommerce.collmepro.consumer_secret'),
         ];
 
-        $this->credentials['collmepro_wholesale'] = [
-            'consumer_key' => config('services.woocommerce.collmepro_wholesale.consumer_key'),
-            'consumer_secret' => config('services.woocommerce.collmepro_wholesale.consumer_secret'),
+        $this->credentials['collmepro_atacadista'] = [
+            'consumer_key' => config('services.woocommerce.collmepro_atacadista.consumer_key'),
+            'consumer_secret' => config('services.woocommerce.collmepro_atacadista.consumer_secret'),
         ];
     }
 

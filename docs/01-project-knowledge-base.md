@@ -32,7 +32,7 @@ Centralized logistics system for tracking orders from Collmepro and Collme Beaut
 ## External Integrations
 
 ### 1. WooCommerce API
-- **Systems**: Collmepro, Collmepro Wholesale
+- **Systems**: Collmepro, Collmepro Atacadista
 - **Data**: order number, date, customer name, seller
 - **Status**: Only paid orders (PROCESSING)
 
@@ -56,7 +56,7 @@ Centralized logistics system for tracking orders from Collmepro and Collme Beaut
 
 ### 1. Orders Screen (Admin/Manager)
 **Columns**:
-- SYSTEM (Collmepro, Wholesale, Collme Beauty)
+- SYSTEM (Collmepro, Atacadista, Collme Beauty)
 - ORDER NUMBER
 - CUSTOMER NAME
 - DATE
@@ -253,7 +253,7 @@ npm run build
 
 ### Phase 2: Order Import ✅ COMPLETED
 - **Order Model**: Complete order management with relationships
-- **WooCommerce Integration**: Import orders from Collmepro and Collmepro Wholesale
+- **WooCommerce Integration**: Import orders from Collmepro and Collmepro Atacadista
 - **Shopify Integration**: Import orders from Collme Beauty
 - **Background Jobs**: Automatic order import every minute
 - **Order Status Tracking**: Picking, packing, picked_up with history

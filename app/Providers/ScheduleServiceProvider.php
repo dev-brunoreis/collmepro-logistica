@@ -29,42 +29,35 @@ class ScheduleServiceProvider extends ServiceProvider
             $this->app->booted(function () {
                 $schedule = $this->app->make(Schedule::class);
                 
-                // Import orders from WooCommerce Collmepro every 15 minutes
                 $schedule->job(new ImportWooCommerceOrdersJob('collmepro'))
                     ->everyMinute()
                     ->withoutOverlapping()
-                    ->description('Import orders from Collmepro WooCommerce');
+                    ->description('Import orders from Collmepro WooCommerce every minute');
 
-                // Import orders from WooCommerce Wholesale every 15 minutes
-                $schedule->job(new ImportWooCommerceOrdersJob('collmepro_wholesale'))
+                $schedule->job(new ImportWooCommerceOrdersJob('collmepro_atacadista'))
                     ->everyMinute()
                     ->withoutOverlapping()
-                    ->description('Import orders from Collmepro Wholesale WooCommerce');
+                    ->description('Import orders from Collmepro Atacadista WooCommerce every minute');
 
-                // Import orders from Shopify Collme Beauty every 15 minutes
-                // Uncomment when ready to use
-                // $schedule->job(new ImportShopifyOrdersJob('collme_beauty'))
-                //     ->everyFifteenMinutes()
-                //     ->withoutOverlapping()
-                //     ->description('Import orders from Collme Beauty Shopify');
+                $schedule->job(new ImportShopifyOrdersJob('collme_beauty'))
+                    ->everyMinute()
+                    ->withoutOverlapping()
+                    ->description('Import orders from Collme Beauty Shopify every minute');
 
                 $schedule->job(new ReprocessPendingInvoicesJob())
                     ->everyMinute()
                     ->withoutOverlapping()
-                    ->description('Reprocess pending invoices (status 5 → 6)');
+                    ->description('Reprocess pending invoices (status 5 → 6) every minute');
 
-                // Busca rastreios faltantes para pedidos que têm NFE mas não têm tracking
                 $schedule->job(new FetchMissingTrackingJob())
                     ->everyMinute()
                     ->withoutOverlapping()
-                    ->description('Fetch missing tracking codes for orders with NFE');
+                    ->description('Fetch missing tracking codes for orders with NFE every minute');
 
-                // Atualiza status de rastreamento para pedidos que já têm tracking code
-                // Roda a cada 2 horas para não sobrecarregar a API
                 $schedule->job(new UpdateTrackingStatusJob())
                     ->everyMinute()
                     ->withoutOverlapping()
-                    ->description('Update tracking status for orders with tracking codes');
+                    ->description('Update tracking status for orders with tracking codes every minute');
             });
         }
     }
