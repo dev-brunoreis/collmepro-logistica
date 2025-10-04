@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, onMounted, onUnmounted, watch, reactive } from 'vue';
 import { Search, Filter, Eye, CheckCircle, XCircle, Package, Truck, ExternalLink, RefreshCw, AlertTriangle, ZoomIn, Download } from 'lucide-vue-next';
 import axios from '@/lib/axios';
 import { useOrderBroadcasting } from '@/composables/useBroadcasting';
@@ -112,33 +112,48 @@ const user = page.props.auth.user as User;
 // Broadcasting setup
 const { isConnected, lastUpdate } = useOrderBroadcasting();
 
-// Watch for real-time updates and update local order data
+// Use the original props data and create a reactive trigger for updates
+const ordersData = ref(props.orders.data);
+const updateTrigger = ref(0);
+
+// Watch for real-time updates and force interface refresh
 watch(lastUpdate, (update) => {
     if (update) {
-        // Find the order in the current list and update its status
-        const orderIndex = props.orders.data.findIndex(order => order.id === update.order.id);
+        // Find and update the order data directly
+        const orderIndex = ordersData.value.findIndex(order => order.id === update.order.id);
         if (orderIndex !== -1) {
-            const order = props.orders.data[orderIndex];
-            if (order.order_status) {
-                order.order_status[update.action] = update.status;
-                
-                if (update.status) {
-                    // Set the marked by and marked at fields
-                    order.order_status[`${update.action}_marked_by`] = update.user.name;
-                    order.order_status[`${update.action}_marked_at`] = update.timestamp;
-                } else {
-                    // Clear the marked by and marked at fields
-                    order.order_status[`${update.action}_marked_by`] = null;
-                    order.order_status[`${update.action}_marked_at`] = null;
-                }
+            const order = ordersData.value[orderIndex];
+            
+            // Ensure order_status exists
+            if (!order.order_status) {
+                order.order_status = {
+                    picking: false,
+                    packing: false,
+                    picked_up: false
+                };
             }
+            
+            // Update the specific status
+            order.order_status[update.action] = update.status;
+            
+            if (update.status) {
+                // Set the marked by and marked at fields
+                order.order_status[`${update.action}_marked_by`] = update.user.name;
+                order.order_status[`${update.action}_marked_at`] = update.timestamp;
+            } else {
+                // Clear the marked by and marked at fields
+                order.order_status[`${update.action}_marked_by`] = null;
+                order.order_status[`${update.action}_marked_at`] = null;
+            }
+            
+            // Force reactivity update
+            updateTrigger.value++;
         }
         
         // Show notification to user
         if (update.user.id !== user.id) {
             const actionName = update.action_name;
             const statusText = update.status ? 'marcado como concluído' : 'desmarcado';
-            // You can add a toast notification here if you have one
             console.log(`${update.user.name} ${statusText} ${actionName} no pedido ${update.order.numero}`);
         }
     }
@@ -237,7 +252,7 @@ const updateOrderStatus = (orderId: number, action: string, currentStatus: boole
     const newStatus = !currentStatus;
     
     // Find the order data
-    const order = props.orders.data.find(o => o.id === orderId);
+    const order = ordersData.value.find(o => o.id === orderId);
     
     // Set modal data
     confirmData.value = {
@@ -586,8 +601,8 @@ const getCurrentPerPage = () => {
                         </thead>
                         <tbody>
                             <tr
-                                v-for="order in props.orders.data || []"
-                                :key="order.id"
+                                v-for="order in ordersData || []"
+                                :key="`${order.id}-${updateTrigger}`"
                                 class="border-b border-sidebar-border/70 dark:border-sidebar-border last:border-b-0 hover:bg-sidebar-border/20"
                             >
                             <td class="px-4 py-3">

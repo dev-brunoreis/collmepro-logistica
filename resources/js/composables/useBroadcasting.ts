@@ -31,20 +31,34 @@ export function useOrderBroadcasting() {
                 return;
             }
             
+            console.log('Echo loaded, connecting to orders channel...');
+            
+            // Wait a bit for connection to be established
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
             // Listen to the orders channel for all order updates
-            echo.channel('orders')
-                .listen('status.updated', (data: any) => {
-                    // Parse the data if it's a string (double-encoded JSON)
-                    let parsedData: OrderStatusUpdate;
-                    if (typeof data.data === 'string') {
-                        parsedData = JSON.parse(data.data);
-                    } else {
-                        parsedData = data.data || data;
-                    }
-                    
-                    lastUpdate.value = parsedData;
-                    console.log('Order status updated:', parsedData);
-                });
+            const channel = echo.channel('orders');
+            
+            channel.listen('status.updated', (data: any) => {
+                console.log('Raw data received:', data);
+                
+                // Parse the data if it's a string (double-encoded JSON)
+                let parsedData: OrderStatusUpdate;
+                if (typeof data.data === 'string') {
+                    parsedData = JSON.parse(data.data);
+                } else {
+                    parsedData = data.data || data;
+                }
+                
+                console.log('Parsed data:', parsedData);
+                lastUpdate.value = parsedData;
+                console.log('Order status updated:', parsedData);
+            });
+
+            // Also listen to the event with a different syntax
+            channel.listen('.status.updated', (data: any) => {
+                lastUpdate.value = data;
+            });
 
             isConnected.value = true;
             console.log('Connected to orders channel');

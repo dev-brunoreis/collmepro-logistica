@@ -25,10 +25,24 @@ try {
         disableStats: true,
         enabledTransports: ['ws', 'wss'],
         cluster: 'local',
-        disableAutoConnect: true, // Don't auto-connect to avoid errors
+        disableAutoConnect: false, // Enable auto-connect
+    });
+
+    // Add connection event listeners for debugging
+    echo.connector.pusher.connection.bind('connected', () => {
+        console.log('Echo: Connected to server');
+    });
+
+    echo.connector.pusher.connection.bind('disconnected', () => {
+        console.log('Echo: Disconnected from server');
+    });
+
+    echo.connector.pusher.connection.bind('error', (error: any) => {
+        console.error('Echo: Connection error', error);
     });
 
     window.Echo = echo;
+    console.log('Echo initialized successfully');
 } catch (error) {
     console.warn('Broadcasting not configured:', error);
 }
