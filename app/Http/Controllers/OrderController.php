@@ -28,18 +28,27 @@ class OrderController extends Controller
     {
         $query = OrderSummary::with(['orderStatus']);
 
-        // Search filter
+        // Search filter - improved to include seller name, tracking and NFE number
         if ($request->filled('search')) {
             $search = $request->get('search');
             $query->where(function ($q) use ($search) {
                 $q->where('numero', 'like', "%{$search}%")
                   ->orWhere('contato_nome', 'like', "%{$search}%")
                   ->orWhere('bling_id', 'like', "%{$search}%")
-                  ->orWhere('tracking_code', 'like', "%{$search}%");
+                  ->orWhere('tracking_code', 'like', "%{$search}%")
+                  ->orWhere('seller_name', 'like', "%{$search}%")
+                  ->orWhereJsonContains('raw_order_data->vendedor->nome', $search)
+                  ->orWhereJsonContains('raw_invoice_data->rastreamento->codigo', $search)
+                  ->orWhereJsonContains('raw_invoice_data->numero', $search);
             });
         }
 
-        // Source filter (now only 'bling')
+        // System filter (now only 'bling')
+        if ($request->filled('system')) {
+            $query->where('source', $request->get('system'));
+        }
+        
+        // Source filter (legacy support)
         if ($request->filled('source')) {
             $query->where('source', $request->get('source'));
         }
@@ -65,6 +74,44 @@ class OrderController extends Controller
         // Data processed filter
         if ($request->filled('data_processed')) {
             $query->where('data_processed', $request->get('data_processed') === '1');
+        }
+
+        // Tracking status filter
+        if ($request->filled('tracking_status')) {
+            $trackingStatus = $request->get('tracking_status');
+            if ($trackingStatus === 'with_tracking') {
+                $query->whereNotNull('tracking_code')
+                      ->where('tracking_code', '!=', '');
+            } elseif ($trackingStatus === 'without_tracking') {
+                $query->where(function ($q) {
+                    $q->whereNull('tracking_code')
+                      ->orWhere('tracking_code', '');
+                });
+            } else {
+                // Filter by specific tracking status from JSON data
+                // We need to find the original status name from the tracking_statuses array
+                $trackingStatuses = $this->getTrackingStatuses($query);
+                $originalStatusName = $trackingStatuses[$trackingStatus] ?? $trackingStatus;
+                $query->whereJsonContains('raw_tracking_data->rastreamento->situacao', $originalStatusName);
+            }
+        }
+
+        // Logistics provider filter
+        if ($request->filled('logistics_provider')) {
+            $logisticsProvider = $request->get('logistics_provider');
+            $query->where(function ($q) use ($logisticsProvider) {
+                $q->whereJsonContains('raw_invoice_data->transporte->transportador->nome', $logisticsProvider)
+                  ->orWhereJsonContains('raw_tracking_data->servico->nome', $logisticsProvider);
+            });
+        }
+
+        // Seller filter
+        if ($request->filled('seller')) {
+            $seller = $request->get('seller');
+            $query->where(function ($q) use ($seller) {
+                $q->where('seller_name', 'like', "%{$seller}%")
+                  ->orWhereJsonContains('raw_order_data->vendedor->nome', $seller);
+            });
         }
 
         // Allow custom pagination size, default to 100
@@ -119,7 +166,14 @@ class OrderController extends Controller
                 // Get tracking status from raw data
                 $trackingStatus = null;
                 if ($trackingData && isset($trackingData['rastreamento']['situacao'])) {
-                    $trackingStatus = $trackingData['rastreamento']['situacao'];
+                    $statusCode = $trackingData['rastreamento']['situacao'];
+                    $trackingStatus = $this->mapTrackingStatus($statusCode);
+                }
+                
+                // Also check invoice data for tracking status
+                if (!$trackingStatus && isset($order->raw_invoice_data['rastreamento']['situacao'])) {
+                    $statusCode = $order->raw_invoice_data['rastreamento']['situacao'];
+                    $trackingStatus = $this->mapTrackingStatus($statusCode);
                 }
                 
                 return [
@@ -162,7 +216,7 @@ class OrderController extends Controller
                 ];
             }),
             'filters' => $request->only([
-                'search', 'source', 'situacao', 'date_from', 'date_to', 'contato', 'data_processed'
+                'search', 'system', 'tracking_status', 'logistics_provider', 'seller', 'source', 'situacao', 'date_from', 'date_to', 'contato', 'data_processed'
             ]),
             'situacoes' => [
                 1 => 'Em Aberto',
@@ -170,9 +224,11 @@ class OrderController extends Controller
                 3 => 'Finalizado',
                 4 => 'Cancelado',
             ],
-            'sources' => [
+            'systems' => [
                 'bling' => 'Bling',
             ],
+            'tracking_statuses' => $this->getTrackingStatuses($query),
+            'logistics_providers' => $this->getLogisticsProviders($query),
         ]);
     }
 
@@ -346,10 +402,129 @@ class OrderController extends Controller
     }
 
     /**
+     * Get unique tracking statuses from orders
+     */
+    private function getTrackingStatuses($query)
+    {
+        $statuses = collect([
+            'with_tracking' => 'Com Rastreamento',
+            'without_tracking' => 'Sem Rastreamento',
+        ]);
+        
+        try {
+            // Get statuses from raw_tracking_data
+            $trackingStatuses = OrderSummary::whereNotNull('raw_tracking_data')
+                ->get()
+                ->pluck('raw_tracking_data')
+                ->filter()
+                ->map(function ($data) {
+                    if (is_array($data) && isset($data['rastreamento']['situacao'])) {
+                        return $data['rastreamento']['situacao'];
+                    }
+                    return null;
+                })
+                ->filter()
+                ->unique()
+                ->map(function ($status) {
+                    // Create a safe key from the status name
+                    $key = strtolower($status);
+                    $key = str_replace([' ', '-', 'ç', 'ã', 'õ', 'é', 'ê'], ['_', '_', 'c', 'a', 'o', 'e', 'e'], $key);
+                    $key = preg_replace('/[^a-z0-9_]/', '_', $key);
+                    $key = preg_replace('/_+/', '_', $key);
+                    $key = trim($key, '_');
+                    
+                    return [
+                        'key' => $key,
+                        'label' => $status
+                    ];
+                })
+                ->mapWithKeys(function ($item) {
+                    return [$item['key'] => $item['label']];
+                });
+                
+            $statuses = $statuses->merge($trackingStatuses)->unique();
+            
+            return $statuses->toArray();
+        } catch (\Exception $e) {
+            // Return default statuses if there's an error
+            return $statuses->toArray();
+        }
+    }
+
+    /**
+     * Get unique logistics providers from orders
+     */
+    private function getLogisticsProviders($query)
+    {
+        $providers = collect();
+        
+        try {
+            // Get providers from raw_invoice_data
+            $invoiceProviders = OrderSummary::whereNotNull('raw_invoice_data')
+                ->get()
+                ->pluck('raw_invoice_data')
+                ->filter()
+                ->map(function ($data) {
+                    if (is_array($data) && isset($data['transporte']['transportador']['nome'])) {
+                        return $data['transporte']['transportador']['nome'];
+                    }
+                    return null;
+                })
+                ->filter()
+                ->unique();
+                
+            // Get providers from raw_tracking_data
+            $trackingProviders = OrderSummary::whereNotNull('raw_tracking_data')
+                ->get()
+                ->pluck('raw_tracking_data')
+                ->filter()
+                ->map(function ($data) {
+                    if (is_array($data) && isset($data['servico']['nome'])) {
+                        return $data['servico']['nome'];
+                    }
+                    return null;
+                })
+                ->filter()
+                ->unique();
+                
+            $providers = $providers->merge($invoiceProviders)->merge($trackingProviders)->unique()->sort()->values();
+            
+            return $providers->mapWithKeys(function ($provider) {
+                return [$provider => $provider];
+            })->toArray();
+        } catch (\Exception $e) {
+            // Return empty array if there's an error
+            return [];
+        }
+    }
+
+    /**
+     * Map tracking status code to human readable text
+     */
+    private function mapTrackingStatus($statusCode)
+    {
+        $statusMap = [
+            0 => 'Objeto postado',
+            1 => 'Objeto em trânsito',
+            2 => 'Objeto em trânsito - por favor aguarde',
+            3 => 'Objeto saiu para entrega ao destinatário',
+            4 => 'Objeto entregue ao destinatário',
+            5 => 'Objeto devolvido ao remetente',
+            6 => 'Objeto extraviado',
+            7 => 'Objeto em trânsito - por favor aguarde',
+            8 => 'Objeto em trânsito - por favor aguarde',
+            9 => 'Objeto em trânsito - por favor aguarde',
+        ];
+        
+        return $statusMap[$statusCode] ?? 'Status desconhecido';
+    }
+
+    /**
      * Build tracking URL based on logistics provider
      */
     private function buildTrackingUrl(string $trackingCode, string $logisticsProvider): string
     {
-        
+        // TODO: Implement tracking URL building logic based on provider
+        return '';
     }
 }

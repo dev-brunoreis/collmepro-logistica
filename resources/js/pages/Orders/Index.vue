@@ -399,7 +399,7 @@ const getCurrentPerPage = () => {
                                 type="text"
                                 :value="props.filters?.search || ''"
                                 @input="search(($event.target as HTMLInputElement).value)"
-                                placeholder="Buscar por número, cliente, vendedor ou tracking..."
+                                placeholder="Buscar por pedido, cliente, NFE ou rastreamento..."
                                 class="w-full rounded-lg border border-sidebar-border/70 bg-background pl-10 pr-4 py-2 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-sidebar-border"
                             />
                         </div>
