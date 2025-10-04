@@ -13,7 +13,7 @@ class OrderStatusHistory extends Model
     protected $table = 'order_status_history';
 
     protected $fillable = [
-        'order_id',
+        'order_summary_id',
         'status_type',
         'status_value',
         'user_id',
@@ -26,11 +26,11 @@ class OrderStatusHistory extends Model
     ];
 
     /**
-     * Get the order that owns the status history.
+     * Get the order summary that owns the status history.
      */
-    public function order(): BelongsTo
+    public function orderSummary(): BelongsTo
     {
-        return $this->belongsTo(Order::class);
+        return $this->belongsTo(OrderSummary::class);
     }
 
     /**

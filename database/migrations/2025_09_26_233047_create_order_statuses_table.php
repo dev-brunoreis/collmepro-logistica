@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('order_statuses', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('order_id')->constrained()->onDelete('cascade');
+            $table->foreignId('order_summary_id')->constrained('order_summary')->onDelete('cascade');
             $table->boolean('picking')->default(false);
             $table->foreignId('picking_marked_by')->nullable()->constrained('users');
             $table->datetime('picking_marked_at')->nullable();

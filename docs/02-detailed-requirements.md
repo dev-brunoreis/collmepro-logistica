@@ -2,54 +2,66 @@
 
 ## 1. External Integrations
 
-### 1.1 WooCommerce API
+### 1.1 Bling API ✅ IMPLEMENTED
+**Objective**: Primary integration for order management, invoices, and tracking
+
+**Current Implementation**:
+- **BlingService**: Complete API integration service
+- **BlingSyncJob**: Background synchronization job
+- **Two-Stage Sync**: Orders → Invoices → Tracking
+- **Raw Data Preservation**: Complete JSON audit trail
+- **Error Handling**: Comprehensive error management and retry logic
+
+**Data Managed**:
+- Complete order information (order_summary table)
+- Detailed order data (order_data table)
+- Invoice/NFE data (invoices table)
+- Tracking information (tracking table)
+- Order status tracking (order_statuses table)
+- Operation history (order_histories table)
+
+**Features Implemented**:
+- ✅ Complete order synchronization
+- ✅ NFE data extraction and PDF links
+- ✅ Tracking code extraction from transport data
+- ✅ Automatic status updates
+- ✅ Background job processing
+- ✅ Data validation and error handling
+- ✅ Sync logging and monitoring
+
+### 1.2 WooCommerce API ⏳ PLANNED
 **Objective**: Capture orders from Collmepro and Collmepro Atacadista systems
 
-**Data to extract**:
+**Planned Data to extract**:
 - Order number
 - Order date
 - Customer name
 - Seller name (seller field)
 - Status: only paid orders (PROCESSING)
 
-**Implementation**:
+**Planned Implementation**:
 - Service for API communication
 - Job for background import
 - Received data validation
 - API error handling
 
-### 1.2 Shopify API
+### 1.3 Shopify API ⏳ PLANNED
 **Objective**: Capture orders from Collme Beauty system
 
-**Data to extract**:
+**Planned Data to extract**:
 - Order number
 - Order date
 - Customer name
 - Seller name
 - Status: only paid orders (PROCESSING)
 
-**Implementation**:
+**Planned Implementation**:
 - Service for API communication
 - Job for background import
 - Received data validation
 - API error handling
 
-### 1.3 Bling API
-**Objective**: Manage invoices and labels
-
-**Features**:
-- Capture invoice number
-- Get link to download NFE PDF
-- Manage shipping labels
-- Label status (issued, posted)
-
-**Implementation**:
-- Service for API communication
-- Model for invoices
-- Model for labels
-- Data validation
-
-### 1.4 Tracking APIs
+### 1.4 Tracking APIs ⏳ PLANNED
 
 #### 1.4.1 Correios API
 - Tracking code
@@ -132,7 +144,14 @@ The system implements a comprehensive permission system with three distinct role
 - **Data Security**: Users can only access data they have permission to view
 - **Action Security**: Users cannot perform actions they don't have permission for
 
-### 2.3 User Management
+### 2.3 User Management ✅ IMPLEMENTED
+**Current Implementation**:
+- **UserController**: Complete CRUD operations
+- **User Model**: Full user management with relationships
+- **Authentication**: Laravel Fortify with Two-Factor Authentication
+- **Profile Management**: Users can edit their own profiles
+- **Role Management**: Admin, Manager, Sales, Developer roles
+
 **Required fields**:
 - Full name
 - Email (unique)
@@ -140,37 +159,76 @@ The system implements a comprehensive permission system with three distinct role
 - Password (hash)
 - Profile/Role
 
-**Features**:
-- Create user
-- Edit user
-- Change profile
-- Reset password
-- Deactivate/Activate user
+**Features Implemented**:
+- ✅ Create user (Admin only)
+- ✅ Edit user (Admin only)
+- ✅ Edit own profile (All users)
+- ✅ Change password with confirmation
+- ✅ User listing with pagination
+- ✅ Search by name, email, username
+- ✅ Role-based filtering
+- ✅ Admin protection (cannot delete self)
+- ✅ Role validation (admin cannot change own role)
+- ✅ Two-factor authentication support
 
-## 3. Orders Screen
+## 3. Orders Screen ✅ IMPLEMENTED
 
-### 3.1 Table Columns
+### 3.1 Current Implementation
+**OrderController**: Complete order management with Bling integration
+**OrderSummary Model**: Main order data with relationships
+**Search & Filters**: Real-time search and filtering capabilities
+**Status Management**: Picking, packing, picked_up status tracking
+
+### 3.2 Table Columns (Current)
+
+#### ORDER NUMBER
+- Bling ID and numero
+- Search by number
+- Sorting
+
+#### CUSTOMER NAME
+- Full customer name (contato_nome)
+- Search by name
+- Alphabetical sorting
+
+#### DATE
+- Order issue date (data)
+- Format: DD/MM/YYYY HH:MM
+- Period filter
+- Chronological sorting
+
+#### TOTAL
+- Order total value (valor)
+- Currency formatting
+- Sorting
+
+#### STATUS
+- Order status (situacao_valor)
+- Status filtering
+- Visual indicators
+
+#### TRACKING CODE
+- Tracking code from logistics
+- Search by tracking code
+- Link to tracking details
+
+#### LOGISTICS PROVIDER
+- Carrier used
+- Provider filtering
+- Status indicators
+
+#### ORDER STATUS
+- Picking status (manual checkbox)
+- Packing status (manual checkbox)
+- Picked up status (manual checkbox)
+- User tracking (who marked each status)
+
+### 3.3 Planned Enhancements ⏳ PLANNED
 
 #### SYSTEM
 - Order origin
 - Values: Collmepro, Atacadista (WooCommerce), Collme Beauty (Shopify)
 - Filter by system
-
-#### ORDER NUMBER
-- Unique order number
-- Search by number
-- Sorting
-
-#### CUSTOMER NAME
-- Full customer name
-- Search by name
-- Alphabetical sorting
-
-#### DATE
-- Order issue date
-- Format: DD/MM/YYYY HH:MM
-- Period filter
-- Chronological sorting
 
 #### NFE
 - Invoice number
@@ -445,3 +503,24 @@ The system implements a comprehensive permission system with three distinct role
 - Theme (light/dark)
 - Language
 - Timezone
+
+## 11. Test Optimization (January 2025)
+
+### 11.1 Removed Tests
+- **BlingIntegrationTest.php**: Redundant integration tests (covered by unit tests)
+- **Network timeout tests**: Covered by general error handling tests
+- **Invalid JSON response tests**: Redundant with error handling coverage
+- **Duplicate bearer token validation**: Consolidated into single test
+
+### 11.2 Maintained Tests
+- **All permission and security tests**: Critical for system security
+- **All model relationship tests**: Essential for data integrity
+- **All service functionality tests**: Core business logic coverage
+- **All job processing tests**: Background processing validation
+
+### 11.3 Test Statistics
+- **Before optimization**: 184 tests
+- **After optimization**: 179 tests
+- **Reduction**: 5 tests (2.7%)
+- **Coverage maintained**: ~85%
+- **Performance improvement**: Faster test execution

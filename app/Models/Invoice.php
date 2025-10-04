@@ -10,75 +10,85 @@ class Invoice extends Model
 {
     use HasFactory;
 
+    protected $table = 'invoices';
+
     protected $fillable = [
-        'order_id',
-        'invoice_number',
-        'invoice_pdf_url',
-        'danfe_url',
-        'access_key',
-        'issued_at',
-        'operation_date',
-        'status',
-        'invoice_type',
-        'invoice_value',
-        'freight_value',
-        'series',
+        'order_summary_id',
+        'bling_id',
+        'tipo',
+        'situacao',
+        'numero',
+        'data_emissao',
+        'data_operacao',
+        'chave_acesso',
+        'valor_nota',
+        'valor_frete',
+        'xml',
+        'link_danfe',
+        'link_pdf',
+        'optante_simples_nacional',
+        'numero_pedido_loja',
+        'serie',
+        'contato_id',
+        'contato_nome',
+        'contato_documento',
+        'contato_ie',
+        'contato_rg',
+        'contato_telefone',
+        'contato_email',
+        'contato_endereco',
+        'contato_numero',
+        'contato_complemento',
+        'contato_bairro',
+        'contato_cep',
+        'contato_municipio',
+        'contato_uf',
+        'contato_pais',
+        'natureza_operacao_id',
+        'loja_id',
+        'vendedor_id',
+        'frete_por_conta',
+        'transportador_nome',
+        'transportador_documento',
+        'etiqueta_nome',
+        'etiqueta_endereco',
+        'etiqueta_numero',
+        'etiqueta_complemento',
+        'etiqueta_municipio',
+        'etiqueta_uf',
+        'etiqueta_cep',
+        'etiqueta_bairro',
+        'itens',
+        'parcelas',
+        'volumes',
         'raw_data',
     ];
 
     protected $casts = [
-        'issued_at' => 'datetime',
-        'operation_date' => 'datetime',
-        'invoice_value' => 'decimal:2',
-        'freight_value' => 'decimal:2',
+        'data_emissao' => 'datetime',
+        'data_operacao' => 'datetime',
+        'valor_nota' => 'decimal:2',
+        'valor_frete' => 'decimal:2',
+        'optante_simples_nacional' => 'boolean',
+        'itens' => 'array',
+        'parcelas' => 'array',
+        'volumes' => 'array',
         'raw_data' => 'array',
     ];
 
     /**
-     * Get the order that owns the invoice.
+     * Get the order summary that owns this invoice
      */
-    public function order(): BelongsTo
+    public function orderSummary(): BelongsTo
     {
-        return $this->belongsTo(Order::class);
+        return $this->belongsTo(OrderSummary::class);
     }
 
     /**
-     * Scope to filter by invoice number.
+     * Get the tracking records for this invoice
      */
-    public function scopeByInvoiceNumber($query, string $invoiceNumber)
+    public function tracking()
     {
-        return $query->where('invoice_number', 'like', "%{$invoiceNumber}%");
-    }
-
-    /**
-     * Scope to filter by date range.
-     */
-    public function scopeByDateRange($query, $startDate, $endDate)
-    {
-        return $query->whereBetween('issued_at', [$startDate, $endDate]);
-    }
-
-    /**
-     * Get the formatted issued date.
-     */
-    public function getFormattedIssuedDateAttribute(): string
-    {
-        return $this->issued_at->format('d/m/Y H:i');
-    }
-
-    /**
-     * Check if invoice has PDF URL.
-     */
-    public function hasPdfUrl(): bool
-    {
-        return !empty($this->invoice_pdf_url);
-    }
-
-    /**
-     * Get the PDF download URL.
-     */
-    public function getPdfDownloadUrl(): ?string
-    {
-        return $this->invoice_pdf_url;
+        return $this->hasMany(Tracking::class);
     }
 }

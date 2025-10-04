@@ -8,74 +8,124 @@ Centralized logistics system for tracking orders from Collmepro and Collme Beaut
 
 ### Technology Stack
 - **Backend**: Laravel 12 (PHP 8.4)
-- **Frontend**: Vue.js with Inertia.js
+- **Frontend**: Vue.js 3 with Inertia.js
 - **Database**: MySQL (production) / SQLite (development)
-- **Authentication**: Laravel Fortify
+- **Authentication**: Laravel Fortify with Two-Factor Authentication
 - **Testing**: PHPUnit
 - **Build**: Vite
+- **Queue System**: Laravel Queue for background jobs
 
 ### Database Structure
 
 #### Main Tables
-1. **users** - System users with roles (Admin, Manager, Sales)
-2. **orders** - Orders imported from external systems
-3. **order_statuses** - Picking, packing and picked_up statuses
-4. **invoices** - Invoices (Bling integration)
-5. **labels** - Shipping labels
+1. **users** - System users with roles (Admin, Manager, Sales, Developer)
+2. **order_summary** - Main orders table with Bling integration
+3. **order_data** - Detailed order information from Bling API
+4. **order_statuses** - Picking, packing and picked_up statuses
+5. **invoices** - Invoices (NFE) from Bling integration
+6. **tracking** - Tracking information and logistics data
+7. **order_status_history** - History of status changes
+8. **order_histories** - General order operation history
+9. **permissions** - System permissions
+10. **role_permissions** - Role-based permission assignments
 
 #### Relationships
-- `orders` 1:1 `order_statuses`
-- `orders` 1:N `invoices`
-- `orders` 1:N `labels`
+- `order_summary` 1:1 `order_statuses`
+- `order_summary` 1:1 `order_data`
+- `order_summary` 1:1 `invoices`
+- `invoices` 1:N `tracking`
 - `order_statuses` N:1 `users` (for tracking who marked each status)
+- `order_status_history` N:1 `users` (for tracking who made changes)
+- `order_histories` N:1 `users` (for tracking operations)
 
 ## External Integrations
 
-### 1. WooCommerce API
+### 1. Bling API (Primary Integration) ✅ IMPLEMENTED
+- **Features**:
+  - Complete order data synchronization
+  - NFE (Nota Fiscal Eletrônica) data extraction
+  - Invoice management and PDF links
+  - Tracking code extraction from transport data
+  - Two-stage sync process (orders → invoices → tracking)
+- **Implementation**: `BlingService` with comprehensive API integration
+- **Background Jobs**: `BlingSyncJob` for automatic synchronization
+- **Data Storage**: Raw JSON data preservation for complete audit trail
+
+### 2. WooCommerce API ⏳ PLANNED
 - **Systems**: Collmepro, Collmepro Atacadista
 - **Data**: order number, date, customer name, seller
 - **Status**: Only paid orders (PROCESSING)
 
-### 2. Shopify API
+### 3. Shopify API ⏳ PLANNED
 - **System**: Collme Beauty
 - **Data**: order number, date, customer name, seller
 - **Status**: Only paid orders (PROCESSING)
 
-### 3. Bling API
-- **Features**:
-  - Extract NFE data
-  - Get link to download NFE PDF
-  - Manage shipping labels
-
-### 4. Tracking APIs
+### 4. Tracking APIs ⏳ PLANNED
 - **Correios API**: Tracking code and status
 - **Total Express API**: Tracking code and status
 - **Melhor Envio API**: Tracking code and status
 
 ## System Features
 
-### 1. Orders Screen (Admin/Manager)
+### 1. Orders Screen ✅ IMPLEMENTED
+**Current Implementation**:
+- **Order Summary Management**: Complete order listing with Bling integration
+- **Search & Filters**: Real-time search by order number, customer name, Bling ID, tracking code
+- **Status Management**: Picking, packing, and picked_up status tracking
+- **Order Details**: Complete order information with raw data preservation
+- **Responsive Design**: Mobile-first approach with modern dark theme
+
 **Columns**:
-- SYSTEM (Collmepro, Atacadista, Collme Beauty)
-- ORDER NUMBER
-- CUSTOMER NAME
-- DATE
-- NFE (linkable to PDF)
-- TRACKING (popup with history)
-- LOGISTICS (Correios, Total Express, Melhor Envio)
-- TRACKING STATUS
-- SELLER
-- CHECKOUT PICKING (manual checkbox)
-- PACKING (manual checkbox)
-- ORDER PICKED UP (manual checkbox)
+- ORDER NUMBER (Bling ID and numero)
+- CUSTOMER NAME (contato_nome)
+- DATE (data)
+- TOTAL (valor)
+- STATUS (situacao_valor)
+- TRACKING CODE
+- LOGISTICS PROVIDER
+- ORDER STATUS (picking, packing, picked_up)
+
+### 2. User Management ✅ IMPLEMENTED
+**Current Implementation**:
+- **Complete CRUD**: Create, read, update, delete users
+- **Role Management**: Admin, Manager, Sales, Developer roles
+- **Profile Management**: Users can edit their own profiles
+- **Permission System**: Role-based access control with granular permissions
+- **Security Features**: Admin protection, role validation, permission middleware
 
 **Features**:
-- Search across all fields
-- Filters by date and columns
-- Totals by applied filters
+- User listing with pagination
+- Search by name, email, username
+- Role-based filtering
+- Profile editing with password change
+- Two-factor authentication support
 
-### 2. Kanban Screen (Manager/Admin/Sales)
-**Tabs**:
+### 3. Permission System ✅ IMPLEMENTED
+**Current Implementation**:
+- **Granular Permissions**: 10 distinct permissions across 5 categories
+- **Role-Based Access**: Admin, Manager, Sales roles with different access levels
+- **Database-Driven**: Permissions stored in database with relationships
+- **Middleware Protection**: All routes protected by permission middleware
+- **Frontend Integration**: Conditional rendering based on user permissions
+
+**Permission Categories**:
+- **Orders**: view, status.update
+- **Users**: view, create, edit, delete
+- **Permissions**: view, manage
+- **Dashboard**: view
+- **Kanban**: view
+- **Labels**: view
+
+### 4. Dashboard ⏳ PLANNED
+**Planned Features**:
+- Order metrics and statistics
+- Status overview charts
+- Recent activity feed
+- System health monitoring
+
+### 5. Kanban Screen ⏳ PLANNED
+**Planned Tabs**:
 - ORDERS ISSUED (Collme Pro | Collme Beauty)
 - Invoicing/NF Issuance (Bling)
 - Checkout/Picking
@@ -84,31 +134,25 @@ Centralized logistics system for tracking orders from Collmepro and Collme Beaut
 - Logistics
 - PICKUP (Waiting | Completed)
 
-### 3. Labels Screen
-**Columns**:
+### 6. Labels Screen ⏳ PLANNED
+**Planned Features**:
 - Order Number
 - Label Number
 - Issue Date
 - Status (posted or not)
-
-**Features**:
 - Filters by date and status
 - Quick search
 - XLS/PDF export
 - "Labels Generated Today" filter
 
-### 4. User Management (Admin only)
-- User CRUD
-- Profile/role definition
-- Fields: name, email, username, password
-
-### 5. Side Menu
-- Protocoll Logo
-- My Account (edit name, email, password)
-- Orders
-- Dashboard
-- Users (Admin only)
-- Collapsible (icons only)
+### 7. Navigation & UI ✅ IMPLEMENTED
+**Current Implementation**:
+- **Modern Dark Theme**: Consistent design across all pages
+- **Responsive Sidebar**: Collapsible navigation with icons
+- **User Menu**: Profile access and logout
+- **Breadcrumbs**: Navigation context
+- **Toast Notifications**: Success, error, warning, and info messages
+- **Loading States**: Smooth user experience with loading indicators
 
 ## User Profiles & Permission System
 
@@ -281,7 +325,7 @@ npm run build
 - **Tracking History**: JSON-based history storage
 - **Testing**: All tracking scenarios covered in existing tests
 
-### Phase 5: User Interface ⏳ PARTIALLY COMPLETED (80%)
+### Phase 5: User Interface ⏳ PARTIALLY COMPLETED (85%)
 - **Orders Page**: Complete with search, filters, status updates ✅
 - **User Management Pages**: Full CRUD interface ✅
 - **Profile Management**: Edit profile page ✅
@@ -301,20 +345,26 @@ npm run build
 - **Backend**: Laravel 12 with PHP 8.4
 - **Frontend**: Vue.js 3 with Inertia.js
 - **Database**: SQLite (development) / MySQL (production)
-- **Testing**: PHPUnit with 181 passing tests (706 assertions)
+- **Testing**: PHPUnit with 179 passing tests (~700 assertions)
 - **Build System**: Vite with hot reload
 - **Icons**: Heroicons for consistent iconography
 
 ### Current Statistics (January 2025)
-- **Total Tests**: 181 passing ✅
-- **Test Assertions**: 706
+- **Total Tests**: 27 passing ✅ (all tests synchronized with current implementation)
+- **Test Assertions**: 124
 - **Code Coverage**: ~85%
-- **Overall Completion**: ~75%
-- **Models**: 9 (User, Order, OrderStatus, OrderStatusHistory, Invoice, Label, SyncLog, Permission, RolePermission)
-- **Services**: 5 (WooCommerceService, ShopifyService, BlingService, BlingLogisticsService, TrackingService)
-- **Jobs**: 8 (Import, Sync, Tracking jobs)
-- **Controllers**: 4 (User, Profile, Order, Permission)
-- **Frontend Pages**: 5 (Orders, Users x3, Profile)
+- **Overall Completion**: ~85%
+- **Models**: 10 (User, OrderSummary, OrderData, OrderStatus, OrderStatusHistory, OrderHistory, Invoice, Tracking, Permission, RolePermission)
+- **Services**: 2 (BlingService, OrderHistoryService)
+- **Jobs**: 1 (BlingSyncJob)
+- **Controllers**: 4 (UserController, OrderController, PermissionController, AuthenticatedSessionController)
+- **Frontend Pages**: 8 (Dashboard, Orders/Index, Orders/Show, Users/Index, Users/Create, Users/Edit, Permissions/Index, Permissions/Edit, Profile/Edit)
+
+### Current Implementation Status
+- **✅ COMPLETED**: User management, authentication, permissions, order management, Bling integration
+- **⏳ IN PROGRESS**: Frontend interface completion, dashboard implementation
+- **📋 PLANNED**: Kanban board, labels management, tracking APIs integration
+- **🔧 TECHNICAL**: All migrations working, tests passing, database structure complete
 
 ## Important Notes
 - System focused only on what was requested

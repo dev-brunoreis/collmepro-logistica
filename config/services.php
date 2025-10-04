@@ -35,25 +35,10 @@ return [
         ],
     ],
 
-    'woocommerce' => [
-        'collmepro' => [
-            'consumer_key' => env('WOOCOMMERCE_COLLMEPRO_CONSUMER_KEY'),
-            'consumer_secret' => env('WOOCOMMERCE_COLLMEPRO_CONSUMER_SECRET'),
-        ],
-        'collmepro_atacadista' => [
-            'consumer_key' => env('WOOCOMMERCE_COLLMEPRO_ATACADISTA_CONSUMER_KEY'),
-            'consumer_secret' => env('WOOCOMMERCE_COLLMEPRO_ATACADISTA_CONSUMER_SECRET'),
-        ],
-    ],
-
-    'shopify' => [
-        'collme_beauty' => [
-            'access_token' => env('SHOPIFY_COLLME_BEAUTY_ACCESS_TOKEN'),
-            'shop_domain' => env('SHOPIFY_COLLME_BEAUTY_SHOP_DOMAIN'),
-        ],
-    ],
-
     'bling' => [
-        'bearer_token' => env('BLING_BEARER_TOKEN'),
+        'api_key' => env('BLING_BEARER_TOKEN'), // Bearer token for API v3
+        'base_url' => env('BLING_BASE_URL', 'https://api.bling.com.br/Api/v3'),
+        'timeout' => env('BLING_TIMEOUT', 30),
+        'retry_attempts' => env('BLING_RETRY_ATTEMPTS', 3),
     ],
 ];

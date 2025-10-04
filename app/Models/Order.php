@@ -4,98 +4,82 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Order extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'system',
-        'order_number',
-        'customer_name',
-        'seller_name',
-        'order_date',
-        'nfe_number',
-        'nfe_pdf_url',
-        'nfe_access_key',
-        'nfe_issue_date',
-        'nfe_value',
+        'bling_id',
+        'numero',
+        'numero_loja',
+        'data',
+        'data_saida',
+        'data_prevista',
+        'total_produtos',
+        'total',
+        'contato_id',
+        'contato_nome',
+        'contato_tipo_pessoa',
+        'contato_documento',
+        'situacao_id',
+        'situacao_valor',
+        'loja_id',
+        'source',
+        'order_status_id',
         'tracking_code',
         'logistics_provider',
-        'tracking_status',
-        'tracking_url',
+        'service_type',
+        'volume',
+        'weight',
     ];
 
     protected $casts = [
-        'order_date' => 'datetime',
-        'nfe_issue_date' => 'datetime',
-        'nfe_value' => 'decimal:2',
+        'data' => 'date',
+        'data_saida' => 'date',
+        'data_prevista' => 'date',
+        'total' => 'decimal:2',
+        'total_produtos' => 'integer',
+        'contato_id' => 'integer',
+        'situacao_id' => 'integer',
+        'situacao_valor' => 'integer',
+        'loja_id' => 'integer',
+        'bling_id' => 'integer',
+        'volume' => 'decimal:2',
+        'weight' => 'decimal:2',
     ];
 
     /**
      * Get the order status associated with the order.
      */
-    public function orderStatus(): HasOne
+    public function orderStatus(): BelongsTo
     {
-        return $this->hasOne(OrderStatus::class);
+        return $this->belongsTo(OrderStatus::class, 'id', 'order_summary_id');
     }
 
     /**
-     * Get the invoices for the order.
+     * Scope to filter by source.
      */
-    public function invoices(): HasMany
+    public function scopeBySource($query, string $source)
     {
-        return $this->hasMany(Invoice::class);
+        return $query->where('source', $source);
     }
 
     /**
-     * Get the labels for the order.
+     * Scope to filter by numero.
      */
-    public function labels(): HasMany
+    public function scopeByNumero($query, string $numero)
     {
-        return $this->hasMany(Label::class);
+        return $query->where('numero', 'like', "%{$numero}%");
     }
 
     /**
-     * Get the sync logs for the order.
+     * Scope to filter by situacao valor.
      */
-    public function syncLogs(): HasMany
+    public function scopeBySituacaoValor($query, int $situacaoValor)
     {
-        return $this->hasMany(SyncLog::class);
-    }
-
-    /**
-     * Scope to filter by system.
-     */
-    public function scopeBySystem($query, string $system)
-    {
-        return $query->where('system', $system);
-    }
-
-    /**
-     * Scope to filter by order number.
-     */
-    public function scopeByOrderNumber($query, string $orderNumber)
-    {
-        return $query->where('order_number', 'like', "%{$orderNumber}%");
-    }
-
-    /**
-     * Scope to filter by customer name.
-     */
-    public function scopeByCustomerName($query, string $customerName)
-    {
-        return $query->where('customer_name', 'like', "%{$customerName}%");
-    }
-
-    /**
-     * Scope to filter by seller name.
-     */
-    public function scopeBySellerName($query, string $sellerName)
-    {
-        return $query->where('seller_name', 'like', "%{$sellerName}%");
+        return $query->where('situacao_valor', $situacaoValor);
     }
 
     /**
@@ -103,70 +87,109 @@ class Order extends Model
      */
     public function scopeByDateRange($query, $startDate, $endDate)
     {
-        return $query->whereBetween('order_date', [$startDate, $endDate]);
+        return $query->whereBetween('data', [$startDate, $endDate]);
     }
 
     /**
-     * Scope to filter by tracking status.
+     * Scope to filter by contato nome.
      */
-    public function scopeByTrackingStatus($query, string $status)
+    public function scopeByContatoNome($query, string $nome)
     {
-        return $query->where('tracking_status', $status);
+        return $query->where('contato_nome', 'like', "%{$nome}%");
     }
 
     /**
-     * Scope to filter by logistics provider.
+     * Get the formatted data.
      */
-    public function scopeByLogisticsProvider($query, string $provider)
+    public function getFormattedDataAttribute(): string
     {
-        return $query->where('logistics_provider', $provider);
+        return $this->data->format('d/m/Y');
     }
 
     /**
-     * Get the formatted order date.
+     * Get the customer name.
      */
-    public function getFormattedOrderDateAttribute(): string
+    public function getCustomerNameAttribute(): string
     {
-        return $this->order_date->format('d/m/Y H:i');
+        return $this->contato_nome ?? 'N/A';
     }
 
     /**
-     * Get the customer full name.
+     * Get the customer document.
      */
-    public function getCustomerFullNameAttribute(): string
+    public function getCustomerDocumentAttribute(): string
     {
-        return $this->customer_name;
+        return $this->contato_documento ?? 'N/A';
     }
 
     /**
-     * Check if order has NFE.
+     * Check if order is from Bling.
      */
-    public function hasNfe(): bool
+    public function isFromBling(): bool
     {
-        return !empty($this->nfe_number);
+        return $this->source === 'bling';
     }
 
     /**
-     * Check if order has tracking code.
+     * Scope to filter by Bling orders.
      */
-    public function hasTrackingCode(): bool
+    public function scopeBling($query)
+    {
+        return $query->where('source', 'bling');
+    }
+
+    /**
+     * Scope to filter by bling_id.
+     */
+    public function scopeByBlingId($query, int $blingId)
+    {
+        return $query->where('bling_id', $blingId);
+    }
+
+    /**
+     * Scope to filter by tracking code.
+     */
+    public function scopeByTrackingCode($query, string $trackingCode)
+    {
+        return $query->where('tracking_code', $trackingCode);
+    }
+
+    /**
+     * Check if order has tracking.
+     */
+    public function hasTracking(): bool
     {
         return !empty($this->tracking_code);
     }
 
     /**
-     * Get the latest invoice.
+     * Get the situacao description.
      */
-    public function getLatestInvoice()
+    public function getSituacaoDescriptionAttribute(): string
     {
-        return $this->invoices()->latest()->first();
+        $situacoes = [
+            1 => 'Em Aberto',
+            2 => 'Em Andamento',
+            3 => 'Finalizado',
+            4 => 'Cancelado'
+        ];
+
+        return $situacoes[$this->situacao_valor] ?? 'Desconhecido';
     }
 
     /**
-     * Get the latest label.
+     * Check if order is finalized.
      */
-    public function getLatestLabel()
+    public function isFinalized(): bool
     {
-        return $this->labels()->latest()->first();
+        return $this->situacao_valor === 3;
+    }
+
+    /**
+     * Check if order is cancelled.
+     */
+    public function isCancelled(): bool
+    {
+        return $this->situacao_valor === 4;
     }
 }

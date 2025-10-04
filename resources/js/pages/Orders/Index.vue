@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
-import { ref } from 'vue';
-import { Search, Filter, Eye, CheckCircle, XCircle, Package, Truck, ExternalLink, RefreshCw } from 'lucide-vue-next';
+import { ref, onMounted, onUnmounted } from 'vue';
+import { Search, Filter, Eye, CheckCircle, XCircle, Package, Truck, ExternalLink, RefreshCw, AlertTriangle } from 'lucide-vue-next';
 import axios from '@/lib/axios';
 
 interface OrderStatus {
@@ -33,24 +33,43 @@ interface User {
 
 interface Order {
     id: number;
-    system: string;
-    system_display_name: string;
-    order_number: string;
-    customer_name: string;
-    seller_name: string;
-    order_date: string;
-    formatted_order_date: string;
-    nfe_number?: string;
-    nfe_pdf_url?: string;
-    tracking_code?: string;
-    logistics_provider?: string;
-    tracking_status?: string;
-    tracking_url?: string;
-    has_nfe: boolean;
-    has_tracking_code: boolean;
+    bling_id: string;
+    numero: string;
+    numero_loja: string;
+    data: string;
+    data_saida: string;
+    data_prevista: string;
+    total_produtos: number;
+    total: number;
+    contato_id: number;
+    contato_nome: string;
+    contato_tipo_pessoa: string;
+    contato_documento: string;
+    situacao_id: number;
+    situacao_valor: number;
+    loja_id: number;
+    source: string;
+    created_at: string;
+    updated_at: string;
     order_status?: OrderStatus;
-    latest_invoice?: any;
-    latest_label?: any;
+    nota_fiscal_id?: number;
+    invoice_id?: string;
+    invoice_chave_acesso?: string;
+    invoice?: any; // raw_invoice_data
+    tracking?: any; // raw_tracking_data
+    carrier?: string;
+    has_tracking_code?: boolean;
+    tracking_code?: string;
+    tracking_url?: string;
+    tracking_status?: string;
+    seller_name?: string;
+    logistics_provider?: string;
+    service_type?: string;
+    volume?: number;
+    weight?: number;
+    raw_order_data?: any;
+    raw_invoice_data?: any;
+    raw_tracking_data?: any;
 }
 
 interface Props {
@@ -101,36 +120,19 @@ const isFetching = ref(false);
 // Loading state for tracking refresh (by order ID)
 const trackingRefreshLoading = ref<Record<number, boolean>>({});
 
-// Refresh tracking status for a specific order
-const refreshTracking = async (order: Order) => {
-    if (!order.tracking_code || trackingRefreshLoading.value[order.id]) {
-        return; // Skip if no tracking code or already loading
-    }
+// Modal state for status confirmation
+const showConfirmModal = ref(false);
+const confirmData = ref<{
+    orderId: number;
+    action: string;
+    actionName: string;
+    currentStatus: boolean;
+    newStatus: boolean;
+    orderNumber: string;
+    orderData?: Order;
+} | null>(null);
 
-    trackingRefreshLoading.value[order.id] = true;
-
-    try {
-        // Use axios which has CSRF token configured automatically
-        const response = await axios.post(`/orders/${order.id}/refresh-tracking`);
-        
-        const data = response.data;
-
-        if (data.success) {
-            // Update order in place
-            order.tracking_code = data.tracking_code;
-            order.logistics_provider = data.logistics_provider;
-            order.tracking_status = data.tracking_status;
-
-            console.log('Tracking updated successfully for order', order.order_number);
-        } else {
-            console.warn('Failed to refresh tracking:', data.message);
-        }
-    } catch (error: any) {
-        console.error('Error refreshing tracking:', error.response?.data || error.message);
-    } finally {
-        trackingRefreshLoading.value[order.id] = false;
-    }
-};
+// Tracking functionality removed as part of simplification
 
 const search = (value: string) => {
     const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
@@ -185,7 +187,7 @@ const clearFilters = () => {
     });
 };
 
-const updateOrderStatus = (orderId: number, action: string, currentStatus: boolean) => {
+const updateOrderStatus = (orderId: number, action: string, currentStatus: boolean, orderNumber: string) => {
     const actionNames = {
         picking: 'Separado',
         packing: 'Embalado',
@@ -194,13 +196,29 @@ const updateOrderStatus = (orderId: number, action: string, currentStatus: boole
     
     const actionName = actionNames[action as keyof typeof actionNames] || action;
     const newStatus = !currentStatus;
-    const statusText = newStatus ? 'marcar como concluído' : 'desmarcar';
     
-    const confirmed = confirm(`Tem certeza que deseja ${statusText} o ${actionName}?`);
+    // Find the order data
+    const order = props.orders.data.find(o => o.id === orderId);
     
-    if (!confirmed) {
-        return;
-    }
+    // Set modal data
+    confirmData.value = {
+        orderId,
+        action,
+        actionName,
+        currentStatus,
+        newStatus,
+        orderNumber,
+        orderData: order
+    };
+    
+    // Show modal
+    showConfirmModal.value = true;
+};
+
+const confirmStatusUpdate = () => {
+    if (!confirmData.value) return;
+    
+    const { orderId, action, newStatus, actionName } = confirmData.value;
     
     // Store current scroll position
     const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
@@ -212,6 +230,10 @@ const updateOrderStatus = (orderId: number, action: string, currentStatus: boole
         preserveState: true,
         preserveScroll: true,
         onSuccess: () => {
+            // Close modal
+            showConfirmModal.value = false;
+            confirmData.value = null;
+            
             // Restore scroll position after a short delay to ensure DOM is updated
             setTimeout(() => {
                 window.scrollTo(0, scrollPosition);
@@ -231,6 +253,27 @@ const updateOrderStatus = (orderId: number, action: string, currentStatus: boole
     });
 };
 
+const cancelStatusUpdate = () => {
+    showConfirmModal.value = false;
+    confirmData.value = null;
+};
+
+// Handle ESC key to close modal
+const handleKeydown = (event: KeyboardEvent) => {
+    if (event.key === 'Escape' && showConfirmModal.value) {
+        cancelStatusUpdate();
+    }
+};
+
+// Add event listener when component mounts
+onMounted(() => {
+    document.addEventListener('keydown', handleKeydown);
+});
+
+onUnmounted(() => {
+    document.removeEventListener('keydown', handleKeydown);
+});
+
 
 
 const getSystemBadgeClass = (system: string) => {
@@ -247,13 +290,34 @@ const getSystemBadgeClass = (system: string) => {
 };
 
 const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-    });
+    if (!dateString) return '-';
+    
+    try {
+        // Handle format: 2025-10-03 00:00:00 (MySQL datetime)
+        let date: Date;
+        
+        if (dateString.includes(' ')) {
+            // Format: 2025-10-03 00:00:00
+            date = new Date(dateString + 'Z'); // Add Z to treat as UTC
+        } else {
+            // Fallback for other formats
+            date = new Date(dateString);
+        }
+        
+        // Check if date is valid
+        if (isNaN(date.getTime())) {
+            return '-';
+        }
+        
+        return date.toLocaleDateString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        });
+    } catch (error) {
+        console.warn('Error formatting date:', dateString, error);
+        return '-';
+    }
 };
 
 const fetchOrders = () => {
@@ -280,6 +344,29 @@ const fetchOrders = () => {
             isFetching.value = false;
         }
     });
+};
+
+const updatePerPage = (event: Event) => {
+    const target = event.target as HTMLSelectElement;
+    const perPage = target.value;
+    
+    const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+    
+    router.get('/orders', { ...props.filters, per_page: perPage }, {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+        onSuccess: () => {
+            setTimeout(() => {
+                window.scrollTo(0, scrollPosition);
+            }, 50);
+        },
+    });
+};
+
+const getCurrentPerPage = () => {
+    const url = new URL(window.location.href);
+    return url.searchParams.get('per_page') || '100';
 };
 </script>
 
@@ -323,7 +410,7 @@ const fetchOrders = () => {
                         <select
                             :value="props.filters?.system || ''"
                             @change="updateFilter('system', ($event.target as HTMLSelectElement).value)"
-                            class="rounded-lg border border-sidebar-border/70 bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-sidebar-border"
+                            class="min-w-48 rounded-lg border border-sidebar-border/70 bg-background px-4 py-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-sidebar-border"
                         >
                             <option value="">Todos os sistemas</option>
                             <option v-for="(label, value) in props.systems || {}" :key="value" :value="value">
@@ -342,13 +429,13 @@ const fetchOrders = () => {
                 </div>
 
                 <!-- Advanced filters -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-muted-foreground mb-1">Status Rastreamento</label>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="min-w-48">
+                        <label class="block text-sm font-medium text-muted-foreground mb-2">Status Rastreamento</label>
                         <select
                             :value="props.filters?.tracking_status || ''"
                             @change="updateFilter('tracking_status', ($event.target as HTMLSelectElement).value)"
-                            class="w-full rounded-lg border border-sidebar-border/70 bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-sidebar-border"
+                            class="w-full rounded-lg border border-sidebar-border/70 bg-background px-4 py-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-sidebar-border"
                         >
                             <option value="">Todos os status</option>
                             <option v-for="(label, value) in props.tracking_statuses || {}" :key="value" :value="value">
@@ -356,12 +443,12 @@ const fetchOrders = () => {
                             </option>
                         </select>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-muted-foreground mb-1">Transportadora</label>
+                    <div class="min-w-48">
+                        <label class="block text-sm font-medium text-muted-foreground mb-2">Transportadora</label>
                         <select
                             :value="props.filters?.logistics_provider || ''"
                             @change="updateFilter('logistics_provider', ($event.target as HTMLSelectElement).value)"
-                            class="w-full rounded-lg border border-sidebar-border/70 bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-sidebar-border"
+                            class="w-full rounded-lg border border-sidebar-border/70 bg-background px-4 py-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-sidebar-border"
                         >
                             <option value="">Todas as transportadoras</option>
                             <option v-for="(label, value) in props.logistics_providers || {}" :key="value" :value="value">
@@ -369,14 +456,14 @@ const fetchOrders = () => {
                             </option>
                         </select>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-muted-foreground mb-1">Vendedor</label>
+                    <div class="min-w-48">
+                        <label class="block text-sm font-medium text-muted-foreground mb-2">Vendedor</label>
                         <input
                             type="text"
                             :value="props.filters?.seller || ''"
                             @input="updateFilter('seller', ($event.target as HTMLInputElement).value)"
                             placeholder="Nome do vendedor..."
-                            class="w-full rounded-lg border border-sidebar-border/70 bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-sidebar-border"
+                            class="w-full rounded-lg border border-sidebar-border/70 bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-sidebar-border"
                         />
                     </div>
                 </div>
@@ -397,15 +484,14 @@ const fetchOrders = () => {
                     <table class="w-full">
                         <thead class="border-b border-sidebar-border/70 dark:border-sidebar-border">
                             <tr>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Sistema</th>
                                 <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Pedido</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Sistema</th>
                                 <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Cliente</th>
                                 <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Data</th>
                                 <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">NFE</th>
                                 <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Rastreamento</th>
                                 <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Transportadora</th>
                                 <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Status</th>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Vendedor</th>
                                 <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Separado</th>
                                 <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Embalado</th>
                                 <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Coletado</th>
@@ -418,94 +504,71 @@ const fetchOrders = () => {
                                 :key="order.id"
                                 class="border-b border-sidebar-border/70 dark:border-sidebar-border last:border-b-0 hover:bg-sidebar-border/20"
                             >
+                            <td class="px-4 py-3">
+                                <div class="font-medium">
+                                    <a :href="`https://www.bling.com.br/notas.fiscais.php#edit/${order.invoice?.id}`" target="_blank" class="text-primary gap-2 gap-1 font-medium rounded-md px-1 py-0.5 text-xs flex items-center hover:bg-sidebar-border/70" :title="`Abrir nota fiscal no Bling`">
+                                        <span class="text-sm font-medium">{{ order.numero }}</span>
+                                            <ExternalLink class="h-3 w-3" />
+                                        </a>
+                                    </div>
+                                </td>
                                 <td class="px-4 py-3">
                                     <span
                                         class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-                                        :class="getSystemBadgeClass(order.system)"
+                                        :class="getSystemBadgeClass(order.source)"
                                     >
-                                        {{ order.system_display_name }}
+                                        {{ order.source.toUpperCase() }}
                                     </span>
                                 </td>
                                 <td class="px-4 py-3">
-                                    <div class="font-medium">{{ order.order_number }}</div>
-                                </td>
-                                <td class="px-4 py-3">
-                                    <div class="font-medium">{{ order.customer_name }}</div>
+                                    <div class="font-medium">{{ order.contato_nome }}</div>
                                 </td>
                                 <td class="px-4 py-3 text-sm text-muted-foreground">
-                                    {{ formatDate(order.order_date) }}
+                                    {{ formatDate(order.data) }}
                                 </td>
                                 <td class="px-4 py-3">
-                                    <div v-if="order.has_nfe" class="flex items-center gap-2">
-                                        <a
-                                            v-if="order.nfe_pdf_url"
-                                            :href="order.nfe_pdf_url"
-                                            target="_blank"
-                                            class="text-sm font-medium text-primary hover:text-primary/80 hover:underline"
-                                            :title="`Baixar PDF da NFE ${order.nfe_number}`"
-                                        >
-                                            {{ order.nfe_number }}
-                                        </a>
-                                        <span v-else class="text-sm">{{ order.nfe_number }}</span>
-                                        <a
-                                            v-if="order.nfe_pdf_url"
-                                            :href="order.nfe_pdf_url"
-                                            target="_blank"
-                                            class="text-primary hover:text-primary/80"
-                                            :title="`Baixar PDF da NFE ${order.nfe_number}`"
-                                        >
+                                    <a
+                                        v-if="order.invoice?.linkPDF"
+                                        :href="order.invoice.linkPDF"
+                                        target="_blank"
+                                        class="text-primary hover:text-primary/80"
+                                        :title="`Baixar PDF da NFE ${order.invoice.numero}`"
+                                    >
+                                    <div v-if="order.invoice?.numero" class="flex items-center gap-2 gap-1 font-medium rounded-md px-1 py-0.5 text-xs hover:bg-sidebar-border/70">
+                                        <span class="text-sm px-1 font-medium">{{ order.invoice.numero }}</span>
                                             <ExternalLink class="h-3 w-3" />
-                                        </a>
-                                    </div>
+                                        </div>
+                                    </a>
                                     <span v-else class="text-sm text-muted-foreground">-</span>
                                 </td>
                                 <td class="px-4 py-3">
+                                    <a 
+                                        v-if="order.raw_tracking_data?.rastreamento?.url" 
+                                        :href="order.raw_tracking_data?.rastreamento?.url" 
+                                        target="_blank" 
+                                        class="inline-flex items-center gap-1 font-medium rounded-md px-1 py-0.5 text-xs hover:bg-sidebar-border/70"
+                                        title="Abrir rastreamento"
+                                    >
                                     <div v-if="order.has_tracking_code" class="flex items-center gap-2">
                                         <span class="text-sm">{{ order.tracking_code }}</span>
-                                        <a 
-                                            v-if="order.tracking_url" 
-                                            :href="order.tracking_url" 
-                                            target="_blank" 
-                                            class="inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-xs hover:bg-sidebar-border/70 text-blue-600 dark:text-blue-400"
-                                            title="Abrir rastreamento"
-                                        >
                                             <ExternalLink class="h-3 w-3" />
-                                        </a>
-                                    </div>
+                                        </div>
+                                    </a>
                                     <span v-else class="text-sm text-muted-foreground">-</span>
                                 </td>
                                 <td class="px-4 py-3 text-sm text-muted-foreground">
-                                    {{ order.logistics_provider || '-' }}
+                                    {{ order.logistics_provider }}
                                 </td>
                                 <td class="px-4 py-3">
                                     <div class="flex items-center gap-2">
-                                        <span v-if="order.tracking_status" class="text-sm">{{ order.tracking_status }}</span>
+                                        <span v-if="order.raw_tracking_data?.rastreamento?.descricao" class="text-sm">{{ order.raw_tracking_data?.rastreamento?.descricao }}</span>
                                         <span v-else class="text-sm text-muted-foreground">-</span>
-                                        
-                                        <!-- Refresh tracking button - only show if order has actual tracking code -->
-                                        <button
-                                            v-if="order.tracking_code"
-                                            @click="refreshTracking(order)"
-                                            :disabled="trackingRefreshLoading[order.id]"
-                                            class="p-1 rounded hover:bg-sidebar-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                            :title="trackingRefreshLoading[order.id] ? 'Atualizando...' : 'Atualizar status de rastreamento'"
-                                        >
-                                            <RefreshCw 
-                                                :class="[
-                                                    'h-4 w-4 text-muted-foreground hover:text-foreground transition-colors',
-                                                    trackingRefreshLoading[order.id] ? 'animate-spin' : ''
-                                                ]"
-                                            />
-                                        </button>
                                     </div>
-                                </td>
-                                <td class="px-4 py-3 text-sm text-muted-foreground">
-                                    {{ order.seller_name || '-' }}
                                 </td>
                                 <td class="px-4 py-3">
                                     <button
                                         v-if="canUpdateStatus"
-                                        @click="updateOrderStatus(order.id, 'picking', order.order_status?.picking || false)"
+                                        @click="updateOrderStatus(order.id, 'picking', order.order_status?.picking || false, order.numero)"
                                         class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm hover:bg-sidebar-border/70"
                                         :class="order.order_status?.picking ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'"
                                     >
@@ -522,7 +585,7 @@ const fetchOrders = () => {
                                 <td class="px-4 py-3">
                                     <button
                                         v-if="canUpdateStatus"
-                                        @click="updateOrderStatus(order.id, 'packing', order.order_status?.packing || false)"
+                                        @click="updateOrderStatus(order.id, 'packing', order.order_status?.packing || false, order.numero)"
                                         class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm hover:bg-sidebar-border/70"
                                         :class="order.order_status?.packing ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'"
                                     >
@@ -539,7 +602,7 @@ const fetchOrders = () => {
                                 <td class="px-4 py-3">
                                     <button
                                         v-if="canUpdateStatus"
-                                        @click="updateOrderStatus(order.id, 'picked_up', order.order_status?.picked_up || false)"
+                                        @click="updateOrderStatus(order.id, 'picked_up', order.order_status?.picked_up || false, order.numero)"
                                         class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm hover:bg-sidebar-border/70"
                                         :class="order.order_status?.picked_up ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'"
                                     >
@@ -570,8 +633,24 @@ const fetchOrders = () => {
 
             <!-- Pagination -->
             <div v-if="props.orders.links?.length > 3" class="flex items-center justify-between">
-                <div class="text-sm text-muted-foreground">
-                    Mostrando {{ props.orders.from || 0 }} a {{ props.orders.to || 0 }} de {{ props.orders.total || 0 }} resultados
+                <div class="flex items-center gap-4">
+                    <div class="text-sm text-muted-foreground">
+                        Mostrando {{ props.orders.from || 0 }} a {{ props.orders.to || 0 }} de {{ props.orders.total || 0 }} resultados
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label class="text-sm text-muted-foreground">Por página:</label>
+                        <select 
+                            @change="updatePerPage"
+                            :value="getCurrentPerPage()"
+                            class="rounded-md border border-sidebar-border/70 bg-background px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        >
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                            <option value="200">200</option>
+                            <option value="500">500</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="flex items-center gap-2">
                     <Link
@@ -586,6 +665,80 @@ const fetchOrders = () => {
                             'text-muted-foreground/50 cursor-not-allowed': !link.url,
                         }"
                     />
+                </div>
+            </div>
+        </div>
+
+        <!-- Confirmation Modal -->
+        <div v-if="showConfirmModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-md" @click="cancelStatusUpdate">
+            <div class="bg-background border border-sidebar-border/70 rounded-xl shadow-2xl max-w-lg w-full mx-4 animate-in fade-in-0 zoom-in-95 duration-200" @click.stop>
+                <div class="p-6">
+                    <!-- Header -->
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="flex-shrink-0 w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900 flex items-center justify-center">
+                            <AlertTriangle class="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-foreground">Confirmar Alteração</h3>
+                            <p class="text-sm text-muted-foreground">Esta ação não pode ser desfeita</p>
+                        </div>
+                    </div>
+
+                    <!-- Content -->
+                    <div class="mb-6">
+                        <p class="text-sm text-foreground mb-4">
+                            Você está prestes a 
+                            <span class="font-semibold" :class="confirmData?.newStatus ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
+                                {{ confirmData?.newStatus ? 'marcar como concluído' : 'desmarcar' }}
+                            </span>
+                            o status:
+                        </p>
+                        
+                        <!-- Order Information -->
+                        <div class="bg-sidebar-border/20 rounded-lg p-4 mb-4">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="font-medium text-foreground">{{ confirmData?.actionName }}</span>
+                                <span class="text-muted-foreground">•</span>
+                                <span class="text-sm text-muted-foreground">Pedido {{ confirmData?.orderNumber }}</span>
+                            </div>
+                            
+                            <div v-if="confirmData?.orderData" class="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                                <div>
+                                    <span class="font-medium">Cliente:</span> {{ confirmData.orderData.contato_nome }}
+                                </div>
+                                <div>
+                                    <span class="font-medium">Total:</span> R$ {{ confirmData.orderData.total }}
+                                </div>
+                                <div>
+                                    <span class="font-medium">Data:</span> {{ formatDate(confirmData.orderData.data) }}
+                                </div>
+                                <div>
+                                    <span class="font-medium">Sistema:</span> {{ confirmData.orderData.source.toUpperCase() }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <p class="text-sm text-muted-foreground">
+                            Tem certeza que deseja continuar?
+                        </p>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex gap-3 justify-end">
+                        <button
+                            @click="cancelStatusUpdate"
+                            class="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            @click="confirmStatusUpdate"
+                            class="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+                            :class="confirmData?.newStatus ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'"
+                        >
+                            {{ confirmData?.newStatus ? 'Confirmar' : 'Desmarcar' }}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

@@ -24,74 +24,75 @@ class OrderFactory extends Factory
      */
     public function definition(): array
     {
-        $systems = ['collmepro', 'collmepro_atacadista', 'collme_beauty'];
-        $logisticsProviders = ['correios_pac', 'correios_sedex', 'total_express', 'melhor_envio'];
-        $trackingStatuses = ['label_issued', 'dispatched', 'in_transit', 'delivered'];
-
+        $situacaoValores = [1, 2, 3, 4]; // Em Aberto, Em Andamento, Finalizado, Cancelado
+        
         return [
-            'system' => fake()->randomElement($systems),
-            'order_number' => fake()->unique()->regexify('[A-Z]{2}[0-9]{3,6}'),
-            'customer_name' => fake()->name(),
-            'seller_name' => fake()->name(),
-            'order_date' => fake()->dateTimeBetween('-30 days', 'now'),
-            'nfe_number' => fake()->optional(0.7)->regexify('[0-9]{44}'),
-            'nfe_pdf_url' => fake()->optional(0.5)->url(),
-            'tracking_code' => fake()->optional(0.6)->regexify('[A-Z]{2}[0-9]{9}[A-Z]{2}'),
-            'logistics_provider' => fake()->optional(0.6)->randomElement($logisticsProviders),
-            'tracking_status' => fake()->optional(0.6)->randomElement($trackingStatuses),
+            'bling_id' => fake()->unique()->numberBetween(10000000, 99999999),
+            'numero' => fake()->unique()->numberBetween(1000, 9999),
+            'numero_loja' => fake()->optional(0.7)->regexify('Loja_[0-9]{3}'),
+            'data' => fake()->dateTimeBetween('-30 days', 'now'),
+            'data_saida' => fake()->optional(0.6)->dateTimeBetween('-20 days', 'now'),
+            'data_prevista' => fake()->optional(0.8)->dateTimeBetween('now', '+7 days'),
+            'total_produtos' => fake()->numberBetween(1, 10),
+            'total' => fake()->randomFloat(2, 50, 2000),
+            'contato_id' => fake()->numberBetween(10000000, 99999999),
+            'contato_nome' => fake()->name(),
+            'contato_tipo_pessoa' => fake()->randomElement(['F', 'J']),
+            'contato_documento' => fake()->randomElement([fake()->cpf(), fake()->cnpj()]),
+            'situacao_id' => fake()->numberBetween(10000000, 99999999),
+            'situacao_valor' => fake()->randomElement($situacaoValores),
+            'loja_id' => fake()->numberBetween(10000000, 99999999),
+            'source' => 'bling',
         ];
     }
 
     /**
-     * Indicate that the order is from Collmepro.
+     * Indicate that the order is from Bling.
      */
-    public function collmepro(): static
+    public function fromBling(): static
     {
         return $this->state(fn (array $attributes) => [
-            'system' => 'collmepro',
+            'source' => 'bling',
         ]);
     }
 
     /**
-     * Indicate that the order is from Collmepro Atacadista.
+     * Indicate that the order is finalized.
      */
-    public function collmeproAtacadista(): static
+    public function finalized(): static
     {
         return $this->state(fn (array $attributes) => [
-            'system' => 'collmepro_atacadista',
+            'situacao_valor' => 3, // Finalizado
         ]);
     }
 
     /**
-     * Indicate that the order is from Collme Beauty.
+     * Indicate that the order is pending.
      */
-    public function collmeBeauty(): static
+    public function pending(): static
     {
         return $this->state(fn (array $attributes) => [
-            'system' => 'collme_beauty',
+            'situacao_valor' => 1, // Em Aberto
         ]);
     }
 
     /**
-     * Indicate that the order has NFE.
+     * Indicate that the order is in progress.
      */
-    public function withNfe(): static
+    public function inProgress(): static
     {
         return $this->state(fn (array $attributes) => [
-            'nfe_number' => fake()->regexify('[0-9]{44}'),
-            'nfe_pdf_url' => fake()->url(),
+            'situacao_valor' => 2, // Em Andamento
         ]);
     }
 
     /**
-     * Indicate that the order has tracking.
+     * Indicate that the order is cancelled.
      */
-    public function withTracking(): static
+    public function cancelled(): static
     {
         return $this->state(fn (array $attributes) => [
-            'tracking_code' => fake()->regexify('[A-Z]{2}[0-9]{9}[A-Z]{2}'),
-            'logistics_provider' => fake()->randomElement(['correios_pac', 'correios_sedex', 'total_express', 'melhor_envio']),
-            'tracking_status' => fake()->randomElement(['label_issued', 'dispatched', 'in_transit', 'delivered']),
+            'situacao_valor' => 4, // Cancelado
         ]);
     }
 }

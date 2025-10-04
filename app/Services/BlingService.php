@@ -4,692 +4,354 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache;
-use Exception;
+use Carbon\Carbon;
 
-/**
- * BlingService - Integration with Bling API v3
- * 
- * @see https://developer.bling.com.br/build/assets/openapi-Dyv70kbC.json
- */
 class BlingService
 {
+    private string $apiKey;
     private string $baseUrl;
-    private string $bearerToken;
     private int $timeout;
-    private array $rateLimit;
-    private array $defaults;
-    private bool $loggingEnabled;
 
     public function __construct()
     {
-        $this->baseUrl = config('bling.api.base_url');
-        $this->timeout = config('bling.api.timeout');
-        $this->rateLimit = config('bling.rate_limit');
-        $this->defaults = config('bling.defaults');
-        $this->loggingEnabled = config('bling.logging.enabled');
-
-        $bearerToken = config('bling.api.bearer_token');
-        if (!$bearerToken) {
-            throw new Exception('Bling Bearer Token not configured');
-        }
-        
-        $this->bearerToken = $bearerToken;
+        $this->apiKey = config('services.bling.api_key');
+        $this->baseUrl = config('services.bling.base_url', 'https://api.bling.com.br/Api/v3');
+        $this->timeout = config('services.bling.timeout', 30);
     }
 
     /**
-     * Busca notas fiscais com filtros opcionais
+     * Apply rate limiting: 3 requests per second
      */
-    public function fetchInvoices(array $filters = []): array
+    private function applyRateLimit(): void
     {
-        try {
-            $this->logRequest('fetchInvoices', $filters);
-
-            $params = $this->buildInvoiceParams($filters);
-            $response = $this->makeRequest('/nfe', $params);
-
-            if (!$response['success']) {
-                $this->logError('Failed to fetch invoices', [
-                    'status' => $response['status_code'],
-                    'response' => $response['body']
-                ]);
-                return [];
-            }
-
-            $data = json_decode($response['body'], true);
-            
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                $this->logError('Invalid JSON response', [
-                    'error' => json_last_error_msg(),
-                    'response' => $response['body']
-                ]);
-                return [];
-            }
-
-            $invoices = $data['data'] ?? [];
-            $this->logResponse('fetchInvoices', count($invoices) . ' invoices found');
-
-            return $invoices;
-
-        } catch (Exception $e) {
-            $this->logError('Exception in fetchInvoices', [
-                'error' => $e->getMessage(),
-                'filters' => $filters
-            ]);
-            return [];
-        }
+        usleep(333333); // 333ms = 3 requests per second
     }
 
     /**
-     * Busca nota fiscal por número do pedido na loja
-     * Formato: numeroLoja = "id_id" onde id é o número do pedido
+     * Get all orders from Bling
      */
-    public function fetchInvoiceByOrderNumber(string $orderNumber): ?array
+    public function getAllOrders(array $filters = []): array
     {
-        try {
-            $this->logRequest('fetchInvoiceByOrderNumber', ['orderNumber' => $orderNumber]);
+        $orders = [];
+        $pagina = 1;
+        $limite = 100;
+        $maxPages = 50; // Prevent infinite loops
+        $requestCount = 0;
 
-            // Formato correto: id_id (ex: 8175_8175)
-            $numeroLoja = $orderNumber . '_' . $orderNumber;
-            
-            $filters = [
-                'numeroLoja' => $numeroLoja,
-                'limite' => 10
-            ];
+        do {
+            try {
+                Log::info("BlingService: Fetching page {$pagina} of orders");
 
-            $this->logInfo('Searching with numeroLoja: ' . $numeroLoja);
-
-            $invoices = $this->fetchInvoices($filters);
-
-            if (empty($invoices)) {
-                $this->logInfo('No invoice found for order number: ' . $orderNumber . ' (numeroLoja: ' . $numeroLoja . ')');
-                return null;
-            }
-
-            // Retorna a primeira nota encontrada (deve ser única por número do pedido)
-            $invoice = $invoices[0];
-            $this->logResponse('fetchInvoiceByOrderNumber', 'Invoice found: ' . $invoice['numero']);
-
-            return $invoice;
-
-        } catch (Exception $e) {
-            $this->logError('Exception in fetchInvoiceByOrderNumber', [
-                'error' => $e->getMessage(),
-                'orderNumber' => $orderNumber
-            ]);
-            return null;
-        }
-    }
-
-    /**
-     * Busca notas fiscais por período
-     */
-    public function fetchInvoicesByDateRange(string $startDate, string $endDate, array $additionalFilters = []): array
-    {
-        try {
-            $this->logRequest('fetchInvoicesByDateRange', [
-                'startDate' => $startDate,
-                'endDate' => $endDate,
-                'additionalFilters' => $additionalFilters
-            ]);
-
-            $filters = array_merge([
-                'dataEmissaoInicial' => $startDate,
-                'dataEmissaoFinal' => $endDate,
-                'limite' => $this->defaults['limit_per_page']
-            ], $additionalFilters);
-
-            $invoices = $this->fetchInvoices($filters);
-            $this->logResponse('fetchInvoicesByDateRange', count($invoices) . ' invoices found in date range');
-
-            return $invoices;
-
-        } catch (Exception $e) {
-            $this->logError('Exception in fetchInvoicesByDateRange', [
-                'error' => $e->getMessage(),
-                'startDate' => $startDate,
-                'endDate' => $endDate
-            ]);
-            return [];
-        }
-    }
-
-    /**
-     * Busca notas fiscais por situação
-     */
-    public function fetchInvoicesByStatus(int $status, array $additionalFilters = []): array
-    {
-        try {
-            $this->logRequest('fetchInvoicesByStatus', [
-                'status' => $status,
-                'additionalFilters' => $additionalFilters
-            ]);
-
-            $filters = array_merge([
-                'situacao' => $status,
-                'limite' => $this->defaults['limit_per_page']
-            ], $additionalFilters);
-
-            $invoices = $this->fetchInvoices($filters);
-            $this->logResponse('fetchInvoicesByStatus', count($invoices) . ' invoices found with status: ' . $status);
-
-            return $invoices;
-
-        } catch (Exception $e) {
-            $this->logError('Exception in fetchInvoicesByStatus', [
-                'error' => $e->getMessage(),
-                'status' => $status
-            ]);
-            return [];
-        }
-    }
-
-    /**
-     * Busca todas as notas fiscais autorizadas (situação 5)
-     */
-    public function fetchAuthorizedInvoices(array $additionalFilters = []): array
-    {
-        return $this->fetchInvoicesByStatus($this->defaults['invoice_status'], $additionalFilters);
-    }
-
-    /**
-     * Busca múltiplas páginas de notas fiscais
-     */
-    public function fetchAllInvoices(array $filters = [], int $maxPages = null): array
-    {
-        try {
-            $maxPages = $maxPages ?? $this->defaults['max_pages'];
-            $allInvoices = [];
-            $page = 1;
-
-            do {
-                $pageFilters = array_merge($filters, [
-                    'pagina' => $page,
-                    'limite' => $this->defaults['limit_per_page']
+                $response = $this->makeRequest('GET', '/pedidos/vendas', [
+                    'pagina' => $pagina,
+                    'limite' => $limite,
+                    ...$filters
                 ]);
 
-                $invoices = $this->fetchInvoices($pageFilters);
+                $requestCount++;
                 
-                if (empty($invoices)) {
+                if (!$response['success']) {
+                    Log::error("BlingService: Failed to fetch orders on page {$pagina}", [
+                        'error' => $response['error']
+                    ]);
                     break;
                 }
 
-                $allInvoices = array_merge($allInvoices, $invoices);
-                $page++;
+                $data = $response['data'];
+                $pageOrders = $data['data'] ?? [];
 
-                // Rate limiting: pausa entre páginas
-                $this->enforceRateLimit();
+                if (empty($pageOrders)) {
+                    Log::info("BlingService: No more orders found on page {$pagina}, stopping pagination");
+                    break;
+                }
 
-            } while (count($invoices) === $this->defaults['limit_per_page'] && $page <= $maxPages);
+                $orders = array_merge($orders, $pageOrders);
+                
+                Log::info("BlingService: Fetched " . count($pageOrders) . " orders from page {$pagina}");
 
-            $this->logInfo('fetchAllInvoices completed', [
-                'total_invoices' => count($allInvoices),
-                'pages_fetched' => $page - 1
-            ]);
+                // If we got less than the limit, we've reached the end
+                if (count($pageOrders) < $limite) {
+                    Log::info("BlingService: Got " . count($pageOrders) . " orders (less than limit {$limite}), stopping pagination");
+                    break;
+                }
 
-            return $allInvoices;
+                $pagina++;
 
-        } catch (Exception $e) {
-            $this->logError('Exception in fetchAllInvoices', [
+                // Rate limiting: 3 requests per second
+                if ($pagina <= $maxPages) {
+                    $this->applyRateLimit();
+                }
+
+        } catch (\Exception $e) {
+                Log::error("BlingService: Exception while fetching orders", [
+                    'page' => $pagina,
                 'error' => $e->getMessage(),
-                'filters' => $filters
+                    'trace' => $e->getTraceAsString()
+                ]);
+                break;
+            }
+
+        } while ($pagina <= $maxPages);
+
+        Log::info("BlingService: Total orders fetched: " . count($orders) . " (requests made: {$requestCount})");
+
+        return $orders;
+    }
+
+    /**
+     * Get a specific order by ID with full details
+     */
+    public function getOrderById(int $orderId): ?array
+    {
+        try {
+            $response = $this->makeRequest('GET', "/pedidos/vendas/{$orderId}");
+            
+            // Rate limiting: 3 requests per second
+            $this->applyRateLimit();
+
+            if (!$response['success']) {
+                Log::error("BlingService: Failed to fetch order {$orderId}", [
+                    'error' => $response['error']
+                ]);
+                return null;
+            }
+
+            return $response['data']['data'] ?? null;
+
+        } catch (\Exception $e) {
+            Log::error("BlingService: Exception while fetching order {$orderId}", [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return null;
+        }
+    }
+
+    /**
+     * Get invoices (NFE) for an order
+     */
+    public function getInvoicesForOrder(string $orderNumber): array
+    {
+        try {
+            $response = $this->makeRequest('GET', '/nfe', [
+                'numero' => $orderNumber,
+                'limit' => 100
+            ]);
+            
+            // Rate limiting: 3 requests per second
+            $this->applyRateLimit();
+
+            if (!$response['success']) {
+                Log::error("BlingService: Failed to fetch invoices for order {$orderNumber}", [
+                    'error' => $response['error']
+                ]);
+                return [];
+            }
+
+            return $response['data']['data'] ?? [];
+
+        } catch (\Exception $e) {
+            Log::error("BlingService: Exception while fetching invoices for order {$orderNumber}", [
+                'order_number' => $orderNumber,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
             return [];
         }
     }
 
     /**
-     * Busca detalhes completos de uma nota fiscal por ID
+     * Get tracking information from invoice transport data
      */
-    public function fetchInvoiceById(string $invoiceId): ?array
+    public function getTrackingFromInvoice(array $invoice): ?array
     {
-        try {
-            $this->logRequest('fetchInvoiceById', ['invoiceId' => $invoiceId]);
-
-            $endpoint = "/nfe/{$invoiceId}";
-            $response = $this->makeRequest($endpoint);
-
-            if (!$response['success']) {
-                $this->logError('Failed to fetch invoice details', [
-                    'invoiceId' => $invoiceId,
-                    'status_code' => $response['status_code'],
-                    'body' => $response['body']
-                ]);
-                return null;
-            }
-
-            $data = json_decode($response['body'], true);
-            
-            if (isset($data['data'])) {
-                $invoice = $data['data'];
-                $this->logResponse('fetchInvoiceById', 'Invoice details retrieved: ' . ($invoice['numero'] ?? 'unknown'));
-                return $invoice;
-            }
-
-            $this->logInfo('Invoice data not found in response', [
-                'invoiceId' => $invoiceId,
-                'response' => $data
-            ]);
-            return null;
-
-        } catch (Exception $e) {
-            $this->logError('Exception in fetchInvoiceById', [
-                'error' => $e->getMessage(),
-                'invoiceId' => $invoiceId
-            ]);
+        if (!isset($invoice['transporte'])) {
             return null;
         }
-    }
 
-    /**
-     * Obtém URL para download do PDF da nota fiscal
-     * Agora busca os detalhes completos e extrai o linkPDF
-     */
-    public function getInvoicePdfUrl(string $invoiceId): ?string
-    {
-        try {
-            $this->logRequest('getInvoicePdfUrl', ['invoiceId' => $invoiceId]);
-
-            // Fallback: tenta buscar por endpoint específico de PDF primeiro
-            $endpoint = "/nfe/{$invoiceId}/pdf";
-            $response = $this->makeRequest($endpoint);
-
-            if ($response['success']) {
-                $data = json_decode($response['body'], true);
-                if (isset($data['data']['url'])) {
-                    $pdfUrl = $data['data']['url'];
-                    $this->logInfo('PDF URL retrieved from PDF endpoint', [
-                        'invoiceId' => $invoiceId,
-                        'pdfUrl' => $pdfUrl
-                    ]);
-                    return $pdfUrl;
-                }
-            }
-
-            // Busca detalhes completos da nota fiscal
-            $invoice = $this->fetchInvoiceById($invoiceId);
-            
-            if (!$invoice) {
-                $this->logInfo('Invoice not found for PDF URL', ['invoiceId' => $invoiceId]);
-                return null;
-            }
-
-            // Extrai linkPDF dos detalhes
-            if (isset($invoice['linkPDF']) && !empty($invoice['linkPDF'])) {
-                $pdfUrl = $invoice['linkPDF'];
-                $this->logInfo('PDF URL retrieved from invoice details', [
-                    'invoiceId' => $invoiceId,
-                    'pdfUrl' => $pdfUrl
-                ]);
-                return $pdfUrl;
-            }
-
-            $this->logInfo('PDF URL not available', [
-                'invoiceId' => $invoiceId,
-                'hasLinkPDF' => isset($invoice['linkPDF']),
-                'linkPDF' => $invoice['linkPDF'] ?? null
-            ]);
-            return null;
-
-        } catch (Exception $e) {
-            $this->logError('Exception in getInvoicePdfUrl', [
-                'error' => $e->getMessage(),
-                'invoiceId' => $invoiceId
-            ]);
-            return null;
-        }
-    }
-
-    /**
-     * Valida se uma nota fiscal é válida para sincronização
-     */
-    public function isValidInvoice(array $invoice): bool
-    {
-        $requiredFields = ['id', 'numero', 'situacao', 'dataEmissao'];
+        $transport = $invoice['transporte'];
         
-        foreach ($requiredFields as $field) {
-            if (!isset($invoice[$field]) || empty($invoice[$field])) {
-                return false;
-            }
-        }
-
-        // Status válidos das notas fiscais no Bling:
-        // 1=Pendente, 2=Cancelada, 3=Aguardando recibo, 4=Rejeitada, 5=Autorizada, 6=Emitida DANFE
-        // 7=Registrada, 8=Aguardando protocolo, 9=Denegada, 10=Consulta situação, 11=Bloqueada
-        // Processamos apenas notas autorizadas (5) e emitidas DANFE (6) - status finais válidos
-        $validStatuses = [5, 6]; // 5=Autorizada, 6=Emitida DANFE
-        if (!in_array($invoice['situacao'], $validStatuses)) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Extrai dados relevantes da nota fiscal para o sistema
-     */
-    public function extractInvoiceData(array $invoice): array
-    {
-        // Extrai informações de transporte/rastreamento
-        $transportInfo = $this->extractTransportData($invoice);
-        
-        return [
-            'bling_id' => $invoice['id'],
-            'invoice_number' => $invoice['numero'],
-            'access_key' => $invoice['chaveAcesso'] ?? null,
-            'issue_date' => $invoice['dataEmissao'],
-            'operation_date' => $invoice['dataOperacao'] ?? $invoice['dataEmissao'],
-            'status' => $invoice['situacao'],
-            'type' => $invoice['tipo'] ?? null,
-            'contact' => $invoice['contato'] ?? null,
-            'store' => $invoice['loja'] ?? null,
-            'link_pdf' => $invoice['linkPDF'] ?? null,
-            'link_danfe' => $invoice['linkDanfe'] ?? null,
-            'valor_nota' => $invoice['valorNota'] ?? null,
-            'valor_frete' => $invoice['valorFrete'] ?? null,
-            'numero_pedido_loja' => $invoice['numeroPedidoLoja'] ?? null,
-            'serie' => $invoice['serie'] ?? null,
-            'transport' => $transportInfo,
-            'raw_data' => $invoice
+        $tracking = [
+            'tracking_code' => $transport['codigoRastreamento'] ?? null,
+            'logistics_provider' => $transport['transportadora'] ?? null,
+            'service_type' => $transport['tipoFrete'] ?? null,
+            'volume' => $transport['volume'] ?? null,
+            'weight' => $transport['peso'] ?? null,
         ];
+
+        // Only return if we have at least tracking code
+        return $tracking['tracking_code'] ? $tracking : null;
     }
 
     /**
-     * Extrai dados de transporte/rastreamento da nota fiscal
+     * Make HTTP request to Bling API
      */
-    private function extractTransportData(array $invoice): array
+    private function makeRequest(string $method, string $endpoint, array $params = []): array
     {
-        $transport = $invoice['transporte'] ?? null;
-        
-        if (!$transport) {
-            return [
-                'logistics_provider' => null,
-                'tracking_code' => null,
-                'frete_por_conta' => null,
-                'volumes' => null,
-                'etiqueta' => null,
-                'logistics_object_id' => null
-            ];
-        }
-
-        // Extrai transportadora
-        $logisticsProvider = null;
-        if (isset($transport['transportador']['nome'])) {
-            $logisticsProvider = $transport['transportador']['nome'];
-        }
-
-        // Extrai código de rastreamento dos volumes
-        $trackingCode = null;
-        if (isset($transport['volumes']) && is_array($transport['volumes'])) {
-            foreach ($transport['volumes'] as $volume) {
-                // Procura por código de rastreamento nos volumes
-                if (isset($volume['codigoRastreamento'])) {
-                    $trackingCode = $volume['codigoRastreamento'];
-                    break;
-                }
-                // Se não tiver codigoRastreamento, pode estar em outro campo
-                if (isset($volume['numero'])) {
-                    $trackingCode = $volume['numero'];
-                    break;
-                }
-            }
-        }
-
-        // Extrai ID do objeto logístico (usado para buscar detalhes de rastreamento)
-        // O ID está dentro de volumes[0].id
-        $logisticsObjectId = null;
-        if (isset($transport['volumes'][0]['id'])) {
-            $logisticsObjectId = $transport['volumes'][0]['id'];
-        } elseif (isset($transport['idObjetoLogistico'])) {
-            // Fallback para formato antigo
-            $logisticsObjectId = $transport['idObjetoLogistico'];
-        }
-
-        return [
-            'logistics_provider' => $logisticsProvider,
-            'tracking_code' => $trackingCode,
-            'frete_por_conta' => $transport['fretePorConta'] ?? null,
-            'volumes' => $transport['volumes'] ?? null,
-            'etiqueta' => $transport['etiqueta'] ?? null,
-            'transportador_documento' => $transport['transportador']['numeroDocumento'] ?? null,
-            'logistics_object_id' => $logisticsObjectId
-        ];
-    }
-
-    /**
-     * Faz requisição HTTP para a API do Bling
-     */
-    private function makeRequest(string $endpoint, array $params = []): array
-    {
-        $this->enforceRateLimit();
-
         $url = $this->baseUrl . $endpoint;
-        if (!empty($params)) {
-            $url .= '?' . http_build_query($params);
-        }
-
+        
         $headers = [
-            'Authorization' => 'Bearer ' . $this->bearerToken,
+            'Authorization' => 'Bearer ' . $this->apiKey,
             'Content-Type' => 'application/json',
-            'Accept' => 'application/json',
-            'User-Agent' => 'Collmepro-Logistics/1.0'
+                        'Accept' => 'application/json',
         ];
 
-        if (config('bling.logging.log_requests')) {
-            $this->logInfo('Making request to Bling API', [
+        try {
+            Log::debug("BlingService: Making {$method} request to {$url}", [
+                'params' => $params,
+                'headers' => $headers
+            ]);
+
+            $response = Http::withHeaders($headers)
+                ->timeout($this->timeout)
+                ->$method($url, $params);
+
+            if ($response->successful()) {
+                return [
+                    'success' => true,
+                    'data' => $response->json(),
+                ];
+            }
+
+            Log::error("BlingService: HTTP request failed", [
+                'method' => $method,
                 'url' => $url,
+                'status' => $response->status(),
+                'body' => $response->body(),
                 'params' => $params
             ]);
-        }
 
-        $response = Http::timeout($this->timeout)
-            ->withHeaders($headers)
-            ->get($url);
+            return [
+                'success' => false,
+                'error' => "HTTP {$response->status()}: {$response->body()}",
+                'status' => $response->status()
+            ];
 
-        $result = [
-            'status_code' => $response->status(),
-            'body' => $response->body(),
-            'success' => $response->successful()
-        ];
-
-        if (config('bling.logging.log_responses')) {
-            $this->logInfo('Bling API response', [
-                'status' => $result['status_code'],
-                'body' => $result['body']
+        } catch (\Exception $e) {
+            Log::error("BlingService: Request exception", [
+                'method' => $method,
+                'url' => $url,
+                'error' => $e->getMessage(),
+                'params' => $params
             ]);
+
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
         }
-
-        return $result;
     }
 
     /**
-     * Aplica rate limiting entre requisições
+     * Get complete order data by ID
      */
-    private function enforceRateLimit(): void
-    {
-        $cacheKey = 'bling_rate_limit_last_request';
-        $lastRequest = Cache::get($cacheKey, 0);
-        $currentTime = microtime(true);
-        
-        $timeSinceLastRequest = $currentTime - $lastRequest;
-        $minInterval = 1 / $this->rateLimit['requests_per_second'];
-        
-        if ($timeSinceLastRequest < $minInterval) {
-            $sleepTime = $minInterval - $timeSinceLastRequest;
-            usleep($sleepTime * 1000000); // Converte para microsegundos
-        }
-        
-        Cache::put($cacheKey, microtime(true), 1); // Cache por 1 segundo
-    }
-
-    /**
-     * Build parameters for invoice search
-     */
-    private function buildInvoiceParams(array $filters): array
-    {
-        $params = array_merge([
-            'limite' => $this->defaults['limit_per_page'],
-            'pagina' => 1
-        ], $filters);
-
-        // Remove parâmetros vazios
-        return array_filter($params, function($value) {
-            return $value !== null && $value !== '';
-        });
-    }
-
-    /**
-     * Log de requisições
-     */
-    private function logRequest(string $method, array $data): void
-    {
-        if (!$this->loggingEnabled) return;
-        
-        Log::info("BlingService: $method", $data);
-    }
-
-    /**
-     * Log de respostas
-     */
-    private function logResponse(string $method, string $message): void
-    {
-        if (!$this->loggingEnabled) return;
-        
-        Log::info("BlingService: $method - $message");
-    }
-
-    /**
-     * Log de informações
-     */
-    private function logInfo(string $message, array $context = []): void
-    {
-        if (!$this->loggingEnabled) return;
-        
-        Log::info("BlingService: $message", $context);
-    }
-
-    /**
-     * Busca detalhes de objeto logístico por ID
-     */
-    public function fetchLogisticsObjectById($objectId): ?array
+    public function getCompleteOrderData(int $orderId): ?array
     {
         try {
-            $this->logRequest('fetchLogisticsObjectById', ['objectId' => $objectId]);
-
-            $endpoint = "/logisticas/objetos/{$objectId}";
-            $response = $this->makeRequest($endpoint);
+            $response = $this->makeRequest('GET', "/pedidos/vendas/{$orderId}");
             
+            $this->applyRateLimit();
+
             if (!$response['success']) {
-                $this->logError('Failed to fetch logistics object details', [
-                    'object_id' => $objectId,
-                    'status_code' => $response['status_code'],
-                    'body' => $response['body']
+                Log::error("BlingService: Failed to fetch complete order data for ID {$orderId}", [
+                    'error' => $response['error']
                 ]);
                 return null;
             }
 
-            $data = json_decode($response['body'], true);
-            
-            if (isset($data['data'])) {
-                $this->logResponse('fetchLogisticsObjectById', 'Logistics object details retrieved for ID: ' . $objectId);
-                return $data['data'];
-            }
-            
-            $this->logInfo('Logistics object data not found in response', [
-                'object_id' => $objectId,
-                'response' => $data
-            ]);
-            return null;
+            return $response['data']['data'] ?? null;
 
-        } catch (Exception $e) {
-            $this->logError('Exception in fetchLogisticsObjectById', [
-                'object_id' => $objectId,
-                'error' => $e->getMessage()
+        } catch (\Exception $e) {
+            Log::error("BlingService: Exception while fetching complete order data for ID {$orderId}", [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
-            
             return null;
         }
     }
 
     /**
-     * Extrai informações de rastreamento do objeto logístico
+     * Get complete invoice data by ID
      */
-    public function extractTrackingData($logisticsObject): array
+    public function getCompleteInvoiceData(int $invoiceId): ?array
     {
-        $data = [
-            'tracking_code' => null,
-            'status' => null,
-            'description' => null,
-            'last_update' => null,
-            'tracking_url' => null,
-            'service' => null,
-            'delivery_date' => null,
-            'estimated_delivery' => null,
-            'freight_value' => null
-        ];
+        try {
+            $response = $this->makeRequest('GET', "/nfe/{$invoiceId}");
+            
+            $this->applyRateLimit();
 
-        if (!isset($logisticsObject['rastreamento'])) {
-            return $data;
+            if (!$response['success']) {
+                Log::error("BlingService: Failed to fetch complete invoice data for ID {$invoiceId}", [
+                    'error' => $response['error']
+                ]);
+                return null;
+            }
+
+            return $response['data']['data'] ?? null;
+
+        } catch (\Exception $e) {
+            Log::error("BlingService: Exception while fetching complete invoice data for ID {$invoiceId}", [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return null;
         }
+    }
 
-        $rastreamento = $logisticsObject['rastreamento'];
+    /**
+     * Get complete tracking data by volume ID
+     */
+    public function getCompleteTrackingData(int $volumeId): ?array
+    {
+        try {
+            $response = $this->makeRequest('GET', "/logisticas/objetos/{$volumeId}");
+            
+            $this->applyRateLimit();
 
-        // Código de rastreamento
-        if (isset($rastreamento['codigo'])) {
-            $data['tracking_code'] = $rastreamento['codigo'];
+            if (!$response['success']) {
+                Log::error("BlingService: Failed to fetch complete tracking data for volume ID {$volumeId}", [
+                    'error' => $response['error']
+                ]);
+                return null;
+            }
+
+            return $response['data']['data'] ?? null;
+
+        } catch (\Exception $e) {
+            Log::error("BlingService: Exception while fetching complete tracking data for volume ID {$volumeId}", [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return null;
         }
+    }
 
-        // Status e descrição
-        if (isset($rastreamento['situacao'])) {
-            $data['status'] = $rastreamento['situacao'];
-        }
+    /**
+     * Test API connection
+     */
+    public function testConnection(): array
+    {
+        try {
+            // Test with pedidos endpoint (orders) which we have permission for
+            $response = $this->makeRequest('GET', '/pedidos/vendas', ['limite' => 1]);
 
-        if (isset($rastreamento['descricao'])) {
-            $data['description'] = $rastreamento['descricao'];
-        }
+            if ($response['success']) {
+                return [
+                    'success' => true,
+                    'message' => 'Bling API connection successful - Orders access confirmed'
+                ];
+            }
 
-        // Última alteração
-        if (isset($rastreamento['ultimaAlteracao'])) {
-            $data['last_update'] = $rastreamento['ultimaAlteracao'];
-        }
+            return [
+                'success' => false,
+                'error' => $response['error'] ?? 'Unknown error'
+            ];
 
-        // URL de rastreamento
-        if (isset($rastreamento['url'])) {
-            $data['tracking_url'] = $rastreamento['url'];
-        }
-
-        // Informações do serviço
-        if (isset($logisticsObject['servico'])) {
-            $servico = $logisticsObject['servico'];
-            $data['service'] = [
-                'name' => $servico['nome'] ?? null,
-                'code' => $servico['codigo'] ?? null
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
             ];
         }
-
-        // Data de saída
-        if (isset($logisticsObject['dataSaida'])) {
-            $data['delivery_date'] = $logisticsObject['dataSaida'];
-        }
-
-        // Prazo de entrega previsto
-        if (isset($logisticsObject['prazoEntregaPrevisto'])) {
-            $data['estimated_delivery'] = $logisticsObject['prazoEntregaPrevisto'];
-        }
-
-        // Valor do frete
-        if (isset($logisticsObject['fretePrevisto'])) {
-            $data['freight_value'] = $logisticsObject['fretePrevisto'];
-        }
-
-        return $data;
-    }
-
-    /**
-     * Log de erros
-     */
-    private function logError(string $message, array $context = []): void
-    {
-        Log::error("BlingService: $message", $context);
     }
 }
