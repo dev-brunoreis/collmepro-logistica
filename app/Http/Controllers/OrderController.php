@@ -61,10 +61,10 @@ class OrderController extends Controller
         // Date range filter
         if ($request->filled('date_from')) {
             $query->where('data', '>=', $request->get('date_from'));
-        }
+                    }
         if ($request->filled('date_to')) {
             $query->where('data', '<=', $request->get('date_to'));
-        }
+                    }
 
         // Contato filter
         if ($request->filled('contato')) {
@@ -87,12 +87,31 @@ class OrderController extends Controller
                     $q->whereNull('tracking_code')
                       ->orWhere('tracking_code', '');
                 });
-            } else {
-                // Filter by specific tracking status from JSON data
-                // We need to find the original status name from the tracking_statuses array
-                $trackingStatuses = $this->getTrackingStatuses($query);
-                $originalStatusName = $trackingStatuses[$trackingStatus] ?? $trackingStatus;
-                $query->whereJsonContains('raw_tracking_data->rastreamento->situacao', $originalStatusName);
+            } elseif (str_starts_with($trackingStatus, 'descricao_')) {
+                // Filter by specific tracking description
+                $descricaoHash = str_replace('descricao_', '', $trackingStatus);
+                $descriptions = $this->getAllTrackingDescriptions();
+                $targetDescription = null;
+                
+                // Find the actual description text by hash
+                foreach ($descriptions as $key => $desc) {
+                    if (str_starts_with($key, 'descricao_') && md5($desc) === $descricaoHash) {
+                        $targetDescription = $desc;
+                        break;
+                    }
+                }
+                
+                if ($targetDescription) {
+                    $query->where(function ($q) use ($targetDescription) {
+                        $q->whereJsonContains('raw_tracking_data->rastreamento->descricao', $targetDescription)
+                          ->orWhereJsonContains('raw_invoice_data->rastreamento->descricao', $targetDescription)
+                          ->orWhereJsonContains('raw_invoice_data->transporte->rastreamento->descricao', $targetDescription);
+                    });
+                }
+            } elseif (str_starts_with($trackingStatus, 'situacao_')) {
+                // Filter by specific tracking situacao (numeric code)
+                $situacao = (int) str_replace('situacao_', '', $trackingStatus);
+                $query->whereJsonContains('raw_tracking_data->rastreamento->situacao', $situacao);
             }
         }
 
@@ -412,42 +431,141 @@ class OrderController extends Controller
         ]);
         
         try {
-            // Get statuses from raw_tracking_data
-            $trackingStatuses = OrderSummary::whereNotNull('raw_tracking_data')
+            // Get all unique tracking descriptions from both raw_tracking_data and raw_invoice_data
+            $trackingDescriptions = collect();
+            
+            // 1. From raw_tracking_data
+            $trackingData = OrderSummary::whereNotNull('raw_tracking_data')
                 ->get()
                 ->pluck('raw_tracking_data')
                 ->filter()
                 ->map(function ($data) {
-                    if (is_array($data) && isset($data['rastreamento']['situacao'])) {
-                        return $data['rastreamento']['situacao'];
+                    if (is_array($data) && isset($data['rastreamento']['descricao'])) {
+                        return $data['rastreamento']['descricao'];
                     }
                     return null;
                 })
                 ->filter()
-                ->unique()
-                ->map(function ($status) {
-                    // Create a safe key from the status name
-                    $key = strtolower($status);
-                    $key = str_replace([' ', '-', 'ç', 'ã', 'õ', 'é', 'ê'], ['_', '_', 'c', 'a', 'o', 'e', 'e'], $key);
-                    $key = preg_replace('/[^a-z0-9_]/', '_', $key);
-                    $key = preg_replace('/_+/', '_', $key);
-                    $key = trim($key, '_');
-                    
-                    return [
-                        'key' => $key,
-                        'label' => $status
-                    ];
+                ->unique();
+            
+            // 2. From raw_invoice_data (rastreamento)
+            $invoiceTrackingData = OrderSummary::whereNotNull('raw_invoice_data')
+                ->get()
+                ->pluck('raw_invoice_data')
+                ->filter()
+                ->map(function ($data) {
+                    if (is_array($data) && isset($data['rastreamento']['descricao'])) {
+                        return $data['rastreamento']['descricao'];
+                    }
+                    return null;
                 })
-                ->mapWithKeys(function ($item) {
-                    return [$item['key'] => $item['label']];
-                });
+                ->filter()
+                ->unique();
+            
+            // 3. From raw_invoice_data (transporte)
+            $invoiceTransportData = OrderSummary::whereNotNull('raw_invoice_data')
+                ->get()
+                ->pluck('raw_invoice_data')
+                ->filter()
+                ->map(function ($data) {
+                    if (is_array($data) && isset($data['transporte']['rastreamento']['descricao'])) {
+                        return $data['transporte']['rastreamento']['descricao'];
+                    }
+                    return null;
+                })
+                ->filter()
+                ->unique();
+            
+            // Combine all descriptions
+            $allDescriptions = $trackingData
+                ->merge($invoiceTrackingData)
+                ->merge($invoiceTransportData)
+                ->filter()
+                ->unique()
+                ->sort()
+                ->map(function ($descricao) {
+                    // Create a safe key from the description
+                    $key = 'descricao_' . md5($descricao);
+                    return [$key => $descricao];
+                })
+                ->collapse();
                 
-            $statuses = $statuses->merge($trackingStatuses)->unique();
+            $statuses = $statuses->merge($allDescriptions);
             
             return $statuses->toArray();
         } catch (\Exception $e) {
             // Return default statuses if there's an error
             return $statuses->toArray();
+        }
+    }
+
+    /**
+     * Get all tracking descriptions from orders
+     */
+    private function getAllTrackingDescriptions()
+    {
+        $descriptions = collect();
+        
+        try {
+            // 1. From raw_tracking_data
+            $trackingData = OrderSummary::whereNotNull('raw_tracking_data')
+                ->get()
+                ->pluck('raw_tracking_data')
+                ->filter()
+                ->map(function ($data) {
+                    if (is_array($data) && isset($data['rastreamento']['descricao'])) {
+                        return $data['rastreamento']['descricao'];
+                    }
+                    return null;
+                })
+                ->filter()
+                ->unique();
+            
+            // 2. From raw_invoice_data (rastreamento)
+            $invoiceTrackingData = OrderSummary::whereNotNull('raw_invoice_data')
+                ->get()
+                ->pluck('raw_invoice_data')
+                ->filter()
+                ->map(function ($data) {
+                    if (is_array($data) && isset($data['rastreamento']['descricao'])) {
+                        return $data['rastreamento']['descricao'];
+                    }
+                    return null;
+                })
+                ->filter()
+                ->unique();
+            
+            // 3. From raw_invoice_data (transporte)
+            $invoiceTransportData = OrderSummary::whereNotNull('raw_invoice_data')
+                ->get()
+                ->pluck('raw_invoice_data')
+                ->filter()
+                ->map(function ($data) {
+                    if (is_array($data) && isset($data['transporte']['rastreamento']['descricao'])) {
+                        return $data['transporte']['rastreamento']['descricao'];
+                    }
+                    return null;
+                })
+                ->filter()
+                ->unique();
+            
+            // Combine all descriptions
+            $allDescriptions = $trackingData
+                ->merge($invoiceTrackingData)
+                ->merge($invoiceTransportData)
+                ->filter()
+                ->unique()
+                ->sort()
+                ->map(function ($descricao) {
+                    // Create a safe key from the description
+                    $key = 'descricao_' . md5($descricao);
+                    return [$key => $descricao];
+                })
+                ->collapse();
+                
+            return $allDescriptions->toArray();
+        } catch (\Exception $e) {
+            return [];
         }
     }
 

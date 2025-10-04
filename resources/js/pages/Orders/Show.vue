@@ -767,19 +767,19 @@ const formatTrackingDataForAPI = (tracking: TrackingData) => {
                         </div>
                         <div v-if="showRawData" class="space-y-4">
                             <div v-if="props.order.raw_order_data">
-                                <h3 class="text-sm font-medium text-muted-foreground mb-2">Dados Completos do Pedido (Bling)</h3>
+                                <h3 class="text-sm font-medium text-muted-foreground mb-2">order</h3>
                                 <pre class="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto max-h-96"><code>{{ JSON.stringify(props.order.raw_order_data, null, 2) }}</code></pre>
                             </div>
                             <div v-if="props.order.raw_invoice_data">
-                                <h3 class="text-sm font-medium text-muted-foreground mb-2">Dados Completos da NFE (Bling)</h3>
+                                <h3 class="text-sm font-medium text-muted-foreground mb-2">invoice</h3>
                                 <pre class="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto max-h-96"><code>{{ JSON.stringify(props.order.raw_invoice_data, null, 2) }}</code></pre>
                             </div>
                             <div v-if="props.order.raw_tracking_data">
-                                <h3 class="text-sm font-medium text-muted-foreground mb-2">Dados Completos de Rastreamento (Bling)</h3>
+                                <h3 class="text-sm font-medium text-muted-foreground mb-2">tracking</h3>
                                 <pre class="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto max-h-96"><code>{{ JSON.stringify(props.order.raw_tracking_data, null, 2) }}</code></pre>
                             </div>
                             <div>
-                                <h3 class="text-sm font-medium text-muted-foreground mb-2">Order Summary</h3>
+                                <h3 class="text-sm font-medium text-muted-foreground mb-2">order summary</h3>
                                 <pre class="bg-gray-900 text-gray-100 p-4 rounded-lg text-xs overflow-x-auto"><code>{{ JSON.stringify({
                                     id: props.order.id,
                                     bling_id: props.order.bling_id,

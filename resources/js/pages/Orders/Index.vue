@@ -2,7 +2,7 @@
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { ref, onMounted, onUnmounted } from 'vue';
-import { Search, Filter, Eye, CheckCircle, XCircle, Package, Truck, ExternalLink, RefreshCw, AlertTriangle } from 'lucide-vue-next';
+import { Search, Filter, Eye, CheckCircle, XCircle, Package, Truck, ExternalLink, RefreshCw, AlertTriangle, ZoomIn, Download } from 'lucide-vue-next';
 import axios from '@/lib/axios';
 
 interface OrderStatus {
@@ -132,6 +132,9 @@ const confirmData = ref<{
     orderData?: Order;
 } | null>(null);
 
+// Loading state for status update
+const isUpdatingStatus = ref(false);
+
 // Tracking functionality removed as part of simplification
 
 const search = (value: string) => {
@@ -216,9 +219,12 @@ const updateOrderStatus = (orderId: number, action: string, currentStatus: boole
 };
 
 const confirmStatusUpdate = () => {
-    if (!confirmData.value) return;
+    if (!confirmData.value || isUpdatingStatus.value) return;
     
     const { orderId, action, newStatus, actionName } = confirmData.value;
+    
+    // Set loading state
+    isUpdatingStatus.value = true;
     
     // Store current scroll position
     const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
@@ -249,6 +255,10 @@ const confirmStatusUpdate = () => {
                 const message = errors.message || 'Erro ao atualizar status';
                 (window as any).toast.error('Erro', message);
             }
+        },
+        onFinish: () => {
+            // Clear loading state
+            isUpdatingStatus.value = false;
         },
     });
 };
@@ -429,7 +439,7 @@ const getCurrentPerPage = () => {
                 </div>
 
                 <!-- Advanced filters -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <div class="min-w-48">
                         <label class="block text-sm font-medium text-muted-foreground mb-2">Status Rastreamento</label>
                         <select
@@ -456,16 +466,6 @@ const getCurrentPerPage = () => {
                             </option>
                         </select>
                     </div>
-                    <div class="min-w-48">
-                        <label class="block text-sm font-medium text-muted-foreground mb-2">Vendedor</label>
-                        <input
-                            type="text"
-                            :value="props.filters?.seller || ''"
-                            @input="updateFilter('seller', ($event.target as HTMLInputElement).value)"
-                            placeholder="Nome do vendedor..."
-                            class="w-full rounded-lg border border-sidebar-border/70 bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-sidebar-border"
-                        />
-                    </div>
                 </div>
 
                 <!-- Active filters display -->
@@ -474,7 +474,43 @@ const getCurrentPerPage = () => {
                     <span v-if="props.filters?.system"> • Sistema: {{ props.systems?.[props.filters.system] }}</span>
                     <span v-if="props.filters?.tracking_status"> • Status: {{ props.tracking_statuses?.[props.filters.tracking_status] }}</span>
                     <span v-if="props.filters?.logistics_provider"> • Transportadora: {{ props.logistics_providers?.[props.filters.logistics_provider] }}</span>
-                    <span v-if="props.filters?.seller"> • Vendedor: "{{ props.filters.seller }}"</span>
+                </div>
+            </div>
+
+            <!-- Pagination Top -->
+            <div v-if="props.orders.links?.length > 3" class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-4">
+                    <div class="text-sm text-muted-foreground">
+                        Mostrando {{ props.orders.from || 0 }} a {{ props.orders.to || 0 }} de {{ props.orders.total || 0 }} resultados
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label class="text-sm text-muted-foreground">Por página:</label>
+                        <select 
+                            @change="updatePerPage"
+                            :value="getCurrentPerPage()"
+                            class="rounded-md border border-sidebar-border/70 bg-background px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        >
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                            <option value="200">200</option>
+                            <option value="500">500</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <Link
+                        v-for="link in props.orders.links || []"
+                        :key="link.label"
+                        :href="link.url || '#'"
+                        v-html="link.label"
+                        class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium"
+                        :class="{
+                            'bg-primary text-primary-foreground': link.active,
+                            'text-muted-foreground hover:bg-sidebar-border/70': !link.active && link.url,
+                            'text-muted-foreground/50 cursor-not-allowed': !link.url,
+                        }"
+                    />
                 </div>
             </div>
 
@@ -506,7 +542,7 @@ const getCurrentPerPage = () => {
                             >
                             <td class="px-4 py-3">
                                 <div class="font-medium">
-                                    <a :href="`https://www.bling.com.br/notas.fiscais.php#edit/${order.invoice?.id}`" target="_blank" class="text-primary gap-2 gap-1 font-medium rounded-md px-1 py-0.5 text-xs flex items-center hover:bg-sidebar-border/70" :title="`Abrir nota fiscal no Bling`">
+                                    <a :href="`https://www.bling.com.br/vendas.php#edit/${order?.bling_id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center hover:bg-sidebar-border/70" :title="`Abrir pedido no Bling`">
                                         <span class="text-sm font-medium">{{ order.numero }}</span>
                                             <ExternalLink class="h-3 w-3" />
                                         </a>
@@ -527,18 +563,38 @@ const getCurrentPerPage = () => {
                                     {{ formatDate(order.data) }}
                                 </td>
                                 <td class="px-4 py-3">
-                                    <a
-                                        v-if="order.invoice?.linkPDF"
-                                        :href="order.invoice.linkPDF"
-                                        target="_blank"
-                                        class="text-primary hover:text-primary/80"
-                                        :title="`Baixar PDF da NFE ${order.invoice.numero}`"
-                                    >
-                                    <div v-if="order.invoice?.numero" class="flex items-center gap-2 gap-1 font-medium rounded-md px-1 py-0.5 text-xs hover:bg-sidebar-border/70">
-                                        <span class="text-sm px-1 font-medium">{{ order.invoice.numero }}</span>
+                                    <div v-if="order.invoice?.numero" class="flex flex-col items-center gap-1">
+                                        <!-- Número da NFE -->
+                                         <a :href="`https://www.bling.com.br/notas.fiscais.php#edit/${order.invoice?.id}`" target="_blank" class="text-primary gap-1 font-small rounded-md  flex items-center hover:bg-sidebar-border/70 " :title="`Abrir nota fiscal no Bling`">
+                                            {{ order.invoice.numero }}
                                             <ExternalLink class="h-3 w-3" />
+                                        </a>
+                                                
+                                        <!-- Botões de ação -->
+                                        <div class="flex items-center gap-2">
+                                            <!-- Visualizar DANFE -->
+                                            <a
+                                                v-if="order.invoice?.linkDanfe"
+                                                :href="order.invoice.linkDanfe"
+                                                target="_blank"
+                                                class="inline-flex items-center justify-center w-6 h-6 rounded-md bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800 text-blue-600 dark:text-blue-400 transition-colors"
+                                                :title="`Visualizar DANFE ${order.invoice.numero}`"
+                                            >
+                                                <ZoomIn class="h-3 w-3" />
+                                            </a>
+                                            
+                                            <!-- Download PDF -->
+                                            <a
+                                                v-if="order.invoice?.linkPDF"
+                                                :href="order.invoice.linkPDF"
+                                                target="_blank"
+                                                class="inline-flex items-center justify-center w-6 h-6 rounded-md bg-green-100 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800 text-green-600 dark:text-green-400 transition-colors"
+                                                :title="`Baixar PDF da NFE ${order.invoice.numero}`"
+                                            >
+                                                <Download class="h-3 w-3" />
+                                            </a>
                                         </div>
-                                    </a>
+                                    </div>
                                     <span v-else class="text-sm text-muted-foreground">-</span>
                                 </td>
                                 <td class="px-4 py-3">
@@ -569,14 +625,15 @@ const getCurrentPerPage = () => {
                                     <button
                                         v-if="canUpdateStatus"
                                         @click="updateOrderStatus(order.id, 'picking', order.order_status?.picking || false, order.numero)"
-                                        class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm hover:bg-sidebar-border/70"
+                                        class="inline-flex items-center gap-1 rounded-md px-4 py-3 cursor-pointer text-sm hover:bg-sidebar-border/70"
                                         :class="order.order_status?.picking ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'"
+                                        :title="order.order_status?.picking ? 'Desmarcar como separado' :  'Marcar como separado'"
                                     >
                                         <CheckCircle v-if="order.order_status?.picking" class="h-3 w-3" />
                                         <XCircle v-else class="h-3 w-3" />
                                         <Package class="h-3 w-3" />
                                     </button>
-                                    <div v-else class="inline-flex items-center gap-1 px-2 py-1 text-sm text-muted-foreground">
+                                    <div v-else class="inline-flex items-center gap-1 px-4 py-3 cursor-pointer text-sm text-muted-foreground">
                                         <CheckCircle v-if="order.order_status?.picking" class="h-3 w-3 text-green-600 dark:text-green-400" />
                                         <XCircle v-else class="h-3 w-3" />
                                         <Package class="h-3 w-3" />
@@ -586,14 +643,15 @@ const getCurrentPerPage = () => {
                                     <button
                                         v-if="canUpdateStatus"
                                         @click="updateOrderStatus(order.id, 'packing', order.order_status?.packing || false, order.numero)"
-                                        class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm hover:bg-sidebar-border/70"
+                                        class="inline-flex items-center gap-1 rounded-md px-4 py-3 cursor-pointer text-sm hover:bg-sidebar-border/70"
                                         :class="order.order_status?.packing ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'"
+                                        :title="order.order_status?.packing ? 'Desmarcar como embalado' : 'Marcar como embalado'"
                                     >
                                         <CheckCircle v-if="order.order_status?.packing" class="h-3 w-3" />
                                         <XCircle v-else class="h-3 w-3" />
                                         <Package class="h-3 w-3" />
                                     </button>
-                                    <div v-else class="inline-flex items-center gap-1 px-2 py-1 text-sm text-muted-foreground">
+                                    <div v-else class="inline-flex items-center gap-1 px-4 py-3 cursor-pointer text-sm text-muted-foreground">
                                         <CheckCircle v-if="order.order_status?.packing" class="h-3 w-3 text-green-600 dark:text-green-400" />
                                         <XCircle v-else class="h-3 w-3" />
                                         <Package class="h-3 w-3" />
@@ -603,14 +661,15 @@ const getCurrentPerPage = () => {
                                     <button
                                         v-if="canUpdateStatus"
                                         @click="updateOrderStatus(order.id, 'picked_up', order.order_status?.picked_up || false, order.numero)"
-                                        class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm hover:bg-sidebar-border/70"
+                                        class="inline-flex items-center gap-1 rounded-md px-4 py-3 cursor-pointer text-sm hover:bg-sidebar-border/70"
                                         :class="order.order_status?.picked_up ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'"
+                                        :title="order.order_status?.picked_up ? 'Desmarcar como coletado' : 'Marcar como coletado'"
                                     >
                                         <CheckCircle v-if="order.order_status?.picked_up" class="h-3 w-3" />
                                         <XCircle v-else class="h-3 w-3" />
                                         <Truck class="h-3 w-3" />
                                     </button>
-                                    <div v-else class="inline-flex items-center gap-1 px-2 py-1 text-sm text-muted-foreground">
+                                    <div v-else class="inline-flex items-center gap-1 px-4 py-3 cursor-pointer text-sm text-muted-foreground">
                                         <CheckCircle v-if="order.order_status?.picked_up" class="h-3 w-3 text-green-600 dark:text-green-400" />
                                         <XCircle v-else class="h-3 w-3" />
                                         <Truck class="h-3 w-3" />
@@ -619,7 +678,8 @@ const getCurrentPerPage = () => {
                                 <td class="px-4 py-3">
                                     <Link
                                         :href="`/orders/${order.id}`"
-                                        class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-sidebar-border/70"
+                                        class="inline-flex items-center gap-1 rounded-md px-4 py-3 text-sm text-muted-foreground hover:bg-sidebar-border/70"
+                                        :title="`Ver pedido ${order.numero}`"
                                     >
                                         <Eye class="h-3 w-3" />
                                         Ver
@@ -727,16 +787,23 @@ const getCurrentPerPage = () => {
                     <div class="flex gap-3 justify-end">
                         <button
                             @click="cancelStatusUpdate"
-                            class="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                            class="px-4 py-2 text-sm font-medium cursor-pointer text-muted-foreground hover:text-foreground transition-colors"
                         >
                             Cancelar
                         </button>
                         <button
                             @click="confirmStatusUpdate"
-                            class="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors"
+                            :disabled="isUpdatingStatus"
+                            class="px-4 py-2 text-sm font-medium cursor-pointer text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             :class="confirmData?.newStatus ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'"
                         >
-                            {{ confirmData?.newStatus ? 'Confirmar' : 'Desmarcar' }}
+                            <span v-if="isUpdatingStatus" class="flex items-center gap-2">
+                                <RefreshCw class="h-4 w-4 animate-spin" />
+                                Processando...
+                            </span>
+                            <span v-else>
+                                {{ confirmData?.newStatus ? 'Confirmar' : 'Desmarcar' }}
+                            </span>
                         </button>
                     </div>
                 </div>
