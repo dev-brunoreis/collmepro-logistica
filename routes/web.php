@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\KanbanController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
@@ -46,6 +47,10 @@ Route::middleware(['auth', 'permission:permissions.view'])->group(function () {
     Route::put('permissions/{role}', [PermissionController::class, 'update'])->name('permissions.update');
 });
 
+Route::middleware(['auth', 'permission:orders.view'])->group(function () {
+    Route::get('painel', [KanbanController::class, 'index'])->name('kanban.index');
+});
+
 // Orders routes (users with orders permissions)
 Route::middleware(['auth', 'permission:orders.view'])->group(function () {
     Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
@@ -75,3 +80,4 @@ Route::middleware(['auth'])->group(function () {
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
+require __DIR__.'/channels.php';

@@ -149,13 +149,13 @@ class OrderController extends Controller
                 $logisticsProvider = null;
                 
                 // Improved logic for determining logistics provider
-                $trackingCodeExists = !empty($order->raw_tracking_data['rastreamento']['codigo']);
+                $trackingCodeExists = !empty($order->raw_tracking_data['rastreamento']['codigo'] ?? null);
 
                 if ($trackingCodeExists) {
                     $logisticsProvider =
-                        $order->raw_invoice_data['transporte']['transportador']['nome']
-                            ?? $order->raw_tracking_data['servico']['nome']
-                            ?? '-';
+                        $order->raw_invoice_data['transporte']['transportador']['nome'] ?? null
+                        ?? $order->raw_tracking_data['servico']['nome'] ?? null
+                        ?? '-';
                 } else {
                     $logisticsProvider = '-';
                 }
@@ -173,12 +173,12 @@ class OrderController extends Controller
                         $trackingUrl = $trackingData['rastreamento']['url'];
                     }
                     
-                    if(isset($order['raw_invoice_data']['transporte']['transportador']['nome'])) {
-                        $carrier = $order['raw_invoice_data']['transporte']['transportador']['nome'];
+                    if(isset($order->raw_invoice_data['transporte']['transportador']['nome'])) {
+                        $carrier = $order->raw_invoice_data['transporte']['transportador']['nome'];
                     }
 
-                    if(isset($order['raw_invoice_data']['numero'])) {
-                        $invoiceId = $order['raw_invoice_data']['numero'];
+                    if(isset($order->raw_invoice_data['numero'])) {
+                        $invoiceId = $order->raw_invoice_data['numero'];
                     }
                 }
                 
@@ -385,6 +385,7 @@ class OrderController extends Controller
         // Record status change in history
         $this->orderHistoryService->recordStatusChange($order, $action, $status, $user);
 
+
         $actionNames = [
             'picking' => 'Separado',
             'packing' => 'Embalado',
@@ -431,66 +432,23 @@ class OrderController extends Controller
         ]);
         
         try {
-            // Get all unique tracking descriptions from both raw_tracking_data and raw_invoice_data
+            // Simplified version to avoid memory issues
             $trackingDescriptions = collect();
             
-            // 1. From raw_tracking_data
-            $trackingData = OrderSummary::whereNotNull('raw_tracking_data')
-                ->get()
-                ->pluck('raw_tracking_data')
-                ->filter()
-                ->map(function ($data) {
-                    if (is_array($data) && isset($data['rastreamento']['descricao'])) {
-                        return $data['rastreamento']['descricao'];
-                    }
-                    return null;
-                })
-                ->filter()
-                ->unique();
+            // Get a limited set of orders to avoid memory issues
+            $orders = OrderSummary::whereNotNull('raw_tracking_data')
+                ->limit(1000)
+                ->get();
             
-            // 2. From raw_invoice_data (rastreamento)
-            $invoiceTrackingData = OrderSummary::whereNotNull('raw_invoice_data')
-                ->get()
-                ->pluck('raw_invoice_data')
-                ->filter()
-                ->map(function ($data) {
-                    if (is_array($data) && isset($data['rastreamento']['descricao'])) {
-                        return $data['rastreamento']['descricao'];
-                    }
-                    return null;
-                })
-                ->filter()
-                ->unique();
-            
-            // 3. From raw_invoice_data (transporte)
-            $invoiceTransportData = OrderSummary::whereNotNull('raw_invoice_data')
-                ->get()
-                ->pluck('raw_invoice_data')
-                ->filter()
-                ->map(function ($data) {
-                    if (is_array($data) && isset($data['transporte']['rastreamento']['descricao'])) {
-                        return $data['transporte']['rastreamento']['descricao'];
-                    }
-                    return null;
-                })
-                ->filter()
-                ->unique();
-            
-            // Combine all descriptions
-            $allDescriptions = $trackingData
-                ->merge($invoiceTrackingData)
-                ->merge($invoiceTransportData)
-                ->filter()
-                ->unique()
-                ->sort()
-                ->map(function ($descricao) {
-                    // Create a safe key from the description
-                    $key = 'descricao_' . md5($descricao);
-                    return [$key => $descricao];
-                })
-                ->collapse();
+            foreach ($orders as $order) {
+                if (isset($order->raw_tracking_data['rastreamento']['descricao'])) {
+                    $desc = $order->raw_tracking_data['rastreamento']['descricao'];
+                    $key = 'descricao_' . md5($desc);
+                    $trackingDescriptions[$key] = $desc;
+                }
+            }
                 
-            $statuses = $statuses->merge($allDescriptions);
+            $statuses = $statuses->merge($trackingDescriptions);
             
             return $statuses->toArray();
         } catch (\Exception $e) {
@@ -577,33 +535,31 @@ class OrderController extends Controller
         $providers = collect();
         
         try {
-            // Get providers from raw_invoice_data
-            $invoiceProviders = OrderSummary::whereNotNull('raw_invoice_data')
-                ->get()
-                ->pluck('raw_invoice_data')
-                ->filter()
-                ->map(function ($data) {
-                    if (is_array($data) && isset($data['transporte']['transportador']['nome'])) {
-                        return $data['transporte']['transportador']['nome'];
-                    }
-                    return null;
-                })
-                ->filter()
-                ->unique();
+            // Simplified version to avoid memory issues
+            $invoiceProviders = collect();
+            $trackingProviders = collect();
+            
+            // Get providers from raw_invoice_data with limit
+            $invoiceOrders = OrderSummary::whereNotNull('raw_invoice_data')
+                ->limit(1000)
+                ->get();
                 
-            // Get providers from raw_tracking_data
-            $trackingProviders = OrderSummary::whereNotNull('raw_tracking_data')
-                ->get()
-                ->pluck('raw_tracking_data')
-                ->filter()
-                ->map(function ($data) {
-                    if (is_array($data) && isset($data['servico']['nome'])) {
-                        return $data['servico']['nome'];
-                    }
-                    return null;
-                })
-                ->filter()
-                ->unique();
+            foreach ($invoiceOrders as $order) {
+                if (isset($order->raw_invoice_data['transporte']['transportador']['nome'])) {
+                    $invoiceProviders[] = $order->raw_invoice_data['transporte']['transportador']['nome'];
+                }
+            }
+                
+            // Get providers from raw_tracking_data with limit
+            $trackingOrders = OrderSummary::whereNotNull('raw_tracking_data')
+                ->limit(1000)
+                ->get();
+                
+            foreach ($trackingOrders as $order) {
+                if (isset($order->raw_tracking_data['servico']['nome'])) {
+                    $trackingProviders[] = $order->raw_tracking_data['servico']['nome'];
+                }
+            }
                 
             $providers = $providers->merge($invoiceProviders)->merge($trackingProviders)->unique()->sort()->values();
             
