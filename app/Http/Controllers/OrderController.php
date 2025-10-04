@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\OrderStatusUpdated;
 use App\Models\OrderSummary;
 use App\Jobs\BlingSyncJob;
 use App\Http\Controllers\PermissionController;
@@ -385,6 +386,8 @@ class OrderController extends Controller
         // Record status change in history
         $this->orderHistoryService->recordStatusChange($order, $action, $status, $user);
 
+        // Broadcast the status update to all connected clients
+        broadcast(new OrderStatusUpdated($order, $user, $action, $status));
 
         $actionNames = [
             'picking' => 'Separado',

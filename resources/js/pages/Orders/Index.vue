@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { Search, Filter, Eye, CheckCircle, XCircle, Package, Truck, ExternalLink, RefreshCw, AlertTriangle, ZoomIn, Download } from 'lucide-vue-next';
 import axios from '@/lib/axios';
+import { useOrderBroadcasting } from '@/composables/useBroadcasting';
 
 interface OrderStatus {
     picking: boolean;
@@ -107,6 +108,41 @@ interface Props {
 const props = defineProps<Props>();
 const page = usePage();
 const user = page.props.auth.user as User;
+
+// Broadcasting setup
+const { isConnected, lastUpdate } = useOrderBroadcasting();
+
+// Watch for real-time updates and update local order data
+watch(lastUpdate, (update) => {
+    if (update) {
+        // Find the order in the current list and update its status
+        const orderIndex = props.orders.data.findIndex(order => order.id === update.order.id);
+        if (orderIndex !== -1) {
+            const order = props.orders.data[orderIndex];
+            if (order.order_status) {
+                order.order_status[update.action] = update.status;
+                
+                if (update.status) {
+                    // Set the marked by and marked at fields
+                    order.order_status[`${update.action}_marked_by`] = update.user.name;
+                    order.order_status[`${update.action}_marked_at`] = update.timestamp;
+                } else {
+                    // Clear the marked by and marked at fields
+                    order.order_status[`${update.action}_marked_by`] = null;
+                    order.order_status[`${update.action}_marked_at`] = null;
+                }
+            }
+        }
+        
+        // Show notification to user
+        if (update.user.id !== user.id) {
+            const actionName = update.action_name;
+            const statusText = update.status ? 'marcado como concluído' : 'desmarcado';
+            // You can add a toast notification here if you have one
+            console.log(`${update.user.name} ${statusText} ${actionName} no pedido ${update.order.numero}`);
+        }
+    }
+});
 
 // Check if user has permission to update order status
 const canUpdateStatus = user?.permissions?.some((p: any) => p.name === 'orders.status.update') || false;
@@ -386,7 +422,21 @@ const getCurrentPerPage = () => {
     <AppLayout>
         <div class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
             <div class="flex items-center justify-between">
-                <h1 class="text-2xl font-bold">Pedidos</h1>
+                <div class="flex items-center gap-3">
+                    <h1 class="text-2xl font-bold">Pedidos</h1>
+                    <!-- Real-time connection indicator -->
+                    <div class="flex items-center gap-2">
+                        <div 
+                            :class="[
+                                'h-2 w-2 rounded-full',
+                                isConnected ? 'bg-green-500' : 'bg-red-500'
+                            ]"
+                        ></div>
+                        <span class="text-xs text-muted-foreground">
+                            {{ isConnected ? 'Tempo real ativo' : 'Sem conexão' }}
+                        </span>
+                    </div>
+                </div>
                 <button
                     v-if="canImportOrders"
                     @click="fetchOrders"

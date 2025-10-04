@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\OrderStatusUpdated;
 use App\Models\OrderSummary;
 use App\Models\OrderStatus;
 use App\Models\User;
@@ -87,21 +88,27 @@ class KanbanController extends Controller
         switch ($status) {
             case 'picking':
                 $orderStatus->markPicking($user);
+                broadcast(new OrderStatusUpdated($order, $user, 'picking', true));
                 break;
             case 'packing':
                 $orderStatus->markPacking($user);
+                broadcast(new OrderStatusUpdated($order, $user, 'packing', true));
                 break;
             case 'picked_up':
                 $orderStatus->markPickedUp($user);
+                broadcast(new OrderStatusUpdated($order, $user, 'picked_up', true));
                 break;
             case 'completed':
                 // Mark all as completed
                 $orderStatus->markPicking($user);
                 $orderStatus->markPacking($user);
                 $orderStatus->markPickedUp($user);
+                // Broadcast each status update
+                broadcast(new OrderStatusUpdated($order, $user, 'picking', true));
+                broadcast(new OrderStatusUpdated($order, $user, 'packing', true));
+                broadcast(new OrderStatusUpdated($order, $user, 'picked_up', true));
                 break;
         }
-
 
         return response()->json([
             'success' => true,
