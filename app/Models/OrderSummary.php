@@ -79,7 +79,7 @@ class OrderSummary extends Model
      */
     public function orderStatus(): HasOne
     {
-        return $this->hasOne(OrderStatus::class);
+        return $this->hasOne(OrderStatus::class, 'order_summary_id', 'id');
     }
 
     /**

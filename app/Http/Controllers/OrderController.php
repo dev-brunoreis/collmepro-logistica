@@ -17,6 +17,34 @@ class OrderController extends Controller
 {
     protected OrderHistoryService $orderHistoryService;
 
+    /**
+     * Get systems mapping from config
+     */
+    private function getSystemsMap(): array
+    {
+        return config('bling.systems_map', []);
+    }
+
+    /**
+     * Get systems mapping for frontend (flattened for dropdown)
+     */
+    private function getSystemsForFrontend(): array
+    {
+        $systemsMap = $this->getSystemsMap();
+        $flattened = [];
+        
+        foreach ($systemsMap as $id => $config) {
+            if (is_array($config) && isset($config['name'])) {
+                $flattened[$id] = $config['name'];
+            } else {
+                // Backward compatibility for string values
+                $flattened[$id] = $config;
+            }
+        }
+        
+        return $flattened;
+    }
+
     public function __construct(OrderHistoryService $orderHistoryService)
     {
         $this->orderHistoryService = $orderHistoryService;
@@ -44,9 +72,22 @@ class OrderController extends Controller
             });
         }
 
-        // System filter (now only 'bling')
+        // System filter - map system names to store IDs for filtering
         if ($request->filled('system')) {
-            $query->where('source', $request->get('system'));
+            $systemFilter = $request->get('system');
+            
+            $systemsMap = $this->getSystemsMap();
+            
+            // If the filter is a store ID, use it directly
+            if (isset($systemsMap[$systemFilter])) {
+                $query->whereJsonContains('raw_invoice_data->loja->id', (int) $systemFilter);
+            } else {
+                // If it's a system name, find the corresponding store ID
+                $storeId = array_search($systemFilter, $systemsMap);
+                if ($storeId) {
+                    $query->whereJsonContains('raw_invoice_data->loja->id', (int) $storeId);
+                }
+            }
         }
         
         // Source filter (legacy support)
@@ -196,6 +237,9 @@ class OrderController extends Controller
                     $trackingStatus = $this->mapTrackingStatus($statusCode);
                 }
                 
+                // Define source based on loja_id from raw_invoice_data
+                $source = $this->determineSourceFromInvoiceData($order);
+
                 return [
                     'id' => $order->id,
                     'bling_id' => $order->bling_id,
@@ -213,7 +257,7 @@ class OrderController extends Controller
                     'situacao_id' => $order->situacao_id,
                     'situacao_valor' => $order->situacao_valor,
                     'loja_id' => $order->loja_id,
-                    'source' => $order->source,
+                    'source' => $source,
                     'data_processed' => $order->data_processed,
                     'external_updated_at' => $order->external_updated_at,
                     'created_at' => $order->created_at,
@@ -244,9 +288,8 @@ class OrderController extends Controller
                 3 => 'Finalizado',
                 4 => 'Cancelado',
             ],
-            'systems' => [
-                'bling' => 'Bling',
-            ],
+            'systems' => $this->getSystemsForFrontend(),
+            'systems_with_colors' => $this->getSystemsMap(),
             'tracking_statuses' => $this->getTrackingStatuses($query),
             'logistics_providers' => $this->getLogisticsProviders($query),
         ]);
@@ -292,6 +335,9 @@ class OrderController extends Controller
             $trackingUrl = $order->raw_tracking_data['rastreamento']['url'] ?? null;
         }
         
+        // Define source based on loja_id from raw_invoice_data
+        $source = $this->determineSourceFromInvoiceData($order);
+        
         return Inertia::render('Orders/Show', [
             'order' => [
                 'id' => $order->id,
@@ -310,7 +356,7 @@ class OrderController extends Controller
                 'situacao_id' => $order->situacao_id,
                 'situacao_valor' => $order->situacao_valor,
                 'loja_id' => $order->loja_id,
-                'source' => $order->source,
+                'source' => $source,
                 'data_processed' => $order->data_processed,
                 'external_updated_at' => $order->external_updated_at,
                 'created_at' => $order->created_at,
@@ -603,5 +649,25 @@ class OrderController extends Controller
     {
         // TODO: Implement tracking URL building logic based on provider
         return '';
+    }
+
+    /**
+     * Determine source based on loja_id from raw_invoice_data
+     */
+    private function determineSourceFromInvoiceData($order): string
+    {
+        // Check if raw_invoice_data exists and has loja_id
+        if ($order->raw_invoice_data && isset($order->raw_invoice_data['loja']['id'])) {
+            $lojaId = (string) $order->raw_invoice_data['loja']['id'];
+            $systemsMap = $this->getSystemsMap();
+            
+            if (isset($systemsMap[$lojaId])) {
+                $config = $systemsMap[$lojaId];
+                return is_array($config) && isset($config['name']) ? $config['name'] : $config;
+            }
+        }
+
+        // Fallback to existing source or default
+        return $order->source ?? 'bling';
     }
 }

@@ -16,6 +16,7 @@ interface OrderStatus {
     picking_marked_at?: string;
     packing_marked_at?: string;
     picked_up_marked_at?: string;
+    [key: string]: any; // Index signature to allow dynamic property access
 }
 
 interface User {
@@ -96,6 +97,12 @@ interface Props {
     };
     systems: {
         [key: string]: string;
+    };
+    systems_with_colors: {
+        [key: string]: {
+            name: string;
+            color: string;
+        };
     };
     tracking_statuses: {
         [key: string]: string;
@@ -192,7 +199,7 @@ const search = (value: string) => {
     const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
     
     router.get('/orders', { search: value }, {
-        preserveState: true,
+        preserveState: false,
         preserveScroll: true,
         replace: true,
         onSuccess: () => {
@@ -214,7 +221,7 @@ const updateFilter = (filterName: string, value: string) => {
     const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
     
     router.get('/orders', filters, {
-        preserveState: true,
+        preserveState: false,
         preserveScroll: true,
         replace: true,
         onSuccess: () => {
@@ -230,7 +237,7 @@ const clearFilters = () => {
     const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
     
     router.get('/orders', {}, {
-        preserveState: true,
+        preserveState: false,
         preserveScroll: true,
         replace: true,
         onSuccess: () => {
@@ -337,8 +344,18 @@ onUnmounted(() => {
 
 
 
-const getSystemBadgeClass = (system: string) => {
-    switch (system) {
+const getSystemBadgeClass = (order: Order) => {
+    // Try to find the system by loja_id from raw_invoice_data first
+    if (order.raw_invoice_data?.loja?.id) {
+        const lojaId = order.raw_invoice_data.loja.id.toString();
+        const systemConfig = props.systems_with_colors?.[lojaId];
+        if (systemConfig) {
+            return systemConfig.color;
+        }
+    }
+    
+    // Fallback to old logic for backward compatibility
+    switch (order.source) {
         case 'collmepro':
             return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
         case 'collmepro_atacadista':
@@ -414,7 +431,7 @@ const updatePerPage = (event: Event) => {
     const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
     
     router.get('/orders', { ...props.filters, per_page: perPage }, {
-        preserveState: true,
+        preserveState: false,
         preserveScroll: true,
         replace: true,
         onSuccess: () => {
@@ -600,6 +617,42 @@ const getCurrentPerPage = () => {
                             </tr>
                         </thead>
                         <tbody>
+                            <!-- Empty state -->
+                            <tr v-if="!ordersData || ordersData.length === 0">
+                                <td colspan="12" class="px-4 py-12 text-center">
+                                    <div class="flex flex-col items-center gap-4">
+                                        <div class="w-16 h-16 rounded-full bg-muted/20 flex items-center justify-center">
+                                            <Package class="w-8 h-8 text-muted-foreground" />
+                                        </div>
+                                        <div class="text-center">
+                                            <h3 class="text-lg font-medium text-foreground mb-2">
+                                                Nenhum pedido encontrado
+                                            </h3>
+                                            <p class="text-sm text-muted-foreground mb-4">
+                                                Não há pedidos que correspondam aos filtros aplicados.
+                                            </p>
+                                            <div class="flex flex-col gap-2 text-xs text-muted-foreground">
+                                                <p v-if="Object.values(props.filters || {}).some(filter => filter !== undefined && filter !== '')">
+                                                    Tente ajustar os filtros ou limpar todos os filtros para ver mais resultados.
+                                                </p>
+                                                <p v-else>
+                                                    Execute a sincronização para importar pedidos do Bling.
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            v-if="Object.values(props.filters || {}).some(filter => filter !== undefined && filter !== '')"
+                                            @click="clearFilters"
+                                            class="inline-flex items-center gap-2 rounded-lg border border-sidebar-border/70 px-4 py-2 text-sm font-medium text-foreground hover:bg-sidebar-border/70 dark:border-sidebar-border"
+                                        >
+                                            <Filter class="h-4 w-4" />
+                                            Limpar Filtros
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            
+                            <!-- Orders data -->
                             <tr
                                 v-for="order in ordersData || []"
                                 :key="`${order.id}-${updateTrigger}`"
@@ -616,7 +669,7 @@ const getCurrentPerPage = () => {
                                 <td class="px-4 py-3">
                                     <span
                                         class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-                                        :class="getSystemBadgeClass(order.source)"
+                                        :class="getSystemBadgeClass(order)"
                                     >
                                         {{ order.source.toUpperCase() }}
                                     </span>
