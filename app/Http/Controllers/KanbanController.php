@@ -21,7 +21,9 @@ class KanbanController extends Controller
         $orders = OrderSummary::with([
             'orderStatus' => function($query) {
                 $query->with(['pickingMarkedBy', 'packingMarkedBy', 'pickedUpMarkedBy']);
-            }
+            },
+            'invoice',
+            'orderData'
         ])
             ->orderBy('data', 'desc')
             ->get();
@@ -126,11 +128,29 @@ class KanbanController extends Controller
             'separado' => [],
             'embalado' => [],
             'coletado' => [],
-            'sucesso' => [],
         ];
 
         foreach ($orders as $order) {
             $status = $this->getOrderKanbanStatus($order);
+            
+            // Get invoice number
+            $invoiceNumber = null;
+            if ($order->invoice && $order->invoice->numero) {
+                $invoiceNumber = $order->invoice->numero;
+            } elseif ($order->raw_invoice_data && isset($order->raw_invoice_data['numero'])) {
+                $invoiceNumber = $order->raw_invoice_data['numero'];
+            }
+            
+            // Get items quantity
+            $itemsQuantity = 0;
+            if ($order->orderData && $order->orderData->itens) {
+                $itemsQuantity = count($order->orderData->itens);
+            } elseif ($order->raw_order_data && isset($order->raw_order_data['itens'])) {
+                $itemsQuantity = count($order->raw_order_data['itens']);
+            } elseif ($order->raw_invoice_data && isset($order->raw_invoice_data['itens'])) {
+                $itemsQuantity = count($order->raw_invoice_data['itens']);
+            }
+            
             $kanbanData[$status][] = [
                 'id' => $order->id,
                 'bling_id' => $order->bling_id,
@@ -139,6 +159,8 @@ class KanbanController extends Controller
                 'total' => $order->total,
                 'data' => $order->data ? $order->data->format('d/m/Y H:i') : null,
                 'source' => $order->source,
+                'invoice_number' => $invoiceNumber,
+                'items_quantity' => $itemsQuantity,
                 'order_status' => $order->orderStatus ? [
                     'picking' => $order->orderStatus->picking,
                     'packing' => $order->orderStatus->packing,
@@ -167,10 +189,6 @@ class KanbanController extends Controller
             return 'aguardando';
         }
 
-        if ($orderStatus->isCompleted()) {
-            return 'sucesso';
-        }
-
         if ($orderStatus->picked_up) {
             return 'coletado';
         }
@@ -197,7 +215,6 @@ class KanbanController extends Controller
             'separado' => 0,
             'embalado' => 0,
             'coletado' => 0,
-            'sucesso' => 0,
         ];
 
         foreach ($orders as $order) {

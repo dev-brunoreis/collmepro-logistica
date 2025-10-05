@@ -1,18 +1,18 @@
 <template>
   <div class="kanban-container">
     <!-- Header -->
-    <div class="kanban-header mb-6">
-      <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold text-gray-900 mb-4">Painel Kanban</h1>
+    <div class="kanban-header mb-6 sm:mb-8 lg:mb-10">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <h1 class="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-black text-gray-900">Painel Kanban</h1>
         <!-- Real-time connection indicator -->
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-3">
           <div 
             :class="[
-              'h-2 w-2 rounded-full',
+              'h-4 w-4 rounded-full animate-pulse',
               isConnected ? 'bg-green-500' : 'bg-red-500'
             ]"
           ></div>
-          <span class="text-xs text-muted-foreground">
+          <span class="text-base sm:text-lg lg:text-xl font-bold text-gray-800">
             {{ isConnected ? 'Tempo real ativo' : 'Sem conexão' }}
           </span>
         </div>
@@ -20,28 +20,43 @@
     </div>
 
     <!-- Simplified Kanban Board -->
-    <div class="kanban-board grid grid-cols-5 gap-6">
+    <div class="kanban-board justify-center flex gap-3 sm:gap-4 lg:gap-6 xl:gap-8 overflow-x-auto pb-4">
       <!-- Aguardando Column -->
       <div class="kanban-column">
-        <div class="column-header bg-yellow-100 p-4 rounded-t-lg">
-          <h3 class="font-semibold text-yellow-800">Aguardando</h3>
-          <span class="badge bg-yellow-200 text-yellow-800 px-2 py-1 rounded-full text-sm">
-            {{ kanbanData.aguardando.length }}
-          </span>
+        <div class="column-header bg-yellow-500 p-5 sm:p-6 lg:p-7 xl:p-8 rounded-t-lg xl:rounded-t-xl shadow-lg">
+          <div class="flex items-center justify-between w-full">
+            <h3 class="font-black text-white text-xl sm:text-2xl lg:text-3xl xl:text-4xl">Aguardando</h3>
+            <span class="badge font-black text-yellow-900 bg-white rounded-full px-4 py-2 sm:px-6 sm:py-3 text-lg sm:text-xl lg:text-2xl xl:text-3xl shadow-lg">
+              {{ kanbanData.aguardando.length }}
+            </span>
+          </div>
         </div>
-        <div class="column-content bg-yellow-50 p-4 rounded-b-lg min-h-96">
+        <div class="column-content bg-yellow-50 p-4 sm:p-5 lg:p-6 xl:p-7 rounded-b-lg xl:rounded-b-xl min-h-72 sm:min-h-96 lg:min-h-[400px] xl:min-h-[500px]">
           <div
             v-for="order in kanbanData.aguardando"
             :key="order.id"
-            class="order-item bg-white p-3 mb-2 rounded border border-yellow-200"
+            class="order-item bg-white p-4 sm:p-5 lg:p-6 xl:p-7 mb-3 sm:mb-4 lg:mb-5 rounded-lg border-2 border-yellow-300 shadow-md hover:shadow-lg lg:hover:shadow-xl transition-all duration-300"
           >
             <div class="flex justify-between items-start">
-              <div>
-                <span class="font-semibold text-gray-900">#{{ order.numero }}</span>
-                <div class="text-sm text-gray-700">{{ order.contato_nome }}</div>
-                <div class="text-sm font-medium text-green-600">R$ {{ formatCurrency(order.total) }}</div>
+              <div class="flex-1">
+                <div class="flex justify-between items-start mb-3 sm:mb-4">
+                  <span class="font-black text-gray-900 text-lg sm:text-xl lg:text-2xl xl:text-3xl">#{{ order.numero }}</span>
+                  <span class="text-sm sm:text-base lg:text-lg text-gray-700 font-bold">{{ formatDateOnly(order.data) }}</span>
+                </div>
+                <div class="text-base sm:text-lg lg:text-xl xl:text-2xl text-gray-800 mb-3 sm:mb-4 font-bold leading-tight">{{ order.contato_nome }}</div>
+                <div class="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-black text-green-700 mb-3 sm:mb-4">R$ {{ formatCurrency(order.total) }}</div>
+                <div class="flex justify-between items-center text-sm sm:text-base lg:text-lg text-gray-700">
+                  <div v-if="order.invoice_number" class="flex items-center gap-2">
+                    <span class="font-black text-gray-800">NF:</span>
+                    <span class="font-bold text-gray-900">{{ order.invoice_number }}</span>
+                  </div>
+                  <div v-else class="text-gray-600 font-bold">Sem NF</div>
+                  <div class="flex items-center gap-2">
+                    <span class="font-black text-gray-900">{{ order.items_quantity }}</span>
+                    <span class="font-bold text-gray-800">{{ order.items_quantity === 1 ? 'item' : 'itens' }}</span>
+                  </div>
+                </div>
               </div>
-              <span class="text-xs text-gray-500">{{ formatDateOnly(order.data) }}</span>
             </div>
           </div>
         </div>
@@ -49,28 +64,43 @@
 
       <!-- Separado Column -->
       <div class="kanban-column">
-        <div class="column-header bg-blue-100 p-4 rounded-t-lg">
-          <h3 class="font-semibold text-blue-800">Separado</h3>
-          <span class="badge bg-blue-200 text-blue-800 px-2 py-1 rounded-full text-sm">
-            {{ kanbanData.separado.length }}
-          </span>
+        <div class="column-header bg-blue-600 p-5 sm:p-6 lg:p-7 xl:p-8 rounded-t-lg xl:rounded-t-xl shadow-lg">
+          <div class="flex items-center justify-between w-full">
+            <h3 class="font-black text-white text-xl sm:text-2xl lg:text-3xl xl:text-4xl">Separado</h3>
+            <span class="badge font-black text-blue-900 bg-white rounded-full px-4 py-2 sm:px-6 sm:py-3 text-lg sm:text-xl lg:text-2xl xl:text-3xl shadow-lg">
+              {{ kanbanData.separado.length }}
+            </span>
+          </div>
         </div>
-        <div class="column-content bg-blue-50 p-4 rounded-b-lg min-h-96">
+        <div class="column-content bg-blue-50 p-4 sm:p-5 lg:p-6 xl:p-7 rounded-b-lg xl:rounded-b-xl min-h-72 sm:min-h-96 lg:min-h-[400px] xl:min-h-[500px]">
           <div
             v-for="order in kanbanData.separado"
             :key="order.id"
-            class="order-item bg-white p-3 mb-2 rounded border border-blue-200"
+            class="order-item bg-white p-4 sm:p-5 lg:p-6 xl:p-7 mb-3 sm:mb-4 lg:mb-5 rounded-lg border-2 border-blue-400 shadow-md hover:shadow-lg lg:hover:shadow-xl transition-all duration-300"
           >
             <div class="flex justify-between items-start">
-              <div>
-                <span class="font-semibold text-gray-900">#{{ order.numero }}</span>
-                <div class="text-sm text-gray-700">{{ order.contato_nome }}</div>
-                <div class="text-sm font-medium text-green-600">R$ {{ formatCurrency(order.total) }}</div>
-                <div v-if="getMovementHistory(order, 'picking')" class="text-xs text-blue-600 mt-1">
+              <div class="flex-1">
+                <div class="flex justify-between items-start mb-3 sm:mb-4">
+                  <span class="font-black text-gray-900 text-lg sm:text-xl lg:text-2xl xl:text-3xl">#{{ order.numero }}</span>
+                  <span class="text-sm sm:text-base lg:text-lg text-gray-700 font-bold">{{ formatDateOnly(order.data) }}</span>
+                </div>
+                <div class="text-base sm:text-lg lg:text-xl xl:text-2xl text-gray-800 mb-3 sm:mb-4 font-bold leading-tight">{{ order.contato_nome }}</div>
+                <div class="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-black text-green-700 mb-3 sm:mb-4">R$ {{ formatCurrency(order.total) }}</div>
+                <div class="flex justify-between items-center text-sm sm:text-base lg:text-lg text-gray-700 mb-3 sm:mb-4">
+                  <div v-if="order.invoice_number" class="flex items-center gap-2">
+                    <span class="font-black text-gray-800">NF:</span>
+                    <span class="font-bold text-gray-900">{{ order.invoice_number }}</span>
+                  </div>
+                  <div v-else class="text-gray-600 font-bold">Sem NF</div>
+                  <div class="flex items-center gap-2">
+                    <span class="font-black text-gray-900">{{ order.items_quantity }}</span>
+                    <span class="font-bold text-gray-800">{{ order.items_quantity === 1 ? 'item' : 'itens' }}</span>
+                  </div>
+                </div>
+                <div v-if="getMovementHistory(order, 'picking')" class="text-sm sm:text-base lg:text-lg text-blue-800 font-bold bg-blue-200 p-2 sm:p-3 rounded-lg">
                   {{ getMovementHistory(order, 'picking') }}
                 </div>
               </div>
-              <span class="text-xs text-gray-500">{{ formatDateOnly(order.data) }}</span>
             </div>
           </div>
         </div>
@@ -78,28 +108,43 @@
 
       <!-- Embalado Column -->
       <div class="kanban-column">
-        <div class="column-header bg-purple-100 p-4 rounded-t-lg">
-          <h3 class="font-semibold text-purple-800">Embalado</h3>
-          <span class="badge bg-purple-200 text-purple-800 px-2 py-1 rounded-full text-sm">
-            {{ kanbanData.embalado.length }}
-          </span>
+        <div class="column-header bg-purple-600 p-5 sm:p-6 lg:p-7 xl:p-8 rounded-t-lg xl:rounded-t-xl shadow-lg">
+          <div class="flex items-center justify-between w-full">
+            <h3 class="font-black text-white text-xl sm:text-2xl lg:text-3xl xl:text-4xl">Embalado</h3>
+            <span class="badge font-black text-purple-900 bg-white rounded-full px-4 py-2 sm:px-6 sm:py-3 text-lg sm:text-xl lg:text-2xl xl:text-3xl shadow-lg">
+              {{ kanbanData.embalado.length }}
+            </span>
+          </div>
         </div>
-        <div class="column-content bg-purple-50 p-4 rounded-b-lg min-h-96">
+        <div class="column-content bg-purple-50 p-4 sm:p-5 lg:p-6 xl:p-7 rounded-b-lg xl:rounded-b-xl min-h-72 sm:min-h-96 lg:min-h-[400px] xl:min-h-[500px]">
           <div
             v-for="order in kanbanData.embalado"
             :key="order.id"
-            class="order-item bg-white p-3 mb-2 rounded border border-purple-200"
+            class="order-item bg-white p-4 sm:p-5 lg:p-6 xl:p-7 mb-3 sm:mb-4 lg:mb-5 rounded-lg border-2 border-purple-400 shadow-md hover:shadow-lg lg:hover:shadow-xl transition-all duration-300"
           >
             <div class="flex justify-between items-start">
-              <div>
-                <span class="font-semibold text-gray-900">#{{ order.numero }}</span>
-                <div class="text-sm text-gray-700">{{ order.contato_nome }}</div>
-                <div class="text-sm font-medium text-green-600">R$ {{ formatCurrency(order.total) }}</div>
-                <div v-if="getMovementHistory(order, 'packing')" class="text-xs text-purple-600 mt-1">
+              <div class="flex-1">
+                <div class="flex justify-between items-start mb-3 sm:mb-4">
+                  <span class="font-black text-gray-900 text-lg sm:text-xl lg:text-2xl xl:text-3xl">#{{ order.numero }}</span>
+                  <span class="text-sm sm:text-base lg:text-lg text-gray-700 font-bold">{{ formatDateOnly(order.data) }}</span>
+                </div>
+                <div class="text-base sm:text-lg lg:text-xl xl:text-2xl text-gray-800 mb-3 sm:mb-4 font-bold leading-tight">{{ order.contato_nome }}</div>
+                <div class="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-black text-green-700 mb-3 sm:mb-4">R$ {{ formatCurrency(order.total) }}</div>
+                <div class="flex justify-between items-center text-sm sm:text-base lg:text-lg text-gray-700 mb-3 sm:mb-4">
+                  <div v-if="order.invoice_number" class="flex items-center gap-2">
+                    <span class="font-black text-gray-800">NF:</span>
+                    <span class="font-bold text-gray-900">{{ order.invoice_number }}</span>
+                  </div>
+                  <div v-else class="text-gray-600 font-bold">Sem NF</div>
+                  <div class="flex items-center gap-2">
+                    <span class="font-black text-gray-900">{{ order.items_quantity }}</span>
+                    <span class="font-bold text-gray-800">{{ order.items_quantity === 1 ? 'item' : 'itens' }}</span>
+                  </div>
+                </div>
+                <div v-if="getMovementHistory(order, 'packing')" class="text-sm sm:text-base lg:text-lg text-purple-800 font-bold bg-purple-200 p-2 sm:p-3 rounded-lg">
                   {{ getMovementHistory(order, 'packing') }}
                 </div>
               </div>
-              <span class="text-xs text-gray-500">{{ formatDateOnly(order.data) }}</span>
             </div>
           </div>
         </div>
@@ -107,61 +152,48 @@
 
       <!-- Coletado Column -->
       <div class="kanban-column">
-        <div class="column-header bg-orange-100 p-4 rounded-t-lg">
-          <h3 class="font-semibold text-orange-800">Coletado</h3>
-          <span class="badge bg-orange-200 text-orange-800 px-2 py-1 rounded-full text-sm">
-            {{ kanbanData.coletado.length }}
-          </span>
+        <div class="column-header bg-orange-600 p-5 sm:p-6 lg:p-7 xl:p-8 rounded-t-lg xl:rounded-t-xl shadow-lg">
+          <div class="flex items-center justify-between w-full">
+            <h3 class="font-black text-white text-xl sm:text-2xl lg:text-3xl xl:text-4xl">Coletado</h3>
+            <span class="badge font-black text-orange-900 bg-white rounded-full px-4 py-2 sm:px-6 sm:py-3 text-lg sm:text-xl lg:text-2xl xl:text-3xl shadow-lg">
+              {{ kanbanData.coletado.length }}
+            </span>
+          </div>
         </div>
-        <div class="column-content bg-orange-50 p-4 rounded-b-lg min-h-96">
+        <div class="column-content bg-orange-50 p-4 sm:p-5 lg:p-6 xl:p-7 rounded-b-lg xl:rounded-b-xl min-h-72 sm:min-h-96 lg:min-h-[400px] xl:min-h-[500px]">
           <div
             v-for="order in kanbanData.coletado"
             :key="order.id"
-            class="order-item bg-white p-3 mb-2 rounded border border-orange-200"
+            class="order-item bg-white p-4 sm:p-5 lg:p-6 xl:p-7 mb-3 sm:mb-4 lg:mb-5 rounded-lg border-2 border-orange-400 shadow-md hover:shadow-lg lg:hover:shadow-xl transition-all duration-300"
           >
             <div class="flex justify-between items-start">
-              <div>
-                <span class="font-semibold text-gray-900">#{{ order.numero }}</span>
-                <div class="text-sm text-gray-700">{{ order.contato_nome }}</div>
-                <div class="text-sm font-medium text-green-600">R$ {{ formatCurrency(order.total) }}</div>
-                <div v-if="getMovementHistory(order, 'picked_up')" class="text-xs text-orange-600 mt-1">
+              <div class="flex-1">
+                <div class="flex justify-between items-start mb-3 sm:mb-4">
+                  <span class="font-black text-gray-900 text-lg sm:text-xl lg:text-2xl xl:text-3xl">#{{ order.numero }}</span>
+                  <span class="text-sm sm:text-base lg:text-lg text-gray-700 font-bold">{{ formatDateOnly(order.data) }}</span>
+                </div>
+                <div class="text-base sm:text-lg lg:text-xl xl:text-2xl text-gray-800 mb-3 sm:mb-4 font-bold leading-tight">{{ order.contato_nome }}</div>
+                <div class="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-black text-green-700 mb-3 sm:mb-4">R$ {{ formatCurrency(order.total) }}</div>
+                <div class="flex justify-between items-center text-sm sm:text-base lg:text-lg text-gray-700 mb-3 sm:mb-4">
+                  <div v-if="order.invoice_number" class="flex items-center gap-2">
+                    <span class="font-black text-gray-800">NF:</span>
+                    <span class="font-bold text-gray-900">{{ order.invoice_number }}</span>
+                  </div>
+                  <div v-else class="text-gray-600 font-bold">Sem NF</div>
+                  <div class="flex items-center gap-2">
+                    <span class="font-black text-gray-900">{{ order.items_quantity }}</span>
+                    <span class="font-bold text-gray-800">{{ order.items_quantity === 1 ? 'item' : 'itens' }}</span>
+                  </div>
+                </div>
+                <div v-if="getMovementHistory(order, 'picked_up')" class="text-sm sm:text-base lg:text-lg text-orange-800 font-bold bg-orange-200 p-2 sm:p-3 rounded-lg">
                   {{ getMovementHistory(order, 'picked_up') }}
                 </div>
               </div>
-              <span class="text-xs text-gray-500">{{ formatDateOnly(order.data) }}</span>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Sucesso Column -->
-      <div class="kanban-column">
-        <div class="column-header bg-green-100 p-4 rounded-t-lg">
-          <h3 class="font-semibold text-green-800">Sucesso</h3>
-          <span class="badge bg-green-200 text-green-800 px-2 py-1 rounded-full text-sm">
-            {{ kanbanData.sucesso.length }}
-          </span>
-        </div>
-        <div class="column-content bg-green-50 p-4 rounded-b-lg min-h-96">
-          <div
-            v-for="order in kanbanData.sucesso"
-            :key="order.id"
-            class="order-item bg-white p-3 mb-2 rounded border border-green-200"
-          >
-            <div class="flex justify-between items-start">
-              <div>
-                <span class="font-semibold text-gray-900">#{{ order.numero }}</span>
-                <div class="text-sm text-gray-700">{{ order.contato_nome }}</div>
-                <div class="text-sm font-medium text-green-600">R$ {{ formatCurrency(order.total) }}</div>
-                <div v-if="getMovementHistory(order, 'completed')" class="text-xs text-green-600 mt-1">
-                  {{ getMovementHistory(order, 'completed') }}
-                </div>
-              </div>
-              <span class="text-xs text-gray-500">{{ formatDateOnly(order.data) }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -179,7 +211,10 @@ interface Order {
   total: number
   data: string
   source: string
+  invoice_number?: string
+  items_quantity: number
   order_status: any
+  raw_invoice_data?: any
 }
 
 interface KanbanData {
@@ -187,7 +222,6 @@ interface KanbanData {
   separado: Order[]
   embalado: Order[]
   coletado: Order[]
-  sucesso: Order[]
 }
 
 interface Stats {
@@ -196,7 +230,6 @@ interface Stats {
   separado: number
   embalado: number
   coletado: number
-  sucesso: number
 }
 
 const props = defineProps<{
@@ -245,17 +278,21 @@ watch(lastUpdate, (update) => {
           order.order_status[`${update.action}_marked_at`] = null
         }
         
+        // Ensure new fields are preserved
+        if (!order.invoice_number && (update.order as any).invoice_number) {
+          order.invoice_number = (update.order as any).invoice_number
+        }
+        if (!order.items_quantity && (update.order as any).items_quantity) {
+          order.items_quantity = (update.order as any).items_quantity
+        }
+        
         // Remove from current column
         column.splice(orderIndex, 1)
         
         // Determine new column based on status
         let newColumn = 'aguardando'
         if (order.order_status.picked_up) {
-          if (order.order_status.packing && order.order_status.picking) {
-            newColumn = 'sucesso'
-          } else {
-            newColumn = 'coletado'
-          }
+          newColumn = 'coletado'
         } else if (order.order_status.packing) {
           newColumn = 'embalado'
         } else if (order.order_status.picking) {
@@ -275,7 +312,6 @@ watch(lastUpdate, (update) => {
     stats.value.separado = kanbanData.value.separado.length
     stats.value.embalado = kanbanData.value.embalado.length
     stats.value.coletado = kanbanData.value.coletado.length
-    stats.value.sucesso = kanbanData.value.sucesso.length
     
     console.log('Kanban updated with new data')
   }
@@ -402,26 +438,104 @@ onMounted(() => {
 
 <style scoped>
 .kanban-container {
-  padding: 1.5rem;
+  padding: 1rem 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .kanban-container {
+    padding: 1rem 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .kanban-container {
+    padding: 1.5rem 1.5rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .kanban-container {
+    padding: 2rem 2rem;
+  }
+}
+
+@media (min-width: 1920px) {
+  .kanban-container {
+    padding: 2.5rem 2.5rem;
+  }
 }
 
 .kanban-board {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .kanban-column {
   display: flex;
   flex-direction: column;
-  min-width: 20rem;
+  width: 300px;
+  flex-shrink: 0;
+}
+
+@media (min-width: 640px) {
+  .kanban-column {
+    width: 350px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .kanban-column {
+    width: 380px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .kanban-column {
+    width: 420px;
+  }
+}
+
+@media (min-width: 1536px) {
+  .kanban-column {
+    width: 480px;
+  }
+}
+
+@media (min-width: 1920px) {
+  .kanban-column {
+    width: 550px;
+  }
 }
 
 .order-item {
-  transition: all 0.2s;
-  border: 1px solid #e5e7eb;
+  transition: all 0.3s ease-in-out;
+  border: 2px solid #e5e7eb;
+  cursor: pointer;
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
 }
 
 .order-item:hover {
-  box-shadow: 0 2px 4px -1px rgb(0 0 0 / 0.1);
+  box-shadow: 0 8px 25px -5px rgb(0 0 0 / 0.2);
+  transform: translateY(-3px) scale(1.02);
+  border-color: #d1d5db;
+}
+
+@media (min-width: 1024px) {
+  .order-item {
+    border: 3px solid #e5e7eb;
+  }
+  
+  .order-item:hover {
+    box-shadow: 0 12px 35px -8px rgb(0 0 0 / 0.25);
+    transform: translateY(-4px) scale(1.03);
+  }
+}
+
+@media (min-width: 1920px) {
+  .order-item:hover {
+    box-shadow: 0 16px 45px -10px rgb(0 0 0 / 0.3);
+    transform: translateY(-5px) scale(1.04);
+  }
 }
 
 .stats-grid {
@@ -433,7 +547,7 @@ onMounted(() => {
 }
 
 .badge {
-  margin-left: 0.5rem;
+  flex-shrink: 0;
 }
 
 .column-header {
@@ -445,6 +559,38 @@ onMounted(() => {
 .column-content {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.75rem;
+  overflow-y: auto;
+  max-height: calc(100vh - 240px);
+  padding-right: 4px;
 }
+
+@media (min-width: 640px) {
+  .column-content {
+    max-height: calc(100vh - 200px);
+    gap: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .column-content {
+    max-height: calc(100vh - 180px);
+    gap: 1.25rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .column-content {
+    max-height: calc(100vh - 170px);
+    gap: 1.5rem;
+  }
+}
+
+@media (min-width: 1920px) {
+  .column-content {
+    max-height: calc(100vh - 160px);
+    gap: 2rem;
+  }
+}
+
 </style>

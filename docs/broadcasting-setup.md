@@ -64,26 +64,34 @@ VITE_PUSHER_SCHEME=http
 
 ### Iniciando o Servidor
 
-Para que o broadcasting funcione, você precisa iniciar o servidor Reverb:
-
-```bash
-php artisan reverb:start
-```
-
-### Comando de Desenvolvimento
-
-Use o comando `composer run dev` que já está configurado para iniciar todos os serviços necessários:
+O servidor Reverb agora é iniciado automaticamente com o comando de desenvolvimento:
 
 ```bash
 composer run dev
 ```
 
-Este comando inicia:
+### Comando de Desenvolvimento
+
+Use o comando `composer run dev` que está configurado para iniciar todos os serviços necessários:
+
+```bash
+composer run dev
+```
+
+Este comando inicia automaticamente:
 - Servidor Laravel
 - Queue worker
 - Pail (logs)
+- **Reverb (broadcasting)** - Iniciado automaticamente
 - Vite (frontend)
-- **Reverb (broadcasting)**
+
+### Iniciando Reverb Separadamente
+
+Se precisar iniciar apenas o Reverb para testes:
+
+```bash
+php artisan reverb:start
+```
 
 ## Testando o Sistema
 
