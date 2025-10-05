@@ -2,7 +2,21 @@
   <div class="kanban-container">
     <!-- Header -->
     <div class="kanban-header mb-6">
-      <h1 class="text-2xl font-bold text-gray-900 mb-4">Painel Kanban</h1>
+      <div class="flex items-center justify-between">
+        <h1 class="text-2xl font-bold text-gray-900 mb-4">Painel Kanban</h1>
+        <!-- Real-time connection indicator -->
+        <div class="flex items-center gap-2">
+          <div 
+            :class="[
+              'h-2 w-2 rounded-full',
+              isConnected ? 'bg-green-500' : 'bg-red-500'
+            ]"
+          ></div>
+          <span class="text-xs text-muted-foreground">
+            {{ isConnected ? 'Tempo real ativo' : 'Sem conexão' }}
+          </span>
+        </div>
+      </div>
     </div>
 
     <!-- Simplified Kanban Board -->
@@ -153,8 +167,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { router } from '@inertiajs/vue3'
+import { useOrderBroadcasting } from '@/composables/useBroadcasting'
 
 interface Order {
   id: number
@@ -191,6 +206,80 @@ const props = defineProps<{
 
 const kanbanData = ref<KanbanData>(props.kanbanData)
 const stats = ref<Stats>(props.stats)
+
+// Broadcasting setup
+const { isConnected, lastUpdate } = useOrderBroadcasting()
+
+// Watch for real-time updates and update kanban data
+watch(lastUpdate, (update) => {
+  if (update) {
+    console.log('Kanban received update:', update)
+    
+    // Find the order in all columns and update it
+    Object.keys(kanbanData.value).forEach(columnKey => {
+      const column = kanbanData.value[columnKey as keyof KanbanData]
+      const orderIndex = column.findIndex(order => order.id === update.order.id)
+      
+      if (orderIndex !== -1) {
+        const order = column[orderIndex]
+        
+        // Ensure order_status exists
+        if (!order.order_status) {
+          order.order_status = {
+            picking: false,
+            packing: false,
+            picked_up: false
+          }
+        }
+        
+        // Update the specific status
+        order.order_status[update.action] = update.status
+        
+        if (update.status) {
+          // Set the marked by and marked at fields
+          order.order_status[`${update.action}_marked_by`] = update.user.name
+          order.order_status[`${update.action}_marked_at`] = update.timestamp
+        } else {
+          // Clear the marked by and marked at fields
+          order.order_status[`${update.action}_marked_by`] = null
+          order.order_status[`${update.action}_marked_at`] = null
+        }
+        
+        // Remove from current column
+        column.splice(orderIndex, 1)
+        
+        // Determine new column based on status
+        let newColumn = 'aguardando'
+        if (order.order_status.picked_up) {
+          if (order.order_status.packing && order.order_status.picking) {
+            newColumn = 'sucesso'
+          } else {
+            newColumn = 'coletado'
+          }
+        } else if (order.order_status.packing) {
+          newColumn = 'embalado'
+        } else if (order.order_status.picking) {
+          newColumn = 'separado'
+        }
+        
+        // Add to new column
+        kanbanData.value[newColumn as keyof KanbanData].push(order)
+        
+        console.log(`Moved order ${update.order.id} from ${columnKey} to ${newColumn}`)
+      }
+    })
+    
+    // Update stats
+    stats.value.total = Object.values(kanbanData.value).reduce((sum, column) => sum + column.length, 0)
+    stats.value.aguardando = kanbanData.value.aguardando.length
+    stats.value.separado = kanbanData.value.separado.length
+    stats.value.embalado = kanbanData.value.embalado.length
+    stats.value.coletado = kanbanData.value.coletado.length
+    stats.value.sucesso = kanbanData.value.sucesso.length
+    
+    console.log('Kanban updated with new data')
+  }
+})
 
 // Debug: log the data to see what we're working with
 console.log('Kanban data:', props.kanbanData)

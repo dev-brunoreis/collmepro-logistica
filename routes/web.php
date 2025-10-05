@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KanbanController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PermissionController;
@@ -12,9 +13,7 @@ Route::get('/', function () {
     return redirect()->route('dashboard');
 })->name('home');
 
-Route::get('dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 
 // User management routes (users with user permissions)
 Route::middleware(['auth', 'permission:users.view'])->group(function () {
