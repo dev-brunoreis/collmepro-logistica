@@ -22,7 +22,7 @@ class PermissionControllerTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'admin']);
         
-        $response = $this->actingAs($admin)->get('/permissions');
+        $response = $this->actingAs($admin)->get('/dashboard/permissions');
         
         $response->assertStatus(200);
         $response->assertInertia(fn ($page) => $page
@@ -36,7 +36,7 @@ class PermissionControllerTest extends TestCase
     {
         $manager = User::factory()->create(['role' => 'manager']);
         
-        $response = $this->actingAs($manager)->get('/permissions');
+        $response = $this->actingAs($manager)->get('/dashboard/permissions');
         
         $response->assertStatus(403);
     }
@@ -45,7 +45,7 @@ class PermissionControllerTest extends TestCase
     {
         $seller = User::factory()->create(['role' => 'sales']);
         
-        $response = $this->actingAs($seller)->get('/permissions');
+        $response = $this->actingAs($seller)->get('/dashboard/permissions');
         
         $response->assertStatus(403);
     }
@@ -54,7 +54,7 @@ class PermissionControllerTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'admin']);
         
-        $response = $this->actingAs($admin)->get('/permissions/admin');
+        $response = $this->actingAs($admin)->get('/dashboard/permissions/admin');
         
         $response->assertStatus(200);
         $response->assertInertia(fn ($page) => $page
@@ -69,7 +69,7 @@ class PermissionControllerTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'admin']);
         
-        $response = $this->actingAs($admin)->get('/permissions/manager/edit');
+        $response = $this->actingAs($admin)->get('/dashboard/permissions/manager/edit');
         
         $response->assertStatus(200);
         $response->assertInertia(fn ($page) => $page
@@ -86,11 +86,11 @@ class PermissionControllerTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         $permission = Permission::first();
         
-        $response = $this->actingAs($admin)->put('/permissions/manager', [
+        $response = $this->actingAs($admin)->put('/dashboard/permissions/manager', [
             'permissions' => [$permission->id]
         ]);
         
-        $response->assertRedirect('/permissions');
+        $response->assertRedirect('/dashboard/permissions');
         $response->assertSessionHas('success');
         
         $this->assertDatabaseHas('role_permissions', [
@@ -108,7 +108,7 @@ class PermissionControllerTest extends TestCase
             $query->where('role', 'admin');
         })->pluck('id')->toArray();
         
-        $response = $this->actingAs($admin)->put('/permissions/admin', [
+        $response = $this->actingAs($admin)->put('/dashboard/permissions/admin', [
             'permissions' => [$adminPermissions[0]] // Only keep first permission
         ]);
         
@@ -121,11 +121,11 @@ class PermissionControllerTest extends TestCase
         $admin1 = User::factory()->create(['role' => 'admin']);
         $admin2 = User::factory()->create(['role' => 'admin']);
         
-        $response = $this->actingAs($admin1)->put('/permissions/admin', [
+        $response = $this->actingAs($admin1)->put('/dashboard/permissions/admin', [
             'permissions' => []
         ]);
         
-        $response->assertRedirect('/permissions');
+        $response->assertRedirect('/dashboard/permissions');
         $response->assertSessionHas('success');
     }
 
@@ -133,7 +133,7 @@ class PermissionControllerTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'admin']);
         
-        $response = $this->actingAs($admin)->get('/permissions/invalid');
+        $response = $this->actingAs($admin)->get('/dashboard/permissions/invalid');
         
         $response->assertStatus(404);
     }

@@ -35,9 +35,9 @@ class UserTest extends TestCase
             'role' => 'manager',
         ];
 
-        $response = $this->post('/users', $userData);
+        $response = $this->post('/dashboard/users', $userData);
 
-        $response->assertRedirect('/users');
+        $response->assertRedirect('/dashboard/users');
         $response->assertSessionHas('success', 'Usuário criado com sucesso.');
 
         $this->assertDatabaseHas('users', [
@@ -54,7 +54,7 @@ class UserTest extends TestCase
 
         $this->actingAs($manager);
 
-        $response = $this->get('/users');
+        $response = $this->get('/dashboard/users');
 
         $response->assertStatus(403);
     }
@@ -65,7 +65,7 @@ class UserTest extends TestCase
 
         $this->actingAs($sales);
 
-        $response = $this->get('/users');
+        $response = $this->get('/dashboard/users');
 
         $response->assertStatus(403);
     }
@@ -81,14 +81,14 @@ class UserTest extends TestCase
 
         $this->actingAs($admin);
 
-        $response = $this->patch("/users/{$user->id}", [
+        $response = $this->patch("/dashboard/users/{$user->id}", [
             'name' => 'Jane Doe',
             'email' => 'jane@example.com',
             'username' => $user->username,
             'role' => 'manager',
         ]);
 
-        $response->assertRedirect('/users');
+        $response->assertRedirect('/dashboard/users');
         $response->assertSessionHas('success', 'Usuário atualizado com sucesso.');
 
         $this->assertDatabaseHas('users', [
@@ -106,9 +106,9 @@ class UserTest extends TestCase
 
         $this->actingAs($admin);
 
-        $response = $this->delete("/users/{$user->id}");
+        $response = $this->delete("/dashboard/users/{$user->id}");
 
-        $response->assertRedirect('/users');
+        $response->assertRedirect('/dashboard/users');
         $response->assertSessionHas('success', 'Usuário excluído com sucesso.');
 
         $this->assertDatabaseMissing('users', [
@@ -122,9 +122,9 @@ class UserTest extends TestCase
 
         $this->actingAs($admin);
 
-        $response = $this->delete("/users/{$admin->id}");
+        $response = $this->delete("/dashboard/users/{$admin->id}");
 
-        $response->assertRedirect('/users');
+        $response->assertRedirect('/dashboard/users');
         $response->assertSessionHas('error', 'Você não pode excluir sua própria conta.');
 
         $this->assertDatabaseHas('users', [
@@ -139,7 +139,7 @@ class UserTest extends TestCase
 
         $this->actingAs($admin);
 
-        $response = $this->post('/users', [
+        $response = $this->post('/dashboard/users', [
             'name' => 'John Doe',
             'email' => 'existing@example.com',
             'username' => 'johndoe',
@@ -158,7 +158,7 @@ class UserTest extends TestCase
 
         $this->actingAs($admin);
 
-        $response = $this->post('/users', [
+        $response = $this->post('/dashboard/users', [
             'name' => 'John Doe',
             'email' => 'john@example.com',
             'username' => 'existinguser',
@@ -176,7 +176,7 @@ class UserTest extends TestCase
 
         $this->actingAs($admin);
 
-        $response = $this->post('/users', [
+        $response = $this->post('/dashboard/users', [
             'name' => 'John Doe',
             'email' => 'john@example.com',
             'username' => 'johndoe',
@@ -194,14 +194,14 @@ class UserTest extends TestCase
 
         $this->actingAs($admin);
 
-        $response = $this->patch("/users/{$admin->id}", [
+        $response = $this->patch("/dashboard/users/{$admin->id}", [
             'name' => $admin->name,
             'email' => $admin->email,
             'username' => $admin->username,
             'role' => 'manager', // Trying to change own role
         ]);
 
-        $response->assertRedirect('/users');
+        $response->assertRedirect('/dashboard/users');
         $response->assertSessionHas('success');
         
         // Verify role was not changed
