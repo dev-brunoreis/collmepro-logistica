@@ -39,7 +39,7 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: 'Pedidos',
-        href: '/orders',
+        href: '/dashboard/orders',
         icon: Package,
         visible: user?.permissions?.some(p => p.name === 'orders.view') || false,
     },
@@ -63,7 +63,7 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: 'Permissões',
-        href: '/permissions',
+        href: '/dashboard/permissions',
         icon: FileText,
         visible: user?.permissions?.some(p => p.name === 'permissions.view') || false,
     },

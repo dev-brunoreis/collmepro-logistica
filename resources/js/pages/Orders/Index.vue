@@ -5,6 +5,7 @@ import { ref, onMounted, onUnmounted, watch, reactive } from 'vue';
 import { Search, Filter, Eye, CheckCircle, XCircle, Package, Truck, ExternalLink, RefreshCw, AlertTriangle, ZoomIn, Download } from 'lucide-vue-next';
 import axios from '@/lib/axios';
 import { useOrderBroadcasting } from '@/composables/useBroadcasting';
+import orders from '@/routes/orders';
 
 interface OrderStatus {
     picking: boolean;
@@ -786,7 +787,7 @@ const getCurrentPerPage = () => {
                                 </td>
                                 <td class="px-4 py-3">
                                     <Link
-                                        :href="`/orders/${order.id}`"
+                                        :href="orders.show.url({ order: order.id })"
                                         class="inline-flex items-center gap-1 rounded-md px-4 py-3 text-sm text-muted-foreground hover:bg-sidebar-border/70"
                                         :title="`Ver pedido ${order.numero}`"
                                     >
