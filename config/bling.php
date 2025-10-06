@@ -43,20 +43,17 @@ return [
     */
     'systems_map' => [
         '205404185' => [
-            'name' => '(WooCommerce) Collme Beauty',
-            'color' => 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-300',
+            'name' => 'Beauty', //verificado
+            'color' => 'bg-[#00c951] text-white dark:bg-[#00c951] dark:text-white',
         ],
         '205274224' => [
-            'name' => '(WooCommerce) Collme Pro',
-            'color' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+            'name' => 'Pro', //verificado
+            'color' => 'bg-[#6108ce] text-white dark:bg-[#6108ce] dark:text-white',
         ],
         '205483126' => [
-            'name' => '(Shopify) Collme Beauty',
-            'color' => 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-300',
+            'name' => 'TikTok', //verificado
+            'color' => 'bg-gray-400 text-white dark:bg-gray 4ark:text-white',
         ],
-        '205404186' => [
-            'name' => '(WooCommerce) Collme Pro Atacadista',
-            'color' => 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
-        ]
+        // atacadista????
     ]
 ];
