@@ -469,15 +469,6 @@ const getCurrentPerPage = () => {
                         </span>
                     </div>
                 </div>
-                <button
-                    v-if="canImportOrders"
-                    @click="fetchOrders"
-                    :disabled="isFetching"
-                    class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    <RefreshCw :class="{ 'animate-spin': isFetching }" class="h-4 w-4" />
-                    {{ isFetching ? 'Buscando...' : 'Sincronizar pedidos' }}
-                </button>
             </div>
 
             <!-- Filters -->
@@ -529,7 +520,7 @@ const getCurrentPerPage = () => {
                             @change="updateFilter('tracking_status', ($event.target as HTMLSelectElement).value)"
                             class="w-full rounded-lg border border-sidebar-border/70 bg-background px-4 py-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-sidebar-border"
                         >
-                            <option value="">Todos os status</option>
+                            <option value="">Selecione um status</option>
                             <option v-for="(label, value) in props.tracking_statuses || {}" :key="value" :value="value">
                                 {{ label }}
                             </option>
@@ -542,7 +533,7 @@ const getCurrentPerPage = () => {
                             @change="updateFilter('logistics_provider', ($event.target as HTMLSelectElement).value)"
                             class="w-full rounded-lg border border-sidebar-border/70 bg-background px-4 py-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-sidebar-border"
                         >
-                            <option value="">Todas as transportadoras</option>
+                            <option value="">Selecione uma transportadora</option>
                             <option v-for="(label, value) in props.logistics_providers || {}" :key="value" :value="value">
                                 {{ label }}
                             </option>
