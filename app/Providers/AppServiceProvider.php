@@ -11,7 +11,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Register Bling services
+        $this->app->singleton(\App\Services\BlingOAuthService::class);
+        $this->app->singleton(\App\Services\CollmeProBlingService::class);
+        $this->app->singleton(\App\Services\CollmeAtacadistaBlingService::class);
     }
 
     /**

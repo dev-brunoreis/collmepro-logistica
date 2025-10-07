@@ -40,5 +40,16 @@ return [
         'base_url' => env('BLING_BASE_URL', 'https://api.bling.com.br/Api/v3'),
         'timeout' => env('BLING_TIMEOUT', 30),
         'retry_attempts' => env('BLING_RETRY_ATTEMPTS', 3),
+        
+        // OAuth2 credentials for different accounts
+        'pro' => [
+            'client_id' => env('BLING_PRO_CLIENT_ID'),
+            'client_secret' => env('BLING_PRO_CLIENT_SECRET'),
+        ],
+        
+        'atacadista' => [
+            'client_id' => env('BLING_ATACADISTA_CLIENT_ID'),
+            'client_secret' => env('BLING_ATACADISTA_CLIENT_SECRET'),
+        ],
     ],
 ];

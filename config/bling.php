@@ -54,6 +54,9 @@ return [
             'name' => 'TikTok', //verificado
             'color' => 'bg-gray-400 text-white dark:bg-gray 4ark:text-white',
         ],
-        // atacadista????
+        '205432408' => [
+            'name' => 'Atacadista', //verificado
+            'color' => 'bg-[#ff9800] text-white dark:bg-[#ff9800] dark:text-white',
+        ]
     ]
 ];

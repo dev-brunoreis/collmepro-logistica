@@ -5,7 +5,7 @@ import { ref, onMounted, onUnmounted, watch, reactive } from 'vue';
 import { Search, Filter, Eye, CheckCircle, XCircle, Package, Truck, ExternalLink, RefreshCw, AlertTriangle, ZoomIn, Download } from 'lucide-vue-next';
 import axios from '@/lib/axios';
 import { useOrderBroadcasting } from '@/composables/useBroadcasting';
-import orders from '@/routes/orders';
+// import orders from '@/routes/orders'; // Removed as file doesn't exist
 
 interface OrderStatus {
     picking: boolean;
@@ -199,7 +199,7 @@ const isUpdatingStatus = ref(false);
 const search = (value: string) => {
     const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
     
-    router.get('/orders', { search: value }, {
+    router.get('/dashboard/orders', { search: value }, {
         preserveState: false,
         preserveScroll: true,
         replace: true,
@@ -221,7 +221,7 @@ const updateFilter = (filterName: string, value: string) => {
     
     const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
     
-    router.get('/orders', filters, {
+    router.get('/dashboard/orders', filters, {
         preserveState: false,
         preserveScroll: true,
         replace: true,
@@ -237,7 +237,7 @@ const updateFilter = (filterName: string, value: string) => {
 const clearFilters = () => {
     const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
     
-    router.get('/orders', {}, {
+    router.get('/dashboard/orders', {}, {
         preserveState: false,
         preserveScroll: true,
         replace: true,
@@ -288,7 +288,7 @@ const confirmStatusUpdate = () => {
     // Store current scroll position
     const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
     
-    router.patch(`/orders/${orderId}`, {
+    router.patch(`/dashboard/orders/${orderId}`, {
         action,
         status: newStatus,
     }, {
@@ -404,7 +404,7 @@ const fetchOrders = () => {
     
     isFetching.value = true;
     
-    router.post('/orders/fetch', {}, {
+    router.post('/dashboard/orders/fetch', {}, {
         preserveState: true,
         preserveScroll: true,
         onSuccess: () => {
@@ -431,7 +431,7 @@ const updatePerPage = (event: Event) => {
     
     const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
     
-    router.get('/orders', { ...props.filters, per_page: perPage }, {
+    router.get('/dashboard/orders', { ...props.filters, per_page: perPage }, {
         preserveState: false,
         preserveScroll: true,
         replace: true,
@@ -599,6 +599,7 @@ const getCurrentPerPage = () => {
                                 <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Cliente</th>
                                 <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Data</th>
                                 <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">NFE</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Valor Total</th>
                                 <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Rastreamento</th>
                                 <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Transportadora</th>
                                 <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Status</th>
@@ -708,6 +709,9 @@ const getCurrentPerPage = () => {
                                     <span v-else class="text-sm text-muted-foreground">-</span>
                                 </td>
                                 <td class="px-4 py-3">
+                                    <span class="text-sm font-medium">R$ {{ order.total }}</span>
+                                </td>
+                                <td class="px-4 py-3">
                                     <a 
                                         v-if="order.raw_tracking_data?.rastreamento?.url" 
                                         :href="order.raw_tracking_data?.rastreamento?.url" 
@@ -787,7 +791,7 @@ const getCurrentPerPage = () => {
                                 </td>
                                 <td class="px-4 py-3">
                                     <Link
-                                        :href="orders.show.url({ order: order.id })"
+                                        :href="`/dashboard/orders/${order.id}`"
                                         class="inline-flex items-center gap-1 rounded-md px-4 py-3 text-sm text-muted-foreground hover:bg-sidebar-border/70"
                                         :title="`Ver pedido ${order.numero}`"
                                     >

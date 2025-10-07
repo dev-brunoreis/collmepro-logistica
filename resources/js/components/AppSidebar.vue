@@ -24,7 +24,8 @@ import {
     Kanban, 
     Tag, 
     FileText,
-    BarChart3
+    BarChart3,
+    SquareKanban
 } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
@@ -67,6 +68,12 @@ const mainNavItems: NavItem[] = [
         icon: FileText,
         visible: user?.permissions?.some(p => p.name === 'permissions.view') || false,
     },
+    {
+        title: 'Painel',
+        href: '/dashboard/painel',
+        icon: SquareKanban,
+        visible: user?.permissions?.some(p => p.name === 'kanban.view') || false,
+    }
     // {
     //     title: 'Relatórios',
     //     href: '#', // TODO: Implementar rota de relatórios
