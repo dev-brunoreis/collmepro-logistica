@@ -3,7 +3,7 @@
     <!-- Header -->
     <div class="kanban-header mb-6 sm:mb-8 lg:mb-10">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <h1 class="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-black text-gray-900">Painel Kanban</h1>
+        <h1 class="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-black text-white">Painel Kanban</h1>
         <!-- Real-time connection indicator -->
         <div class="flex items-center gap-3">
           <div 
@@ -12,7 +12,7 @@
               isConnected ? 'bg-green-500' : 'bg-red-500'
             ]"
           ></div>
-          <span class="text-base sm:text-lg lg:text-xl font-bold text-gray-800">
+          <span class="text-base sm:text-lg lg:text-xl font-bold text-white">
             {{ isConnected ? 'Tempo real ativo' : 'Sem conexão' }}
           </span>
         </div>
@@ -20,13 +20,13 @@
     </div>
 
     <!-- Simplified Kanban Board -->
-    <div class="kanban-board justify-center flex gap-3 sm:gap-4 lg:gap-6 xl:gap-8 overflow-x-auto pb-4">
+    <div class="kanban-board flex gap-3 sm:gap-4 lg:gap-6 xl:gap-8 pb-4 px-2 sm:px-4">
       <!-- Aguardando Column -->
       <div class="kanban-column">
         <div class="column-header bg-yellow-500 p-5 sm:p-6 lg:p-7 xl:p-8 rounded-t-lg xl:rounded-t-xl shadow-lg">
           <div class="flex items-center justify-between w-full">
-            <h3 class="font-black text-white text-xl sm:text-2xl lg:text-3xl xl:text-4xl">Aguardando</h3>
-            <span class="badge font-black text-yellow-900 bg-white rounded-full px-4 py-2 sm:px-6 sm:py-3 text-lg sm:text-xl lg:text-2xl xl:text-3xl shadow-lg">
+            <h3 class="font-black text-white text-xl sm:text-2xl lg:text-3xl xl:text-4xl truncate mr-2">Aguardando</h3>
+            <span class="badge font-black text-yellow-900 bg-white rounded-full px-4 py-2 sm:px-6 sm:py-3 text-lg sm:text-xl lg:text-2xl xl:text-3xl shadow-lg flex-shrink-0">
               {{ kanbanData.aguardando.length }}
             </span>
           </div>
@@ -43,7 +43,7 @@
                   <span class="font-black text-gray-900 text-lg sm:text-xl lg:text-2xl xl:text-3xl">#{{ order.numero }}</span>
                   <span class="text-sm sm:text-base lg:text-lg text-gray-700 font-bold">{{ formatDateOnly(order.data) }}</span>
                 </div>
-                <div class="text-base sm:text-lg lg:text-xl xl:text-2xl text-gray-800 mb-3 sm:mb-4 font-bold leading-tight">{{ order.contato_nome }}</div>
+                <div class="text-base sm:text-lg lg:text-xl xl:text-2xl text-gray-800 mb-3 sm:mb-4 font-bold leading-tight break-words hyphens-auto">{{ order.contato_nome }}</div>
                 <div class="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-black text-green-700 mb-3 sm:mb-4">R$ {{ formatCurrency(order.total) }}</div>
                 <div class="flex justify-between items-center text-sm sm:text-base lg:text-lg text-gray-700">
                   <div v-if="order.invoice_number" class="flex items-center gap-2">
@@ -66,8 +66,8 @@
       <div class="kanban-column">
         <div class="column-header bg-blue-600 p-5 sm:p-6 lg:p-7 xl:p-8 rounded-t-lg xl:rounded-t-xl shadow-lg">
           <div class="flex items-center justify-between w-full">
-            <h3 class="font-black text-white text-xl sm:text-2xl lg:text-3xl xl:text-4xl">Separado</h3>
-            <span class="badge font-black text-blue-900 bg-white rounded-full px-4 py-2 sm:px-6 sm:py-3 text-lg sm:text-xl lg:text-2xl xl:text-3xl shadow-lg">
+            <h3 class="font-black text-white text-xl sm:text-2xl lg:text-3xl xl:text-4xl truncate mr-2">Separado</h3>
+            <span class="badge font-black text-blue-900 bg-white rounded-full px-4 py-2 sm:px-6 sm:py-3 text-lg sm:text-xl lg:text-2xl xl:text-3xl shadow-lg flex-shrink-0">
               {{ kanbanData.separado.length }}
             </span>
           </div>
@@ -84,7 +84,7 @@
                   <span class="font-black text-gray-900 text-lg sm:text-xl lg:text-2xl xl:text-3xl">#{{ order.numero }}</span>
                   <span class="text-sm sm:text-base lg:text-lg text-gray-700 font-bold">{{ formatDateOnly(order.data) }}</span>
                 </div>
-                <div class="text-base sm:text-lg lg:text-xl xl:text-2xl text-gray-800 mb-3 sm:mb-4 font-bold leading-tight">{{ order.contato_nome }}</div>
+                <div class="text-base sm:text-lg lg:text-xl xl:text-2xl text-gray-800 mb-3 sm:mb-4 font-bold leading-tight break-words hyphens-auto">{{ order.contato_nome }}</div>
                 <div class="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-black text-green-700 mb-3 sm:mb-4">R$ {{ formatCurrency(order.total) }}</div>
                 <div class="flex justify-between items-center text-sm sm:text-base lg:text-lg text-gray-700 mb-3 sm:mb-4">
                   <div v-if="order.invoice_number" class="flex items-center gap-2">
@@ -110,8 +110,8 @@
       <div class="kanban-column">
         <div class="column-header bg-purple-600 p-5 sm:p-6 lg:p-7 xl:p-8 rounded-t-lg xl:rounded-t-xl shadow-lg">
           <div class="flex items-center justify-between w-full">
-            <h3 class="font-black text-white text-xl sm:text-2xl lg:text-3xl xl:text-4xl">Embalado</h3>
-            <span class="badge font-black text-purple-900 bg-white rounded-full px-4 py-2 sm:px-6 sm:py-3 text-lg sm:text-xl lg:text-2xl xl:text-3xl shadow-lg">
+            <h3 class="font-black text-white text-xl sm:text-2xl lg:text-3xl xl:text-4xl truncate mr-2">Embalado</h3>
+            <span class="badge font-black text-purple-900 bg-white rounded-full px-4 py-2 sm:px-6 sm:py-3 text-lg sm:text-xl lg:text-2xl xl:text-3xl shadow-lg flex-shrink-0">
               {{ kanbanData.embalado.length }}
             </span>
           </div>
@@ -128,7 +128,7 @@
                   <span class="font-black text-gray-900 text-lg sm:text-xl lg:text-2xl xl:text-3xl">#{{ order.numero }}</span>
                   <span class="text-sm sm:text-base lg:text-lg text-gray-700 font-bold">{{ formatDateOnly(order.data) }}</span>
                 </div>
-                <div class="text-base sm:text-lg lg:text-xl xl:text-2xl text-gray-800 mb-3 sm:mb-4 font-bold leading-tight">{{ order.contato_nome }}</div>
+                <div class="text-base sm:text-lg lg:text-xl xl:text-2xl text-gray-800 mb-3 sm:mb-4 font-bold leading-tight break-words hyphens-auto">{{ order.contato_nome }}</div>
                 <div class="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-black text-green-700 mb-3 sm:mb-4">R$ {{ formatCurrency(order.total) }}</div>
                 <div class="flex justify-between items-center text-sm sm:text-base lg:text-lg text-gray-700 mb-3 sm:mb-4">
                   <div v-if="order.invoice_number" class="flex items-center gap-2">
@@ -154,8 +154,8 @@
       <div class="kanban-column">
         <div class="column-header bg-orange-600 p-5 sm:p-6 lg:p-7 xl:p-8 rounded-t-lg xl:rounded-t-xl shadow-lg">
           <div class="flex items-center justify-between w-full">
-            <h3 class="font-black text-white text-xl sm:text-2xl lg:text-3xl xl:text-4xl">Coletado</h3>
-            <span class="badge font-black text-orange-900 bg-white rounded-full px-4 py-2 sm:px-6 sm:py-3 text-lg sm:text-xl lg:text-2xl xl:text-3xl shadow-lg">
+            <h3 class="font-black text-white text-xl sm:text-2xl lg:text-3xl xl:text-4xl truncate mr-2">Coletado</h3>
+            <span class="badge font-black text-orange-900 bg-white rounded-full px-4 py-2 sm:px-6 sm:py-3 text-lg sm:text-xl lg:text-2xl xl:text-3xl shadow-lg flex-shrink-0">
               {{ kanbanData.coletado.length }}
             </span>
           </div>
@@ -172,7 +172,7 @@
                   <span class="font-black text-gray-900 text-lg sm:text-xl lg:text-2xl xl:text-3xl">#{{ order.numero }}</span>
                   <span class="text-sm sm:text-base lg:text-lg text-gray-700 font-bold">{{ formatDateOnly(order.data) }}</span>
                 </div>
-                <div class="text-base sm:text-lg lg:text-xl xl:text-2xl text-gray-800 mb-3 sm:mb-4 font-bold leading-tight">{{ order.contato_nome }}</div>
+                <div class="text-base sm:text-lg lg:text-xl xl:text-2xl text-gray-800 mb-3 sm:mb-4 font-bold leading-tight break-words hyphens-auto">{{ order.contato_nome }}</div>
                 <div class="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-black text-green-700 mb-3 sm:mb-4">R$ {{ formatCurrency(order.total) }}</div>
                 <div class="flex justify-between items-center text-sm sm:text-base lg:text-lg text-gray-700 mb-3 sm:mb-4">
                   <div v-if="order.invoice_number" class="flex items-center gap-2">
@@ -439,6 +439,9 @@ onMounted(() => {
 <style scoped>
 .kanban-container {
   padding: 1rem 0.5rem;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 @media (min-width: 640px) {
@@ -466,44 +469,62 @@ onMounted(() => {
 }
 
 .kanban-board {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+  width: 100%;
+  display: flex;
 }
 
 .kanban-column {
   display: flex;
   flex-direction: column;
-  width: 300px;
-  flex-shrink: 0;
+  flex: 1;
+  min-width: 250px;
+  max-width: calc(25% - 0.75rem);
 }
 
 @media (min-width: 640px) {
   .kanban-column {
-    width: 350px;
+    min-width: 280px;
+    max-width: calc(25% - 1rem);
   }
 }
 
 @media (min-width: 1024px) {
   .kanban-column {
-    width: 380px;
+    min-width: 300px;
+    max-width: calc(25% - 1.5rem);
   }
 }
 
 @media (min-width: 1280px) {
   .kanban-column {
-    width: 420px;
+    min-width: 320px;
+    max-width: calc(25% - 2rem);
   }
 }
 
 @media (min-width: 1536px) {
   .kanban-column {
-    width: 480px;
+    min-width: 350px;
+    max-width: calc(25% - 2rem);
   }
 }
 
 @media (min-width: 1920px) {
   .kanban-column {
-    width: 550px;
+    min-width: 380px;
+    max-width: calc(25% - 2rem);
+  }
+}
+
+/* Para telas muito pequenas, permitir scroll horizontal */
+@media (max-width: 1024px) {
+  .kanban-board {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .kanban-column {
+    flex-shrink: 0;
   }
 }
 
@@ -562,7 +583,6 @@ onMounted(() => {
   gap: 0.75rem;
   overflow-y: auto;
   max-height: calc(100vh - 240px);
-  padding-right: 4px;
 }
 
 @media (min-width: 640px) {

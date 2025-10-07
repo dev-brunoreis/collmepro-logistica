@@ -26,9 +26,13 @@ try {
         enabledTransports: ['ws', 'wss'],
         cluster: 'local',
         disableAutoConnect: false, // Enable auto-connect
+        // Add reconnection settings
+        activityTimeout: 30000, // 30 seconds
+        pongTimeout: 6000, // 6 seconds
+        unavailableTimeout: 10000, // 10 seconds
     });
 
-    // Add connection event listeners for debugging
+    // Add connection event listeners for debugging and management
     echo.connector.pusher.connection.bind('connected', () => {
         console.log('Echo: Connected to server');
     });
@@ -39,6 +43,19 @@ try {
 
     echo.connector.pusher.connection.bind('error', (error: any) => {
         console.error('Echo: Connection error', error);
+    });
+
+    echo.connector.pusher.connection.bind('connecting', () => {
+        console.log('Echo: Connecting to server...');
+    });
+
+    echo.connector.pusher.connection.bind('unavailable', () => {
+        console.warn('Echo: Connection unavailable');
+    });
+
+    // Add global error handler
+    echo.connector.pusher.connection.bind('failed', (error: any) => {
+        console.error('Echo: Connection failed', error);
     });
 
     window.Echo = echo;

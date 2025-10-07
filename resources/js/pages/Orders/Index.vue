@@ -118,7 +118,7 @@ const page = usePage();
 const user = page.props.auth.user as User;
 
 // Broadcasting setup
-const { isConnected, lastUpdate } = useOrderBroadcasting();
+const { isConnected, lastUpdate, connectToOrdersChannel } = useOrderBroadcasting();
 
 // Use the original props data and create a reactive trigger for updates
 const ordersData = ref(props.orders.data);
@@ -164,6 +164,17 @@ watch(lastUpdate, (update) => {
             const statusText = update.status ? 'marcado como concluído' : 'desmarcado';
             console.log(`${update.user.name} ${statusText} ${actionName} no pedido ${update.order.numero}`);
         }
+    }
+});
+
+// Watch for connection status changes and attempt reconnection
+watch(isConnected, (connected) => {
+    if (!connected) {
+        console.log('Connection lost, attempting to reconnect...');
+        // Try to reconnect after a short delay
+        setTimeout(() => {
+            connectToOrdersChannel();
+        }, 2000);
     }
 });
 
@@ -481,6 +492,14 @@ const getCurrentPerPage = () => {
                         <span class="text-xs text-muted-foreground">
                             {{ isConnected ? 'Tempo real ativo' : 'Sem conexão' }}
                         </span>
+                        <button
+                            v-if="!isConnected"
+                            @click="connectToOrdersChannel"
+                            class="ml-2 text-xs text-blue-600 hover:text-blue-800 underline"
+                            title="Tentar reconectar"
+                        >
+                            Reconectar
+                        </button>
                     </div>
                 </div>
             </div>
