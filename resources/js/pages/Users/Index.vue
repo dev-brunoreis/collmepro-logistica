@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import users from '@/routes/users';
+// import users from '@/routes/users'; // Removed as file doesn't exist
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { Trash2, Edit, Plus, Search, Filter } from 'lucide-vue-next';
+import { ref } from 'vue';
+import { Trash2, Edit, Plus, Search, Filter, Loader2 } from 'lucide-vue-next';
 
 interface User {
     id: number;
@@ -40,7 +41,7 @@ const props = defineProps<Props>();
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Usuários',
-        href: users.index.url(),
+        href: '/dashboard/users',
     },
 ];
 
@@ -49,7 +50,7 @@ const deleteUser = (user: User) => {
         // Store current scroll position
         const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
         
-        router.delete(users.destroy.url({ user: user.id }), {
+        router.delete(`/dashboard/users/${user.id}`, {
             preserveState: true,
             preserveScroll: true,
             onSuccess: (page: any) => {
@@ -77,10 +78,19 @@ const deleteUser = (user: User) => {
     }
 };
 
-const search = (value: string) => {
+// Search input value
+const searchValue = ref(props.filters?.search || '');
+
+// Loading state for search
+const isSearching = ref(false);
+
+const search = () => {
+    if (isSearching.value || !searchValue.value.trim()) return;
+    
+    isSearching.value = true;
     const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
     
-    router.get('/users', { search: value }, {
+    router.get('/dashboard/users', { search: searchValue.value.trim() }, {
         preserveState: true,
         preserveScroll: true,
         replace: true,
@@ -89,13 +99,16 @@ const search = (value: string) => {
                 window.scrollTo(0, scrollPosition);
             }, 50);
         },
+        onFinish: () => {
+            isSearching.value = false;
+        },
     });
 };
 
 const filterByRole = (role: string) => {
     const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
     
-    router.get('/users', { role: role || null }, {
+    router.get('/dashboard/users', { role: role || null }, {
         preserveState: true,
         preserveScroll: true,
         replace: true,
@@ -108,9 +121,10 @@ const filterByRole = (role: string) => {
 };
 
 const clearFilters = () => {
+    searchValue.value = '';
     const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
     
-    router.get('/users', {}, {
+    router.get('/dashboard/users', {}, {
         preserveState: true,
         preserveScroll: true,
         replace: true,
@@ -131,7 +145,7 @@ const clearFilters = () => {
             <div class="flex items-center justify-between">
                 <h1 class="text-2xl font-bold">Usuários</h1>
                 <Link
-                    :href="users.create.url()"
+                    href="/dashboard/users/create"
                     class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
                 >
                     <Plus class="h-4 w-4" />
@@ -143,15 +157,26 @@ const clearFilters = () => {
             <div class="flex flex-col gap-4 rounded-lg border border-sidebar-border/70 p-4 dark:border-sidebar-border">
                 <div class="flex items-center gap-4">
                     <div class="flex-1">
-                        <div class="relative">
-                            <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <input
-                                type="text"
-                                :value="props.filters?.search || ''"
-                                @input="search(($event.target as HTMLInputElement).value)"
-                                placeholder="Buscar por nome, email ou usuário..."
-                                class="w-full rounded-lg border border-sidebar-border/70 bg-background pl-10 pr-4 py-2 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-sidebar-border"
-                            />
+                        <div class="flex gap-2">
+                            <div class="relative flex-1">
+                                <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                <input
+                                    type="text"
+                                    v-model="searchValue"
+                                    @keyup.enter="search"
+                                    placeholder="Buscar por nome, email ou usuário..."
+                                    class="w-full rounded-lg border border-sidebar-border/70 bg-background pl-10 pr-4 py-2 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-sidebar-border"
+                                />
+                            </div>
+                            <button
+                                @click="search"
+                                :disabled="isSearching || !searchValue.trim()"
+                                class="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <Loader2 v-if="isSearching" class="h-4 w-4 animate-spin" />
+                                <Search v-else class="h-4 w-4" />
+                                {{ isSearching ? 'Buscando...' : 'Buscar' }}
+                            </button>
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
@@ -225,7 +250,7 @@ const clearFilters = () => {
                                 <td class="px-4 py-3">
                                     <div class="flex items-center gap-2">
                                         <Link
-                                            :href="users.edit.url({ user: user.id })"
+                                            :href="`/dashboard/users/${user.id}/edit`"
                                             class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-sidebar-border/70"
                                         >
                                             <Edit class="h-3 w-3" />

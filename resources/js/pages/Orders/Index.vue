@@ -2,7 +2,7 @@
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { ref, onMounted, onUnmounted, watch, reactive } from 'vue';
-import { Search, Filter, Eye, CheckCircle, XCircle, Package, Truck, ExternalLink, RefreshCw, AlertTriangle, ZoomIn, Download } from 'lucide-vue-next';
+import { Search, Filter, Eye, CheckCircle, XCircle, Package, Truck, ExternalLink, RefreshCw, AlertTriangle, ZoomIn, Download, Loader2 } from 'lucide-vue-next';
 import axios from '@/lib/axios';
 import { useOrderBroadcasting } from '@/composables/useBroadcasting';
 // import orders from '@/routes/orders'; // Removed as file doesn't exist
@@ -196,10 +196,19 @@ const isUpdatingStatus = ref(false);
 
 // Tracking functionality removed as part of simplification
 
-const search = (value: string) => {
+// Search input value
+const searchValue = ref(props.filters?.search || '');
+
+// Loading state for search
+const isSearching = ref(false);
+
+const search = () => {
+    if (isSearching.value || !searchValue.value.trim()) return;
+    
+    isSearching.value = true;
     const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
     
-    router.get('/dashboard/orders', { search: value }, {
+    router.get('/dashboard/orders', { search: searchValue.value.trim() }, {
         preserveState: false,
         preserveScroll: true,
         replace: true,
@@ -207,6 +216,9 @@ const search = (value: string) => {
             setTimeout(() => {
                 window.scrollTo(0, scrollPosition);
             }, 50);
+        },
+        onFinish: () => {
+            isSearching.value = false;
         },
     });
 };
@@ -235,6 +247,7 @@ const updateFilter = (filterName: string, value: string) => {
 
 
 const clearFilters = () => {
+    searchValue.value = '';
     const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
     
     router.get('/dashboard/orders', {}, {
@@ -477,15 +490,26 @@ const getCurrentPerPage = () => {
                 <!-- Search and basic filters -->
                 <div class="flex flex-wrap items-center gap-4">
                     <div class="flex-1 min-w-64">
-                        <div class="relative">
-                            <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <input
-                                type="text"
-                                :value="props.filters?.search || ''"
-                                @input="search(($event.target as HTMLInputElement).value)"
-                                placeholder="Buscar por pedido, cliente, NFE ou rastreamento..."
-                                class="w-full rounded-lg border border-sidebar-border/70 bg-background pl-10 pr-4 py-2 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-sidebar-border"
-                            />
+                        <div class="flex gap-2">
+                            <div class="relative flex-1">
+                                <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                <input
+                                    type="text"
+                                    v-model="searchValue"
+                                    @keyup.enter="search"
+                                    placeholder="Buscar por pedido, cliente, NFE ou rastreamento..."
+                                    class="w-full rounded-lg border border-sidebar-border/70 bg-background pl-10 pr-4 py-2 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-sidebar-border"
+                                />
+                            </div>
+                            <button
+                                @click="search"
+                                :disabled="isSearching || !searchValue.trim()"
+                                class="inline-flex items-center cursor-pointer gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <Loader2 v-if="isSearching" class="h-4 w-4 animate-spin" />
+                                <Search v-else class="h-4 w-4" />
+                                {{ isSearching ? 'Buscando...' : 'Buscar' }}
+                            </button>
                         </div>
                     </div>
                     

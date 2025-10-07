@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import users from '@/routes/users';
+// import users from '@/routes/users'; // Removed as file doesn't exist
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ArrowLeft } from 'lucide-vue-next';
@@ -27,11 +27,11 @@ const props = defineProps<Props>();
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Usuários',
-        href: users.index.url(),
+        href: '/dashboard/users',
     },
     {
         title: 'Editar Usuário',
-        href: users.edit.url({ user: props.user.id }),
+        href: `/dashboard/users/${props.user.id}/edit`,
     },
 ];
 
@@ -45,7 +45,7 @@ const form = useForm({
 });
 
 const submit = () => {
-    form.patch(users.update.url({ user: props.user.id }), {
+    form.patch(`/dashboard/users/${props.user.id}`, {
         onSuccess: () => {
             if (typeof window !== 'undefined' && (window as any).toast) {
                 (window as any).toast.success('Usuário atualizado', 'O usuário foi atualizado com sucesso.');
@@ -68,7 +68,7 @@ const submit = () => {
         <div class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
             <div class="flex items-center gap-4">
                 <Link
-                    :href="users.index.url()"
+                    href="/dashboard/users"
                     class="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
                 >
                     <ArrowLeft class="h-4 w-4" />
@@ -180,7 +180,7 @@ const submit = () => {
                         <span v-else>Atualizar Usuário</span>
                     </button>
                     <Link
-                        :href="users.index.url()"
+                        href="/dashboard/users"
                         class="inline-flex items-center gap-2 rounded-lg border border-sidebar-border/70 px-4 py-2 text-sm font-medium text-foreground hover:bg-sidebar-border/70 dark:border-sidebar-border"
                     >
                         Cancelar
