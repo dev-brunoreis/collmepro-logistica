@@ -14,18 +14,24 @@ window.Pusher = Pusher;
 let echo: Echo | null = null;
 
 try {
+    // Detect if we're in production (HTTPS)
+    const isProduction = window.location.protocol === 'https:';
+    const pusherHost = import.meta.env.VITE_PUSHER_HOST || window.location.hostname;
+    const pusherPort = import.meta.env.VITE_PUSHER_PORT ? parseInt(import.meta.env.VITE_PUSHER_PORT) : (isProduction ? 443 : 8080);
+    const pusherScheme = import.meta.env.VITE_PUSHER_SCHEME || (isProduction ? 'https' : 'http');
+    
     echo = new Echo({
         broadcaster: 'pusher',
         key: import.meta.env.VITE_PUSHER_APP_KEY || 'local',
-        wsHost: import.meta.env.VITE_PUSHER_HOST || '127.0.0.1',
-        wsPort: import.meta.env.VITE_PUSHER_PORT || 8080,
-        wssPort: import.meta.env.VITE_PUSHER_PORT || 8080,
-        forceTLS: false,
-        encrypted: false,
+        wsHost: pusherHost,
+        wsPort: pusherPort,
+        wssPort: pusherPort,
+        forceTLS: isProduction,
+        encrypted: isProduction,
         disableStats: true,
         enabledTransports: ['ws', 'wss'],
-        cluster: 'local',
-        disableAutoConnect: false, // Enable auto-connect
+        cluster: import.meta.env.VITE_PUSHER_CLUSTER || 'mt1',
+        disableAutoConnect: false,
         // Add reconnection settings
         activityTimeout: 30000, // 30 seconds
         pongTimeout: 6000, // 6 seconds
@@ -34,7 +40,7 @@ try {
 
     // Add connection event listeners for debugging and management
     echo.connector.pusher.connection.bind('connected', () => {
-        console.log('Echo: Connected to server');
+        console.log('Echo: Connected to server', { host: pusherHost, port: pusherPort, scheme: pusherScheme });
     });
 
     echo.connector.pusher.connection.bind('disconnected', () => {
@@ -46,7 +52,7 @@ try {
     });
 
     echo.connector.pusher.connection.bind('connecting', () => {
-        console.log('Echo: Connecting to server...');
+        console.log('Echo: Connecting to server...', { host: pusherHost, port: pusherPort, tls: isProduction });
     });
 
     echo.connector.pusher.connection.bind('unavailable', () => {
@@ -59,7 +65,12 @@ try {
     });
 
     window.Echo = echo;
-    console.log('Echo initialized successfully');
+    console.log('Echo initialized successfully', {
+        environment: isProduction ? 'production' : 'development',
+        host: pusherHost,
+        port: pusherPort,
+        tls: isProduction
+    });
 } catch (error) {
     console.warn('Broadcasting not configured:', error);
 }
