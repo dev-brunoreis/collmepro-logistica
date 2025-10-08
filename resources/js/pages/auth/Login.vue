@@ -99,11 +99,6 @@ defineProps<{
                     Entrar
                 </Button>
             </div>
-
-            <div class="text-center text-sm text-muted-foreground">
-                Não tem uma conta?
-                <TextLink :href="register()" :tabindex="5">Cadastrar</TextLink>
-            </div>
         </Form>
     </AuthBase>
 </template>
