@@ -3,81 +3,111 @@
     <!-- Header with fullscreen button -->
     <div class="flex items-center justify-between mb-4">
       <h2 class="text-xl font-bold text-white">Kanban Board</h2>
-      <button
-        @click="toggleFullscreen"
+      <button @click="toggleFullscreen"
         class="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200"
-        :title="isFullscreen ? 'Exit fullscreen' : 'Open fullscreen'"
-      >
+        :title="isFullscreen ? 'Exit fullscreen' : 'Open fullscreen'">
         <Maximize class="w-4 h-4" />
         <span class="cursor-pointer hidden sm:inline">{{ isFullscreen ? 'Diminuir' : 'Expandir' }}</span>
       </button>
-    </div>
 
-    <!-- Compact Kanban Board -->
-    <div class="kanban-board-compact">
-      <div class="kanban-flow">
-        <!-- Column 1: Pedidos Emitidos -->
-        <div class="kanban-column special-column">
-          <h4 class="column-title">Pedidos Emitidos</h4>
-          <div class="column-content sub-columns">
+    </div>
+    <!-- Pedidos Emitidos Layout -->
+    <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+      <!-- Seven Column Grid Layout - Always Horizontal -->
+      <div class="grid grid-cols-8 min-h-96 gap-0 overflow-hidden" style="min-width: max-content; width: 100%;">
+        <!-- Pedidos Emitidos Column (spans 2 columns) -->
+        <div class="col-span-2 border-r border-gray-600 min-w-0 flex-shrink-0" style="min-width: 200px;">
+          <div class="bg-gray-700 px-4 py-3 text-center border-b border-gray-600">
+            <h3 class="text-white font-semibold">Pedidos Emitidos</h3>
+          </div>
+          <div class="grid grid-cols-2 h-full">
             <!-- Collme Pro Sub-column -->
-            <div class="sub-column">
-              <h5 class="sub-column-title">Collme Pro</h5>
-              <div class="orders-list">
-                <div 
-                  v-for="order in getOrdersBySource('Collme Pro')" 
-                  :key="order.id"
-                  class="order-card collme-pro"
-                >
-                  <div class="order-info">
-                    <div class="order-details">
-                      <div class="order-header">
-                        <span class="order-number">{{ order.numero }}</span>
-                        <span class="order-system">CP</span>
+            <div class="border-r border-gray-600">
+              <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
+                <h4 class="text-white text-xs font-medium">Collme Pro</h4>
+              </div>
+              <div class="p-2 bg-gray-800 h-full overflow-y-auto">
+                <div class="space-y-1">
+                  <div v-for="order in getOrdersBySource('Collme Pro')" :key="order.id"
+                    class="bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 border border-blue-500 rounded p-1.5 cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-1 hover:shadow-lg text-white"
+                    @click="handleAddOrder(order)">
+                    <div class="flex flex-col gap-0.5">
+                      <div class="flex justify-between items-center">
+                        <span class="font-bold text-xs">{{ order.numero }}</span>
+                        <span class="text-xs font-semibold bg-white bg-opacity-20 px-1 py-0.5 rounded">{{
+                          getOrderSource(order) }}</span>
                       </div>
-                      <div class="order-data">
-                        <div class="order-date">{{ formatDateOnly(order.data) }}</div>
-                        <div class="order-customer">{{ order.contato_nome || 'Cliente Exemplo' }}</div>
-                        <div class="order-items">{{ order.items_quantity || 3 }} itens</div>
-                        <div class="order-nf" v-if="order.invoice_number">NF: {{ order.invoice_number }}</div>
-                        <div class="order-tracking" v-if="order.tracking_code">Rastreio: {{ order.tracking_code }}</div>
+                      <div class="flex flex-col gap-0.5 text-xs">
+                        <div class="font-semibold truncate">{{ order.contato_nome }}</div>
+                        <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
+                        <div class="opacity-90">{{ order.items_quantity }} item(s)</div>
+                        <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">R$ {{
+                          formatCurrency(order.total) }}</div>
                       </div>
                     </div>
-                    <button class="add-button" @click="handleAddOrder(order)">
-                      <Plus class="w-4 h-4" />
-                    </button>
+                  </div>
+                  <div v-if="getOrdersBySource('Collme Pro').length === 0"
+                    class="text-center text-gray-400 py-2 text-xs">
+                    <div
+                      class="flex flex-col gap-4"
+                    >
+                      <div class="w-full border border-gray-600 rounded p-2" v-for="n in 10" :key="n">
+                        <div class="flex justify-between items-center mb-4">
+                          <span class="font-bold p-1 rounded bg-gray-600">Atacadista</span>
+                          <span class="flex font-bold">#3333333</span>
+                        </div>
+
+                        <div class="flex items-center justify-center mb-2">
+                          <span class="flex">Bruno dos reis</span>
+                        </div>
+                       
+                        <div class="flex items-center mb-2">
+                          <span class="flex">Rastreio: asdadsasdadads</span>
+                        </div>
+
+                        <div class="flex items-center justify-between mb-2">
+                          <span class="font-bold">Nf: 21321231</span>
+                          <span>10 itens</span>
+                        </div>
+                        
+                        <div class="flex items-center justify-between">
+                          <span>08/10/2025</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
             <!-- Collme Beauty Sub-column -->
-            <div class="sub-column">
-              <h5 class="sub-column-title">Collme Beauty</h5>
-              <div class="orders-list">
-                <div 
-                  v-for="order in getOrdersBySource('Collme Beauty')" 
-                  :key="order.id"
-                  class="order-card collme-beauty"
-                >
-                  <div class="order-info">
-                    <div class="order-details">
-                      <div class="order-header">
-                        <div class="status-indicator"></div>
-                        <span class="order-number">{{ order.numero }}</span>
-                        <span class="order-system">CB</span>
+            <div>
+              <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
+                <h4 class="text-white text-xs font-medium">Collme Beauty</h4>
+              </div>
+              <div class="p-2 bg-gray-800 h-full overflow-y-auto">
+                <div class="space-y-1">
+                  <div v-for="order in getOrdersBySource('Collme Beauty')" :key="order.id"
+                    class="bg-gradient-to-br from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 border border-yellow-400 rounded p-1.5 cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-1 hover:shadow-lg text-gray-900"
+                    @click="handleAddOrder(order)">
+                    <div class="flex flex-col gap-0.5">
+                      <div class="flex justify-between items-center">
+                        <span class="font-bold text-xs">{{ order.numero }}</span>
+                        <span class="text-xs font-semibold bg-black bg-opacity-10 px-1 py-0.5 rounded">{{
+                          getOrderSource(order) }}</span>
                       </div>
-                      <div class="order-data">
-                        <div class="order-date">{{ formatDateOnly(order.data) }}</div>
-                        <div class="order-customer">{{ order.contato_nome || 'Cliente Exemplo' }}</div>
-                        <div class="order-items">{{ order.items_quantity || 2 }} itens</div>
-                        <div class="order-nf" v-if="order.invoice_number">NF: {{ order.invoice_number }}</div>
-                        <div class="order-tracking" v-if="order.tracking_code">Rastreio: {{ order.tracking_code }}</div>
+                      <div class="flex flex-col gap-0.5 text-xs">
+                        <div class="font-semibold truncate">{{ order.contato_nome }}</div>
+                        <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
+                        <div class="opacity-90">{{ order.items_quantity }} item(s)</div>
+                        <div class="font-semibold border-t border-black border-opacity-20 pt-0.5 mt-0.5">R$ {{
+                          formatCurrency(order.total) }}</div>
                       </div>
                     </div>
-                    <button class="add-button" @click="handleAddOrder(order)">
-                      <Plus class="w-4 h-4" />
-                    </button>
+                  </div>
+                  <div v-if="getOrdersBySource('Collme Beauty').length === 0"
+                    class="text-center text-gray-400 py-2 text-xs italic">
+                    Nenhum pedido
                   </div>
                 </div>
               </div>
@@ -85,176 +115,210 @@
           </div>
         </div>
 
-        <!-- Column 2: Faturamento / Emissão de NF -->
-        <div class="kanban-column">
-          <h4 class="column-title">Faturamento / Emissão de NF</h4>
-          <div class="column-content">
-            <div 
-              v-for="order in kanbanData.faturamento" 
-              :key="order.id"
-              class="kanban-card"
-              :class="getOrderCardClass(order)"
-            >
-              <div class="card-content">
-                <div class="card-header">
-                  <div class="order-source">{{ getOrderSource(order) }}</div>
-                  <div class="order-number">{{ order.numero }}</div>
+        <!-- Faturamento/Emissão de NF Column -->
+        <div class="border-r border-gray-600 min-w-0 flex-shrink-0" style="min-width: 120px;">
+          <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
+            <h3 class="text-white text-xs font-semibold leading-tight">Faturamento/Emissão de NF</h3>
+          </div>
+          <div class="p-2 bg-gray-800 h-full overflow-y-auto">
+            <div class="space-y-1">
+              <div v-for="order in kanbanData.faturamento || []" :key="order.id"
+                class="bg-gradient-to-br from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 border border-green-500 rounded p-1.5 cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-1 hover:shadow-lg text-white"
+                @click="handleAddOrder(order)">
+                <div class="flex flex-col gap-0.5">
+                  <div class="flex justify-between items-center">
+                    <span class="font-bold text-xs">{{ order.numero }}</span>
+                    <span class="text-xs font-semibold bg-white bg-opacity-20 px-1 py-0.5 rounded">{{
+                      getOrderSource(order) }}</span>
+                  </div>
+                  <div class="flex flex-col gap-0.5 text-xs">
+                    <div class="font-semibold truncate">{{ order.contato_nome }}</div>
+                    <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
+                    <div class="opacity-90" v-if="order.invoice_number">NF: {{ order.invoice_number }}</div>
+                    <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">R$ {{
+                      formatCurrency(order.total) }}</div>
+                  </div>
                 </div>
-                <div class="card-details">
-                  <div class="card-date">{{ formatDateOnly(order.data) }}</div>
-                  <div class="card-customer">{{ order.contato_nome || 'Cliente Exemplo' }}</div>
-                  <div class="card-items">{{ order.items_quantity || 2 }} itens</div>
-                  <div class="card-nf" v-if="order.invoice_number">NF: {{ order.invoice_number }}</div>
-                  <div class="card-tracking" v-if="order.tracking_code">Rastreio: {{ order.tracking_code }}</div>
-                </div>
+              </div>
+              <div v-if="(kanbanData.faturamento || []).length === 0"
+                class="text-center text-gray-400 py-2 text-xs italic">
+                Nenhum pedido
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Column 3: Checkout (Picking) -->
-        <div class="kanban-column">
-          <h4 class="column-title">Checkout (Picking)</h4>
-          <div class="column-content">
-            <div 
-              v-for="order in kanbanData.checkout" 
-              :key="order.id"
-              class="kanban-card"
-              :class="getOrderCardClass(order)"
-            >
-              <div class="card-content">
-                <div class="card-header">
-                  <div class="order-source">{{ getOrderSource(order) }}</div>
-                  <div class="order-number">{{ order.numero }}</div>
+        <!-- Checkout (Picking) Column -->
+        <div class="border-r border-gray-600 min-w-0 flex-shrink-0" style="min-width: 120px;">
+          <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
+            <h3 class="text-white text-xs font-semibold">Checkout (Picking)</h3>
+          </div>
+          <div class="p-2 bg-gray-800 h-full overflow-y-auto">
+            <div class="space-y-1">
+              <div v-for="order in kanbanData.checkout || []" :key="order.id"
+                class="bg-gradient-to-br from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 border border-orange-500 rounded p-1.5 cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-1 hover:shadow-lg text-white"
+                @click="handleAddOrder(order)">
+                <div class="flex flex-col gap-0.5">
+                  <div class="flex justify-between items-center">
+                    <span class="font-bold text-xs">{{ order.numero }}</span>
+                    <span class="text-xs font-semibold bg-white bg-opacity-20 px-1 py-0.5 rounded">{{
+                      getOrderSource(order) }}</span>
+                  </div>
+                  <div class="flex flex-col gap-0.5 text-xs">
+                    <div class="font-semibold truncate">{{ order.contato_nome }}</div>
+                    <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
+                    <div class="opacity-90" v-if="order.order_status?.picking_marked_by">
+                      Separado por: {{ order.order_status.picking_marked_by }}
+                    </div>
+                    <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">R$ {{
+                      formatCurrency(order.total) }}</div>
+                  </div>
                 </div>
-                <div class="card-details">
-                  <div class="card-date">{{ formatDateOnly(order.data) }}</div>
-                  <div class="card-customer">{{ order.contato_nome || 'Cliente Exemplo' }}</div>
-                  <div class="card-items">{{ order.items_quantity || 2 }} itens</div>
-                  <div class="card-nf" v-if="order.invoice_number">NF: {{ order.invoice_number }}</div>
-                  <div class="card-tracking" v-if="order.tracking_code">Rastreio: {{ order.tracking_code }}</div>
-                </div>
+              </div>
+              <div v-if="(kanbanData.checkout || []).length === 0"
+                class="text-center text-gray-400 py-2 text-xs italic">
+                Nenhum pedido
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Column 4: Embalagem (Packing) -->
-        <div class="kanban-column">
-          <h4 class="column-title">Embalagem (Packing)</h4>
-          <div class="column-content">
-            <div 
-              v-for="order in kanbanData.embalagem" 
-              :key="order.id"
-              class="kanban-card"
-              :class="getOrderCardClass(order)"
-            >
-              <div class="card-content">
-                <div class="card-header">
-                  <div class="order-source">{{ getOrderSource(order) }}</div>
-                  <div class="order-number">{{ order.numero }}</div>
+        <!-- Embalagem (Packing) Column -->
+        <div class="border-r border-gray-600 min-w-0 flex-shrink-0" style="min-width: 120px;">
+          <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
+            <h3 class="text-white text-xs font-semibold">Embalagem (Packing)</h3>
+          </div>
+          <div class="p-2 bg-gray-800 h-full overflow-y-auto">
+            <div class="space-y-1">
+              <div v-for="order in kanbanData.embalagem || []" :key="order.id"
+                class="bg-gradient-to-br from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border border-purple-500 rounded p-1.5 cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-1 hover:shadow-lg text-white"
+                @click="handleAddOrder(order)">
+                <div class="flex flex-col gap-0.5">
+                  <div class="flex justify-between items-center">
+                    <span class="font-bold text-xs">{{ order.numero }}</span>
+                    <span class="text-xs font-semibold bg-white bg-opacity-20 px-1 py-0.5 rounded">{{
+                      getOrderSource(order) }}</span>
+                  </div>
+                  <div class="flex flex-col gap-0.5 text-xs">
+                    <div class="font-semibold truncate">{{ order.contato_nome }}</div>
+                    <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
+                    <div class="opacity-90" v-if="order.order_status?.packing_marked_by">
+                      Embalado por: {{ order.order_status.packing_marked_by }}
+                    </div>
+                    <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">R$ {{
+                      formatCurrency(order.total) }}</div>
+                  </div>
                 </div>
-                <div class="card-details">
-                  <div class="card-date">{{ formatDateOnly(order.data) }}</div>
-                  <div class="card-customer">{{ order.contato_nome || 'Cliente Exemplo' }}</div>
-                  <div class="card-items">{{ order.items_quantity || 2 }} itens</div>
-                  <div class="card-nf" v-if="order.invoice_number">NF: {{ order.invoice_number }}</div>
-                  <div class="card-tracking" v-if="order.tracking_code">Rastreio: {{ order.tracking_code }}</div>
-                </div>
+              </div>
+              <div v-if="(kanbanData.embalagem || []).length === 0"
+                class="text-center text-gray-400 py-2 text-xs italic">
+                Nenhum pedido
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Column 5: Etiqueta (cód. rastreio) -->
-        <div class="kanban-column">
-          <h4 class="column-title">Etiqueta (cód. rastreio)</h4>
-          <div class="column-content">
-            <div 
-              v-for="order in kanbanData.etiqueta" 
-              :key="order.id"
-              class="kanban-card"
-              :class="getOrderCardClass(order)"
-            >
-              <div class="card-content">
-                <div class="card-header">
-                  <div class="order-source">{{ getOrderSource(order) }}</div>
-                  <div class="order-number">{{ order.numero }}</div>
+        <!-- Etiqueta (Cód. Rastreio) Column -->
+        <div class="border-r border-gray-600 min-w-0 flex-shrink-0" style="min-width: 120px;">
+          <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
+            <h3 class="text-white text-xs font-semibold">Etiqueta (Cód. Rastreio)</h3>
+          </div>
+          <div class="p-2 bg-gray-800 h-full overflow-y-auto">
+            <div class="space-y-1">
+              <div v-for="order in kanbanData.etiqueta || []" :key="order.id"
+                class="bg-gradient-to-br from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 border border-teal-500 rounded p-1.5 cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-1 hover:shadow-lg text-white"
+                @click="handleAddOrder(order)">
+                <div class="flex flex-col gap-0.5">
+                  <div class="flex justify-between items-center">
+                    <span class="font-bold text-xs">{{ order.numero }}</span>
+                    <span class="text-xs font-semibold bg-white bg-opacity-20 px-1 py-0.5 rounded">{{
+                      getOrderSource(order) }}</span>
+                  </div>
+                  <div class="flex flex-col gap-0.5 text-xs">
+                    <div class="font-semibold truncate">{{ order.contato_nome }}</div>
+                    <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
+                    <div class="opacity-90" v-if="(order as any).tracking_code">
+                      Código: {{ (order as any).tracking_code }}
+                    </div>
+                    <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">R$ {{
+                      formatCurrency(order.total) }}</div>
+                  </div>
                 </div>
-                <div class="card-details">
-                  <div class="card-date">{{ formatDateOnly(order.data) }}</div>
-                  <div class="card-customer">{{ order.contato_nome || 'Cliente Exemplo' }}</div>
-                  <div class="card-items">{{ order.items_quantity || 2 }} itens</div>
-                  <div class="card-nf" v-if="order.invoice_number">NF: {{ order.invoice_number }}</div>
-                  <div class="card-tracking" v-if="order.tracking_code">Rastreio: {{ order.tracking_code }}</div>
-                </div>
+              </div>
+              <div v-if="(kanbanData.etiqueta || []).length === 0"
+                class="text-center text-gray-400 py-2 text-xs italic">
+                Nenhum pedido
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Column 6: Coleta -->
-        <div class="kanban-column special-column">
-          <h4 class="column-title">Coleta</h4>
-          <div class="column-content sub-columns">
-            <!-- Coleta Aguardando Sub-column -->
-            <div class="sub-column">
-              <h5 class="sub-column-title">Aguardando</h5>
-              <div class="orders-list">
-                <div 
-                  v-for="order in kanbanData.coleta_aguardando" 
-                  :key="order.id"
-                  class="order-card collme-pro"
-                >
-                  <div class="order-info">
-                    <div class="order-details">
-                      <div class="order-header">
-                        <span class="order-number">{{ order.numero }}</span>
-                        <span class="order-system">CP</span>
+        <div class="col-span-2 border-r border-gray-600 min-w-0">
+          <div class="bg-gray-700 px-4 py-3 text-center border-b border-gray-600">
+            <h3 class="text-white font-semibold">Pedidos Emitidos</h3>
+          </div>
+          <div class="grid grid-cols-2 h-full">
+            <!-- Collme Pro Sub-column -->
+            <div class="border-r border-gray-600">
+              <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
+                <h4 class="text-white text-xs font-medium">Collme Pro</h4>
+              </div>
+              <div class="p-2 bg-gray-800 h-full overflow-y-auto">
+                <div class="space-y-1">
+                  <div v-for="order in getOrdersBySource('Collme Pro')" :key="order.id"
+                    class="bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 border border-blue-500 rounded p-1.5 cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-1 hover:shadow-lg text-white"
+                    @click="handleAddOrder(order)">
+                    <div class="flex flex-col gap-0.5">
+                      <div class="flex justify-between items-center">
+                        <span class="font-bold text-xs">{{ order.numero }}</span>
+                        <span class="text-xs font-semibold bg-white bg-opacity-20 px-1 py-0.5 rounded">{{
+                          getOrderSource(order) }}</span>
                       </div>
-                      <div class="order-data">
-                        <div class="order-date">{{ formatDateOnly(order.data) }}</div>
-                        <div class="order-customer">{{ order.contato_nome || 'Cliente Exemplo' }}</div>
-                        <div class="order-items">{{ order.items_quantity || 3 }} itens</div>
-                        <div class="order-nf" v-if="order.invoice_number">NF: {{ order.invoice_number }}</div>
-                        <div class="order-tracking" v-if="order.tracking_code">Rastreio: {{ order.tracking_code }}</div>
+                      <div class="flex flex-col gap-0.5 text-xs">
+                        <div class="font-semibold truncate">{{ order.contato_nome }}</div>
+                        <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
+                        <div class="opacity-90">{{ order.items_quantity }} item(s)</div>
+                        <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">R$ {{
+                          formatCurrency(order.total) }}</div>
                       </div>
                     </div>
-                    <button class="add-button" @click="handleAddOrder(order)">
-                      <Plus class="w-4 h-4" />
-                    </button>
+                  </div>
+                  <div v-if="getOrdersBySource('Collme Pro').length === 0"
+                    class="text-center text-gray-400 py-2 text-xs italic">
+                    Nenhum pedido
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Coleta Realizada Sub-column -->
-            <div class="sub-column">
-              <h5 class="sub-column-title">Realizada</h5>
-              <div class="orders-list">
-                <div 
-                  v-for="order in kanbanData.coleta_realizada" 
-                  :key="order.id"
-                  class="order-card collme-beauty"
-                >
-                  <div class="order-info">
-                    <div class="order-details">
-                      <div class="order-header">
-                        <div class="status-indicator"></div>
-                        <span class="order-number">{{ order.numero }}</span>
-                        <span class="order-system">CB</span>
+            <!-- Collme Beauty Sub-column -->
+            <div>
+              <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
+                <h4 class="text-white text-xs font-medium">Collme Beauty</h4>
+              </div>
+              <div class="p-2 bg-gray-800 h-full overflow-y-auto">
+                <div class="space-y-1">
+                  <div v-for="order in getOrdersBySource('Collme Beauty')" :key="order.id"
+                    class="bg-gradient-to-br from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 border border-yellow-400 rounded p-1.5 cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-1 hover:shadow-lg text-gray-900"
+                    @click="handleAddOrder(order)">
+                    <div class="flex flex-col gap-0.5">
+                      <div class="flex justify-between items-center">
+                        <span class="font-bold text-xs">{{ order.numero }}</span>
+                        <span class="text-xs font-semibold bg-black bg-opacity-10 px-1 py-0.5 rounded">{{
+                          getOrderSource(order) }}</span>
                       </div>
-                      <div class="order-data">
-                        <div class="order-date">{{ formatDateOnly(order.data) }}</div>
-                        <div class="order-customer">{{ order.contato_nome || 'Cliente Exemplo' }}</div>
-                        <div class="order-items">{{ order.items_quantity || 2 }} itens</div>
-                        <div class="order-nf" v-if="order.invoice_number">NF: {{ order.invoice_number }}</div>
-                        <div class="order-tracking" v-if="order.tracking_code">Rastreio: {{ order.tracking_code }}</div>
+                      <div class="flex flex-col gap-0.5 text-xs">
+                        <div class="font-semibold truncate">{{ order.contato_nome }}</div>
+                        <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
+                        <div class="opacity-90">{{ order.items_quantity }} item(s)</div>
+                        <div class="font-semibold border-t border-black border-opacity-20 pt-0.5 mt-0.5">R$ {{
+                          formatCurrency(order.total) }}</div>
                       </div>
                     </div>
-                    <button class="add-button" @click="handleAddOrder(order)">
-                      <Plus class="w-4 h-4" />
-                    </button>
+                  </div>
+                  <div v-if="getOrdersBySource('Collme Beauty').length === 0"
+                    class="text-center text-gray-400 py-2 text-xs italic">
+                    Nenhum pedido
                   </div>
                 </div>
               </div>
@@ -330,15 +394,16 @@ const { isConnected, lastUpdate } = useOrderBroadcasting()
 watch(lastUpdate, (update) => {
   if (update) {
     console.log('Kanban Compact received update:', update)
-    
+
     // Find the order in all columns and update it
     Object.keys(kanbanData.value).forEach(columnKey => {
       const column = kanbanData.value[columnKey as keyof KanbanData]
+      if (!column) return
       const orderIndex = column.findIndex(order => order.id === update.order.id)
-      
+
       if (orderIndex !== -1) {
         const order = column[orderIndex]
-        
+
         // Ensure order_status exists
         if (!order.order_status) {
           order.order_status = {
@@ -347,10 +412,10 @@ watch(lastUpdate, (update) => {
             picked_up: false
           }
         }
-        
+
         // Update the specific status
         order.order_status[update.action] = update.status
-        
+
         if (update.status) {
           // Set the marked by and marked at fields
           order.order_status[`${update.action}_marked_by`] = update.user.name
@@ -360,7 +425,7 @@ watch(lastUpdate, (update) => {
           order.order_status[`${update.action}_marked_by`] = null
           order.order_status[`${update.action}_marked_at`] = null
         }
-        
+
         // Ensure new fields are preserved
         if (!order.invoice_number && (update.order as any).invoice_number) {
           order.invoice_number = (update.order as any).invoice_number
@@ -368,10 +433,12 @@ watch(lastUpdate, (update) => {
         if (!order.items_quantity && (update.order as any).items_quantity) {
           order.items_quantity = (update.order as any).items_quantity
         }
-        
+
         // Remove from current column
-        column.splice(orderIndex, 1)
-        
+        if (column) {
+          column.splice(orderIndex, 1)
+        }
+
         // Determine new column based on status
         let newColumn = 'pedidos_emitidos'
         if (order.order_status.picked_up) {
@@ -382,17 +449,20 @@ watch(lastUpdate, (update) => {
           newColumn = 'embalagem'
         } else if (order.invoice_number) {
           newColumn = 'faturamento'
-        } else if (order.tracking_code) {
+        } else if ((order as any).tracking_code) {
           newColumn = 'etiqueta'
         }
-        
+
         // Add to new column
-        kanbanData.value[newColumn as keyof KanbanData].push(order)
-        
+        const targetColumn = kanbanData.value[newColumn as keyof KanbanData]
+        if (targetColumn) {
+          targetColumn.push(order)
+        }
+
         console.log(`Moved order ${update.order.id} from ${columnKey} to ${newColumn}`)
       }
     })
-    
+
     console.log('Kanban Compact updated with new data')
   }
 })
@@ -406,10 +476,10 @@ const formatCurrency = (value: number): string => {
 
 const formatDateOnly = (dateString: string): string => {
   if (!dateString) return '-';
-  
+
   try {
     let date: Date;
-    
+
     if (typeof dateString === 'string') {
       if (dateString.includes(' ')) {
         const [datePart] = dateString.split(' ');
@@ -419,11 +489,11 @@ const formatDateOnly = (dateString: string): string => {
     } else {
       date = dateString;
     }
-    
+
     if (isNaN(date.getTime())) {
       return '-';
     }
-    
+
     return date.toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
@@ -437,13 +507,13 @@ const formatDateOnly = (dateString: string): string => {
 
 const formatDateTime = (dateString: string): string => {
   if (!dateString) return '-';
-  
+
   try {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) {
       return '-';
     }
-    
+
     return date.toLocaleString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
@@ -461,9 +531,9 @@ const getMovementHistory = (order: Order, statusType: string): string => {
   if (!order.order_status) {
     return '';
   }
-  
+
   const status = order.order_status;
-  
+
   try {
     switch (statusType) {
       case 'picking':
@@ -488,7 +558,7 @@ const getMovementHistory = (order: Order, statusType: string): string => {
   } catch (error) {
     console.warn('Error getting movement history:', error);
   }
-  
+
   return '';
 }
 
@@ -536,7 +606,7 @@ const handleAddOrder = (order: Order) => {
 
 const toggleFullscreen = () => {
   isFullscreen.value = !isFullscreen.value
-  
+
   if (isFullscreen.value) {
     // Add escape key listener
     document.addEventListener('keydown', handleEscapeKey)
@@ -613,6 +683,7 @@ onUnmounted(() => {
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -812,7 +883,11 @@ onUnmounted(() => {
   opacity: 0.9;
 }
 
-.order-date, .order-customer, .order-items, .order-nf, .order-tracking {
+.order-date,
+.order-customer,
+.order-items,
+.order-nf,
+.order-tracking {
   font-size: 0.7rem;
   line-height: 1.2;
 }
@@ -905,7 +980,11 @@ onUnmounted(() => {
   opacity: 0.9;
 }
 
-.card-date, .card-customer, .card-items, .card-nf, .card-tracking {
+.card-date,
+.card-customer,
+.card-items,
+.card-nf,
+.card-tracking {
   font-size: 0.65rem;
   line-height: 1.2;
 }
@@ -933,7 +1012,7 @@ onUnmounted(() => {
   .kanban-flow {
     grid-template-columns: repeat(3, 1fr);
   }
-  
+
   .kanban-flow .kanban-column:nth-child(n+4) {
     grid-column: span 1;
   }
@@ -943,7 +1022,7 @@ onUnmounted(() => {
   .kanban-flow {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .kanban-flow .kanban-column:nth-child(n+3) {
     grid-column: span 1;
   }
@@ -954,26 +1033,26 @@ onUnmounted(() => {
     grid-template-columns: 1fr;
     gap: 0.5rem;
   }
-  
+
   .kanban-column {
     border-right: none;
     border-bottom: 1px solid #e0e0e0;
     min-height: 200px;
   }
-  
+
   .kanban-column:last-child {
     border-bottom: none;
   }
-  
+
   .column-content.sub-columns {
     grid-template-columns: 1fr;
     gap: 0.75rem;
   }
-  
+
   .sub-column-title {
     font-size: 0.8rem;
   }
-  
+
   .order-number {
     font-size: 0.9rem;
   }
