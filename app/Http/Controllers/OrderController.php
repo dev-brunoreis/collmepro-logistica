@@ -7,6 +7,7 @@ use App\Models\OrderSummary;
 use App\Jobs\BlingSyncJob;
 use App\Http\Controllers\PermissionController;
 use App\Services\OrderHistoryService;
+use App\Services\SystemMappingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Queue;
@@ -18,11 +19,11 @@ class OrderController extends Controller
     protected OrderHistoryService $orderHistoryService;
 
     /**
-     * Get systems mapping from config
+     * Get systems mapping from SystemMappingService
      */
     private function getSystemsMap(): array
     {
-        return config('bling.systems_map', []);
+        return SystemMappingService::getAllSystems();
     }
 
     /**
@@ -30,19 +31,7 @@ class OrderController extends Controller
      */
     private function getSystemsForFrontend(): array
     {
-        $systemsMap = $this->getSystemsMap();
-        $flattened = [];
-        
-        foreach ($systemsMap as $id => $config) {
-            if (is_array($config) && isset($config['name'])) {
-                $flattened[$id] = $config['name'];
-            } else {
-                // Backward compatibility for string values
-                $flattened[$id] = $config;
-            }
-        }
-        
-        return $flattened;
+        return SystemMappingService::getSystemsForDropdown();
     }
 
     public function __construct(OrderHistoryService $orderHistoryService)
@@ -72,21 +61,19 @@ class OrderController extends Controller
             });
         }
 
-        // System filter - map system names to store IDs for filtering
+        // System filter - filter by source field
         if ($request->filled('system')) {
             $systemFilter = $request->get('system');
             
             $systemsMap = $this->getSystemsMap();
             
-            // If the filter is a store ID, use it directly
+            // If the filter is a store ID, get the system name
             if (isset($systemsMap[$systemFilter])) {
-                $query->whereJsonContains('raw_invoice_data->loja->id', (int) $systemFilter);
+                $systemName = $systemsMap[$systemFilter]['name'];
+                $query->where('source', $systemName);
             } else {
-                // If it's a system name, find the corresponding store ID
-                $storeId = array_search($systemFilter, $systemsMap);
-                if ($storeId) {
-                    $query->whereJsonContains('raw_invoice_data->loja->id', (int) $storeId);
-                }
+                // If it's a system name, use it directly
+                $query->where('source', $systemFilter);
             }
         }
         

@@ -13,6 +13,7 @@ use App\Services\BlingService;
 use App\Services\CollmeProBlingService;
 use App\Services\CollmeAtacadistaBlingService;
 use App\Services\OrderHistoryService;
+use App\Services\SystemMappingService;
 use App\Models\OrderSummary;
 use App\Models\Invoice;
 use Carbon\Carbon;
@@ -418,6 +419,10 @@ class BlingSyncJob implements ShouldQueue
     private function mapBlingOrderToOrder(array $blingOrder): array
     {
         $contact = $blingOrder['contato'] ?? [];
+        $lojaId = $blingOrder['loja']['id'] ?? 1;
+        
+        // Map loja_id to system name using centralized service
+        $source = SystemMappingService::mapLojaIdToSource($lojaId);
         
         return [
             'bling_id' => $blingOrder['id'],
@@ -434,12 +439,13 @@ class BlingSyncJob implements ShouldQueue
             'contato_documento' => $contact['numeroDocumento'] ?? null,
             'situacao_id' => $blingOrder['situacao']['id'] ?? 1,
             'situacao_valor' => $blingOrder['situacao']['valor'] ?? 1,
-            'loja_id' => $blingOrder['loja']['id'] ?? 1,
-            'source' => 'bling',
+            'loja_id' => $lojaId,
+            'source' => $source,
             'data_processed' => false,
             'external_updated_at' => now(),
         ];
     }
+
 
     /**
      * Parse and validate date from Bling API

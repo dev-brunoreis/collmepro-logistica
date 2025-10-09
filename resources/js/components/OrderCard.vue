@@ -7,7 +7,7 @@
         <span 
           :class="[
             'px-2 py-1 rounded-full text-xs font-bold',
-            getSystemBadgeClass(order.source)
+            getSystemBadgeColor(order.source)
           ]"
         >
           {{ order.source }}
@@ -52,10 +52,10 @@
 
     <!-- System indicator -->
     <div class="flex items-center gap-2 text-xs">
-      <div 
+      <div
         :class="[
           'w-3 h-3 rounded-full',
-          getSystemIndicatorClass(order.source)
+          getSystemIndicatorColor(order.source)
         ]"
       ></div>
       <span class="font-bold text-gray-600">{{ order.source }}</span>
@@ -64,6 +64,8 @@
 </template>
 
 <script setup lang="ts">
+import { getSystemBadgeColor, getSystemIndicatorColor } from '@/helpers/systemMapping'
+
 interface Order {
   id: number
   bling_id: number
@@ -120,27 +122,6 @@ const formatDateOnly = (dateString: string): string => {
   }
 }
 
-const getSystemBadgeClass = (source: string): string => {
-  switch (source) {
-    case 'Collme Pro':
-      return 'bg-blue-100 text-blue-800 border border-blue-200'
-    case 'Collme Beauty':
-      return 'bg-yellow-100 text-yellow-800 border border-yellow-200'
-    default:
-      return 'bg-gray-100 text-gray-800 border border-gray-200'
-  }
-}
-
-const getSystemIndicatorClass = (source: string): string => {
-  switch (source) {
-    case 'Collme Pro':
-      return 'bg-blue-500'
-    case 'Collme Beauty':
-      return 'bg-yellow-500'
-    default:
-      return 'bg-gray-500'
-  }
-}
 </script>
 
 <style scoped>

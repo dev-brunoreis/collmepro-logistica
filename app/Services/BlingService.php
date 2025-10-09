@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\OrderSummary;
 use App\Models\OrderStatus;
 use App\Services\OrderHistoryService;
+use App\Services\SystemMappingService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -264,9 +265,7 @@ abstract class BlingService
         $blingId = $blingOrder['id'];
         
         // Check if order already exists
-        $existingOrder = OrderSummary::where('bling_id', $blingId)
-            ->where('source', 'bling')
-            ->first();
+        $existingOrder = OrderSummary::where('bling_id', $blingId)->first();
         
         if ($existingOrder) {
             // Check if order data is exactly the same
@@ -540,8 +539,12 @@ abstract class BlingService
     protected function mapBlingOrderToOrder(array $blingOrder): array
     {
         $contact = $blingOrder['contato'] ?? [];
+        $lojaId = $blingOrder['loja']['id'] ?? 1;
+        
+        // Map loja_id to system name using centralized service
+        $source = SystemMappingService::mapLojaIdToSource($lojaId);
 
-            return [
+        return [
             'bling_id' => $blingOrder['id'],
             'numero' => $blingOrder['numero'],
             'numero_loja' => $blingOrder['numeroLoja'] ?? $blingOrder['numero'],
@@ -556,12 +559,13 @@ abstract class BlingService
             'contato_documento' => $contact['numeroDocumento'] ?? null,
             'situacao_id' => $blingOrder['situacao']['id'] ?? 1,
             'situacao_valor' => $blingOrder['situacao']['valor'] ?? 1,
-            'loja_id' => $blingOrder['loja']['id'] ?? 1,
-            'source' => 'bling',
+            'loja_id' => $lojaId,
+            'source' => $source,
             'data_processed' => false,
             'external_updated_at' => now(),
         ];
     }
+
 
     /**
      * Check if order data is identical to existing order

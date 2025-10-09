@@ -786,14 +786,14 @@ const getCurrentPerPage = () => {
                                         :class="order.order_status?.picking ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'"
                                         :title="order.order_status?.picking ? 'Desmarcar como separado' :  'Marcar como separado'"
                                     >
-                                        <CheckCircle v-if="order.order_status?.picking" class="h-3 w-3" />
-                                        <XCircle v-else class="h-3 w-3" />
-                                        <Package class="h-3 w-3" />
+                                        <CheckCircle v-if="order.order_status?.picking" class="h-5 w-6" />
+                                        <XCircle v-else class="h-5 w-6" />
+                                        <Package class="h-5 w-6" />
                                     </button>
                                     <div v-else class="inline-flex items-center gap-1 px-4 py-3 cursor-pointer text-sm text-muted-foreground">
-                                        <CheckCircle v-if="order.order_status?.picking" class="h-3 w-3 text-green-600 dark:text-green-400" />
-                                        <XCircle v-else class="h-3 w-3" />
-                                        <Package class="h-3 w-3" />
+                                        <CheckCircle v-if="order.order_status?.picking" class="h-5 w-6 text-green-600 dark:text-green-400" />
+                                        <XCircle v-else class="h-5 w-6" />
+                                        <Package class="h-5 w-6" />
                                     </div>
                                 </td>
                                 <td class="px-4 py-3">
@@ -804,14 +804,14 @@ const getCurrentPerPage = () => {
                                         :class="order.order_status?.packing ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'"
                                         :title="order.order_status?.packing ? 'Desmarcar como embalado' : 'Marcar como embalado'"
                                     >
-                                        <CheckCircle v-if="order.order_status?.packing" class="h-3 w-3" />
-                                        <XCircle v-else class="h-3 w-3" />
-                                        <Package class="h-3 w-3" />
+                                        <CheckCircle v-if="order.order_status?.packing" class="h-5 w-6" />
+                                        <XCircle v-else class="h-5 w-6" />
+                                        <Package class="h-5 w-6" />
                                     </button>
                                     <div v-else class="inline-flex items-center gap-1 px-4 py-3 cursor-pointer text-sm text-muted-foreground">
-                                        <CheckCircle v-if="order.order_status?.packing" class="h-3 w-3 text-green-600 dark:text-green-400" />
-                                        <XCircle v-else class="h-3 w-3" />
-                                        <Package class="h-3 w-3" />
+                                        <CheckCircle v-if="order.order_status?.packing" class="h-5 w-6 text-green-600 dark:text-green-400" />
+                                        <XCircle v-else class="h-5 w-6" />
+                                        <Package class="h-5 w-6" />
                                     </div>
                                 </td>
                                 <td class="px-4 py-3">
@@ -822,14 +822,14 @@ const getCurrentPerPage = () => {
                                         :class="order.order_status?.picked_up ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'"
                                         :title="order.order_status?.picked_up ? 'Desmarcar como coletado' : 'Marcar como coletado'"
                                     >
-                                        <CheckCircle v-if="order.order_status?.picked_up" class="h-3 w-3" />
-                                        <XCircle v-else class="h-3 w-3" />
-                                        <Truck class="h-3 w-3" />
+                                        <CheckCircle v-if="order.order_status?.picked_up" class="h-5 w-6" />
+                                        <XCircle v-else class="h-5 w-6" />
+                                        <Truck class="h-5 w-6" />
                                     </button>
                                     <div v-else class="inline-flex items-center gap-1 px-4 py-3 cursor-pointer text-sm text-muted-foreground">
-                                        <CheckCircle v-if="order.order_status?.picked_up" class="h-3 w-3 text-green-600 dark:text-green-400" />
-                                        <XCircle v-else class="h-3 w-3" />
-                                        <Truck class="h-3 w-3" />
+                                        <CheckCircle v-if="order.order_status?.picked_up" class="h-5 w-6 text-green-600 dark:text-green-400" />
+                                        <XCircle v-else class="h-5 w-6" />
+                                        <Truck class="h-5 w-6" />
                                     </div>
                                 </td>
                                 <td class="px-4 py-3">

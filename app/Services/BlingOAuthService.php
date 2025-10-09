@@ -28,16 +28,17 @@ class BlingOAuthService
         // If we have a refresh token, try to refresh
         if ($existingToken && $existingToken->refresh_token) {
             try {
-                $refreshedToken = $this->refreshToken($existingToken->refresh_token, $clientId, $clientSecret);
+                $refreshedToken = $this->refreshToken($existingToken->refresh_token, $clientId, $clientSecret, $accountType);
                 if ($refreshedToken) {
                     return $refreshedToken;
                 }
             } catch (Exception $e) {
-                Log::warning("Failed to refresh token for account {$accountType}: " . $e->getMessage());
+                Log::channel('token')->warning("Failed to refresh token for account {$accountType}: " . $e->getMessage());
             }
         }
 
         // If refresh failed or no refresh token, need manual authorization
+        Log::channel('token')->error("No valid token found for account '{$accountType}'. Manual authorization required.");
         throw new Exception(
             "No valid token found for account '{$accountType}'. " .
             "Please run: php artisan bling:authorize --account={$accountType}"
@@ -47,9 +48,11 @@ class BlingOAuthService
     /**
      * Refresh an access token using refresh_token
      */
-    public function refreshToken(string $refreshToken, string $clientId, string $clientSecret): ?string
+    public function refreshToken(string $refreshToken, string $clientId, string $clientSecret, string $accountType): ?string
     {
         try {
+            Log::channel('token')->info("Attempting to refresh token for account: {$accountType}");
+            
             $response = Http::withBasicAuth($clientId, $clientSecret)
                 ->asForm()
                 ->post(self::BLING_TOKEN_URL, [
@@ -58,7 +61,8 @@ class BlingOAuthService
                 ]);
 
             if (!$response->successful()) {
-                Log::error('Token refresh failed', [
+                Log::channel('token')->error('Token refresh failed', [
+                    'account' => $accountType,
                     'status' => $response->status(),
                     'body' => $response->body(),
                 ]);
@@ -68,19 +72,27 @@ class BlingOAuthService
             $data = $response->json();
             
             // Save the new token
-            BlingToken::updateOrCreateToken(
-                $this->extractAccountTypeFromClientId($clientId),
+            $token = BlingToken::updateOrCreateToken(
+                $accountType,
                 $data['access_token'],
                 $data['refresh_token'] ?? null,
                 $data['expires_in'],
                 explode(' ', $data['scope'] ?? '')
             );
 
-            Log::info('Token refreshed successfully');
+            Log::channel('token')->info('Token refreshed successfully', [
+                'account' => $accountType,
+                'expires_at' => $token->expires_at->toDateTimeString(),
+                'expires_in_hours' => round($token->expires_at->diffInHours(now()), 2),
+            ]);
+            
             return $data['access_token'];
 
         } catch (Exception $e) {
-            Log::error('Token refresh exception: ' . $e->getMessage());
+            Log::channel('token')->error('Token refresh exception', [
+                'account' => $accountType,
+                'error' => $e->getMessage(),
+            ]);
             return null;
         }
     }
@@ -146,7 +158,10 @@ class BlingOAuthService
                 explode(' ', $data['scope'] ?? '')
             );
 
-            Log::info("Token generated successfully for account: {$accountType}");
+            Log::channel('token')->info("Token generated successfully for account: {$accountType}", [
+                'expires_at' => now()->addSeconds($data['expires_in'])->toDateTimeString(),
+                'expires_in_hours' => round($data['expires_in'] / 3600, 2),
+            ]);
             return $data;
 
         } catch (Exception $e) {

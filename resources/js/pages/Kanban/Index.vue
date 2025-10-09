@@ -66,10 +66,10 @@
 
       <!-- Faturamento / Emissão de NF Column -->
       <div class="kanban-column">
-        <div class="column-header bg-green-600 p-5 sm:p-6 lg:p-7 xl:p-8 rounded-t-lg xl:rounded-t-xl shadow-lg">
+        <div class="column-header bg-blue-600 p-5 sm:p-6 lg:p-7 xl:p-8 rounded-t-lg xl:rounded-t-xl shadow-lg">
           <div class="flex items-center justify-between w-full">
             <h3 class="font-black text-white text-xl sm:text-2xl lg:text-3xl xl:text-4xl truncate mr-2">Invoicing / NF Issuance</h3>
-            <span class="badge font-black text-green-900 bg-white rounded-full px-4 py-2 sm:px-6 sm:py-3 text-lg sm:text-xl lg:text-2xl xl:text-3xl shadow-lg flex-shrink-0">
+            <span class="badge font-black text-blue-900 bg-white rounded-full px-4 py-2 sm:px-6 sm:py-3 text-lg sm:text-xl lg:text-2xl xl:text-3xl shadow-lg flex-shrink-0">
               {{ kanbanData.faturamento?.length || 0 }}
             </span>
           </div>
@@ -111,10 +111,10 @@
 
       <!-- Embalagem Column -->
       <div class="kanban-column">
-        <div class="column-header bg-purple-600 p-5 sm:p-6 lg:p-7 xl:p-8 rounded-t-lg xl:rounded-t-xl shadow-lg">
+        <div class="column-header bg-blue-600 p-5 sm:p-6 lg:p-7 xl:p-8 rounded-t-lg xl:rounded-t-xl shadow-lg">
           <div class="flex items-center justify-between w-full">
             <h3 class="font-black text-white text-xl sm:text-2xl lg:text-3xl xl:text-4xl truncate mr-2">Packing</h3>
-            <span class="badge font-black text-purple-900 bg-white rounded-full px-4 py-2 sm:px-6 sm:py-3 text-lg sm:text-xl lg:text-2xl xl:text-3xl shadow-lg flex-shrink-0">
+            <span class="badge font-black text-blue-900 bg-white rounded-full px-4 py-2 sm:px-6 sm:py-3 text-lg sm:text-xl lg:text-2xl xl:text-3xl shadow-lg flex-shrink-0">
               {{ kanbanData.embalagem?.length || 0 }}
             </span>
           </div>
@@ -135,10 +135,10 @@
 
       <!-- Etiqueta (cód. rastreio) Column -->
       <div class="kanban-column">
-        <div class="column-header bg-indigo-600 p-5 sm:p-6 lg:p-7 xl:p-8 rounded-t-lg xl:rounded-t-xl shadow-lg">
+        <div class="column-header bg-blue-600 p-5 sm:p-6 lg:p-7 xl:p-8 rounded-t-lg xl:rounded-t-xl shadow-lg">
           <div class="flex items-center justify-between w-full">
             <h3 class="font-black text-white text-xl sm:text-2xl lg:text-3xl xl:text-4xl truncate mr-2">Label (tracking code)</h3>
-            <span class="badge font-black text-indigo-900 bg-white rounded-full px-4 py-2 sm:px-6 sm:py-3 text-lg sm:text-xl lg:text-2xl xl:text-3xl shadow-lg flex-shrink-0">
+            <span class="badge font-black text-blue-900 bg-white rounded-full px-4 py-2 sm:px-6 sm:py-3 text-lg sm:text-xl lg:text-2xl xl:text-3xl shadow-lg flex-shrink-0">
               {{ kanbanData.etiqueta?.length || 0 }}
             </span>
           </div>

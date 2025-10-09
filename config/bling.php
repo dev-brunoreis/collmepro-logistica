@@ -33,30 +33,4 @@ return [
         'log_responses' => env('BLING_LOG_RESPONSES', false),
     ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Store Systems Mapping
-    |--------------------------------------------------------------------------
-    |
-    | Mapping of store IDs to system names for identification
-    |
-    */
-    'systems_map' => [
-        '205404185' => [
-            'name' => 'Beauty', //verificado
-            'color' => 'bg-[#00c951] text-white dark:bg-[#00c951] dark:text-white',
-        ],
-        '205274224' => [
-            'name' => 'Pro', //verificado
-            'color' => 'bg-[#6108ce] text-white dark:bg-[#6108ce] dark:text-white',
-        ],
-        '205483126' => [
-            'name' => 'TikTok', //verificado
-            'color' => 'bg-gray-400 text-white dark:bg-gray 4ark:text-white',
-        ],
-        '205432408' => [
-            'name' => 'Atacadista', //verificado
-            'color' => 'bg-[#ff9800] text-white dark:bg-[#ff9800] dark:text-white',
-        ]
-    ]
 ];

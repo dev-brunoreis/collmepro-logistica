@@ -12,11 +12,11 @@
 
     </div>
     <!-- Pedidos Emitidos Layout -->
-    <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden">
-      <!-- Seven Column Grid Layout - Always Horizontal -->
-      <div class="grid grid-cols-8 min-h-96 gap-0 overflow-hidden" style="min-width: max-content; width: 100%;">
+    <div class="bg-gray-800 rounded-lg shadow-lg">
+      <!-- Flex Layout - Responsive -->
+      <div class="flex min-h-96 gap-0 w-full">
         <!-- Pedidos Emitidos Column (spans 2 columns) -->
-        <div class="col-span-2 border-r border-gray-600 min-w-0 flex-shrink-0" style="min-width: 200px;">
+        <div class="border-r border-gray-600 flex-1" style="max-width: 25%; min-width: 200px;">
           <div class="bg-gray-700 px-4 py-3 text-center border-b border-gray-600">
             <h3 class="text-white font-semibold">Pedidos Emitidos</h3>
           </div>
@@ -47,34 +47,8 @@
                     </div>
                   </div>
                   <div v-if="getOrdersBySource('Collme Pro').length === 0"
-                    class="text-center text-gray-400 py-2 text-xs">
-                    <div
-                      class="flex flex-col gap-4"
-                    >
-                      <div class="w-full border border-gray-600 rounded p-2" v-for="n in 10" :key="n">
-                        <div class="flex justify-between items-center mb-4">
-                          <span class="font-bold p-1 rounded bg-gray-600">Atacadista</span>
-                          <span class="flex font-bold">#3333333</span>
-                        </div>
-
-                        <div class="flex items-center justify-center mb-2">
-                          <span class="flex">Bruno dos reis</span>
-                        </div>
-                       
-                        <div class="flex items-center mb-2">
-                          <span class="flex">Rastreio: asdadsasdadads</span>
-                        </div>
-
-                        <div class="flex items-center justify-between mb-2">
-                          <span class="font-bold">Nf: 21321231</span>
-                          <span>10 itens</span>
-                        </div>
-                        
-                        <div class="flex items-center justify-between">
-                          <span>08/10/2025</span>
-                        </div>
-                      </div>
-                    </div>
+                    class="text-center text-gray-400 py-2 text-xs italic">
+                    Nenhum pedido
                   </div>
                 </div>
               </div>
@@ -93,7 +67,7 @@
                     <div class="flex flex-col gap-0.5">
                       <div class="flex justify-between items-center">
                         <span class="font-bold text-xs">{{ order.numero }}</span>
-                        <span class="text-xs font-semibold bg-black bg-opacity-10 px-1 py-0.5 rounded">{{
+                        <span class="text-xs font-semibold bg-gray-200 bg-opacity-10 px-1 py-0.5 rounded">{{
                           getOrderSource(order) }}</span>
                       </div>
                       <div class="flex flex-col gap-0.5 text-xs">
@@ -116,7 +90,7 @@
         </div>
 
         <!-- Faturamento/Emissão de NF Column -->
-        <div class="border-r border-gray-600 min-w-0 flex-shrink-0" style="min-width: 120px;">
+        <div class="border-r border-gray-600 flex-1" style="max-width: 15%; min-width: 120px;">
           <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
             <h3 class="text-white text-xs font-semibold leading-tight">Faturamento/Emissão de NF</h3>
           </div>
@@ -149,7 +123,7 @@
         </div>
 
         <!-- Checkout (Picking) Column -->
-        <div class="border-r border-gray-600 min-w-0 flex-shrink-0" style="min-width: 120px;">
+        <div class="border-r border-gray-600 flex-1" style="max-width: 15%; min-width: 120px;">
           <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
             <h3 class="text-white text-xs font-semibold">Checkout (Picking)</h3>
           </div>
@@ -184,7 +158,7 @@
         </div>
 
         <!-- Embalagem (Packing) Column -->
-        <div class="border-r border-gray-600 min-w-0 flex-shrink-0" style="min-width: 120px;">
+        <div class="border-r border-gray-600 flex-1" style="max-width: 15%; min-width: 120px;">
           <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
             <h3 class="text-white text-xs font-semibold">Embalagem (Packing)</h3>
           </div>
@@ -219,7 +193,7 @@
         </div>
 
         <!-- Etiqueta (Cód. Rastreio) Column -->
-        <div class="border-r border-gray-600 min-w-0 flex-shrink-0" style="min-width: 120px;">
+        <div class="border-r border-gray-600 flex-1" style="max-width: 15%; min-width: 120px;">
           <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
             <h3 class="text-white text-xs font-semibold">Etiqueta (Cód. Rastreio)</h3>
           </div>
@@ -253,20 +227,21 @@
           </div>
         </div>
 
-        <div class="col-span-2 border-r border-gray-600 min-w-0">
+        <!-- Coleta Column -->
+        <div class="flex-1" style="max-width: 25%; min-width: 200px;">
           <div class="bg-gray-700 px-4 py-3 text-center border-b border-gray-600">
-            <h3 class="text-white font-semibold">Pedidos Emitidos</h3>
+            <h3 class="text-white font-semibold">Coleta</h3>
           </div>
           <div class="grid grid-cols-2 h-full">
-            <!-- Collme Pro Sub-column -->
+            <!-- Aguardando Sub-column -->
             <div class="border-r border-gray-600">
               <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
-                <h4 class="text-white text-xs font-medium">Collme Pro</h4>
+                <h4 class="text-white text-xs font-medium">Aguardando</h4>
               </div>
               <div class="p-2 bg-gray-800 h-full overflow-y-auto">
                 <div class="space-y-1">
-                  <div v-for="order in getOrdersBySource('Collme Pro')" :key="order.id"
-                    class="bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 border border-blue-500 rounded p-1.5 cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-1 hover:shadow-lg text-white"
+                  <div v-for="order in kanbanData.coleta_aguardando || []" :key="order.id"
+                    class="bg-gradient-to-br from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 border border-orange-500 rounded p-1.5 cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-1 hover:shadow-lg text-white"
                     @click="handleAddOrder(order)">
                     <div class="flex flex-col gap-0.5">
                       <div class="flex justify-between items-center">
@@ -283,7 +258,7 @@
                       </div>
                     </div>
                   </div>
-                  <div v-if="getOrdersBySource('Collme Pro').length === 0"
+                  <div v-if="(kanbanData.coleta_aguardando || []).length === 0"
                     class="text-center text-gray-400 py-2 text-xs italic">
                     Nenhum pedido
                   </div>
@@ -291,32 +266,32 @@
               </div>
             </div>
 
-            <!-- Collme Beauty Sub-column -->
+            <!-- Realizada Sub-column -->
             <div>
               <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
-                <h4 class="text-white text-xs font-medium">Collme Beauty</h4>
+                <h4 class="text-white text-xs font-medium">Realizada</h4>
               </div>
               <div class="p-2 bg-gray-800 h-full overflow-y-auto">
                 <div class="space-y-1">
-                  <div v-for="order in getOrdersBySource('Collme Beauty')" :key="order.id"
-                    class="bg-gradient-to-br from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 border border-yellow-400 rounded p-1.5 cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-1 hover:shadow-lg text-gray-900"
+                  <div v-for="order in kanbanData.coleta_realizada || []" :key="order.id"
+                    class="bg-gradient-to-br from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 border border-green-500 rounded p-1.5 cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-1 hover:shadow-lg text-white"
                     @click="handleAddOrder(order)">
                     <div class="flex flex-col gap-0.5">
                       <div class="flex justify-between items-center">
                         <span class="font-bold text-xs">{{ order.numero }}</span>
-                        <span class="text-xs font-semibold bg-black bg-opacity-10 px-1 py-0.5 rounded">{{
+                        <span class="text-xs font-semibold bg-white bg-opacity-20 px-1 py-0.5 rounded">{{
                           getOrderSource(order) }}</span>
                       </div>
                       <div class="flex flex-col gap-0.5 text-xs">
                         <div class="font-semibold truncate">{{ order.contato_nome }}</div>
                         <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
                         <div class="opacity-90">{{ order.items_quantity }} item(s)</div>
-                        <div class="font-semibold border-t border-black border-opacity-20 pt-0.5 mt-0.5">R$ {{
+                        <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">R$ {{
                           formatCurrency(order.total) }}</div>
                       </div>
                     </div>
                   </div>
-                  <div v-if="getOrdersBySource('Collme Beauty').length === 0"
+                  <div v-if="(kanbanData.coleta_realizada || []).length === 0"
                     class="text-center text-gray-400 py-2 text-xs italic">
                     Nenhum pedido
                   </div>
@@ -334,6 +309,7 @@
 import { ref, watch, onUnmounted } from 'vue'
 import { Maximize, Plus } from 'lucide-vue-next'
 import { useOrderBroadcasting } from '@/composables/useBroadcasting'
+import { getSystemShortName } from '@/helpers/systemMapping'
 import OrderCard from './OrderCard.vue'
 
 interface Order {
@@ -568,7 +544,7 @@ const getOrdersBySource = (source: string): Order[] => {
   return pedidosEmitidos.filter(order => {
     // Map source names to match the data
     if (source === 'Collme Pro') {
-      return order.source === 'Collmepro' || order.source === 'Collmepro Atacadista'
+      return order.source === 'Collme Pro'
     } else if (source === 'Collme Beauty') {
       return order.source === 'Collme Beauty'
     }
@@ -578,17 +554,12 @@ const getOrdersBySource = (source: string): Order[] => {
 
 // Get order source abbreviation
 const getOrderSource = (order: Order): string => {
-  if (order.source === 'Collmepro' || order.source === 'Collmepro Atacadista') {
-    return 'CP'
-  } else if (order.source === 'Collme Beauty') {
-    return 'CB'
-  }
-  return order.source?.substring(0, 2).toUpperCase() || 'UN'
+  return getSystemShortName(order.source)
 }
 
 // Get order card class based on source
 const getOrderCardClass = (order: Order): string => {
-  if (order.source === 'Collmepro' || order.source === 'Collmepro Atacadista') {
+  if (order.source === 'Collme Pro') {
     return 'collme-pro'
   } else if (order.source === 'Collme Beauty') {
     return 'collme-beauty'
@@ -635,6 +606,39 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   transition: all 0.3s ease;
+}
+
+/* Kanban column responsive adjustments */
+.kanban-compact .flex > div {
+  transition: all 0.3s ease;
+}
+
+/* Ensure all columns fit on screen */
+@media (max-width: 1920px) {
+  .kanban-compact .flex > div[style*="max-width: 25%"] {
+    max-width: 22% !important;
+  }
+  .kanban-compact .flex > div[style*="max-width: 15%"] {
+    max-width: 13% !important;
+  }
+}
+
+@media (max-width: 1600px) {
+  .kanban-compact .flex > div[style*="max-width: 25%"] {
+    max-width: 20% !important;
+  }
+  .kanban-compact .flex > div[style*="max-width: 15%"] {
+    max-width: 12% !important;
+  }
+}
+
+@media (max-width: 1200px) {
+  .kanban-compact .flex > div[style*="max-width: 25%"] {
+    max-width: 18% !important;
+  }
+  .kanban-compact .flex > div[style*="max-width: 15%"] {
+    max-width: 10% !important;
+  }
 }
 
 .kanban-fullscreen {
