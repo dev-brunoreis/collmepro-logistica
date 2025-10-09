@@ -54,10 +54,10 @@ class OrderController extends Controller
                   ->orWhere('contato_nome', 'like', "%{$search}%")
                   ->orWhere('bling_id', 'like', "%{$search}%")
                   ->orWhere('tracking_code', 'like', "%{$search}%")
-                  ->orWhere('seller_name', 'like', "%{$search}%")
                   ->orWhereJsonContains('raw_order_data->vendedor->nome', $search)
-                  ->orWhereJsonContains('raw_invoice_data->rastreamento->codigo', $search)
-                  ->orWhereJsonContains('raw_invoice_data->numero', $search);
+                  ->orWhereJsonContains('raw_invoice_data->numero', $search)
+                  ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(raw_invoice_data, '$.numero')) LIKE ?", ["%{$search}%"])
+                  ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(raw_order_data, '$.vendedor.nome')) LIKE ?", ["%{$search}%"]);
             });
         }
 
@@ -157,8 +157,7 @@ class OrderController extends Controller
         if ($request->filled('seller')) {
             $seller = $request->get('seller');
             $query->where(function ($q) use ($seller) {
-                $q->where('seller_name', 'like', "%{$seller}%")
-                  ->orWhereJsonContains('raw_order_data->vendedor->nome', $seller);
+                $q->whereJsonContains('raw_order_data->vendedor->nome', $seller);
             });
         }
 

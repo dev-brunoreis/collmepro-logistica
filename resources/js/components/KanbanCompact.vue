@@ -1,5 +1,16 @@
 <template>
   <div class="kanban-compact" :class="{ 'kanban-fullscreen': isFullscreen }">
+    <!-- Loading Indicator -->
+    <div v-if="loading" class="loading-overlay-compact">
+      <div class="loading-content-compact">
+        <div class="spinner-compact"></div>
+        <h3 class="text-xl font-bold text-white mb-2">Loading orders...</h3>
+        <p class="text-sm text-white/80">
+          {{ loadingProgress }} / {{ totalOrders }} orders
+        </p>
+      </div>
+    </div>
+
     <!-- Header with fullscreen button -->
     <div class="flex items-center justify-between mb-4">
       <h2 class="text-xl font-bold text-white">Kanban Board</h2>
@@ -306,11 +317,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { Maximize, Plus } from 'lucide-vue-next'
 import { useOrderBroadcasting } from '@/composables/useBroadcasting'
 import { getSystemShortName } from '@/helpers/systemMapping'
 import OrderCard from './OrderCard.vue'
+import axios from 'axios'
 
 interface Order {
   id: number
@@ -352,15 +364,20 @@ const emit = defineEmits<{
 // Fullscreen state
 const isFullscreen = ref(false)
 
-// Initialize with safe defaults to handle both old and new data structures
+// Loading state
+const loading = ref(true)
+const loadingProgress = ref(0)
+const totalOrders = ref(0)
+
+// Initialize with empty data for async loading
 const kanbanData = ref<KanbanData>({
-  pedidos_emitidos: props.kanbanData?.pedidos_emitidos || props.kanbanData?.aguardando || [],
+  pedidos_emitidos: props.kanbanData?.pedidos_emitidos || [],
   faturamento: props.kanbanData?.faturamento || [],
-  checkout: props.kanbanData?.checkout || props.kanbanData?.separado || [],
-  embalagem: props.kanbanData?.embalagem || props.kanbanData?.embalado || [],
+  checkout: props.kanbanData?.checkout || [],
+  embalagem: props.kanbanData?.embalagem || [],
   etiqueta: props.kanbanData?.etiqueta || [],
   coleta_aguardando: props.kanbanData?.coleta_aguardando || [],
-  coleta_realizada: props.kanbanData?.coleta_realizada || props.kanbanData?.coletado || [],
+  coleta_realizada: props.kanbanData?.coleta_realizada || [],
 })
 
 // Broadcasting setup
@@ -538,10 +555,20 @@ const getMovementHistory = (order: Order, statusType: string): string => {
   return '';
 }
 
-// Get orders by source (Collme Pro or Collme Beauty)
+// Get orders by source (Collme Pro or Collme Beauty) from all columns
 const getOrdersBySource = (source: string): Order[] => {
-  const pedidosEmitidos = kanbanData.value.pedidos_emitidos || []
-  return pedidosEmitidos.filter(order => {
+  // Get orders from all columns, not just pedidos_emitidos
+  const allOrders = [
+    ...(kanbanData.value.pedidos_emitidos || []),
+    ...(kanbanData.value.faturamento || []),
+    ...(kanbanData.value.checkout || []),
+    ...(kanbanData.value.embalagem || []),
+    ...(kanbanData.value.etiqueta || []),
+    ...(kanbanData.value.coleta_aguardando || []),
+    ...(kanbanData.value.coleta_realizada || [])
+  ]
+  
+  return allOrders.filter(order => {
     // Map source names to match the data
     if (source === 'Collme Pro') {
       return order.source === 'Collme Pro'
@@ -594,6 +621,59 @@ const handleEscapeKey = (event: KeyboardEvent) => {
   }
 }
 
+// Fetch orders asynchronously
+const fetchOrdersAsync = async (daysBack: number = 30, loadAll: boolean = false) => {
+  try {
+    console.log('KanbanCompact: Starting to fetch orders...')
+    loading.value = true
+    
+    const response = await axios.get('/dashboard/data', {
+      params: {
+        days_back: daysBack,
+        load_all: loadAll
+      }
+    })
+    
+    console.log('KanbanCompact: Response received:', response.data)
+    const data = response.data
+    
+    // Update kanban data with received orders
+    kanbanData.value = {
+      pedidos_emitidos: data.kanbanData.pedidos_emitidos || [],
+      faturamento: data.kanbanData.faturamento || [],
+      checkout: data.kanbanData.checkout || [],
+      embalagem: data.kanbanData.embalagem || [],
+      etiqueta: data.kanbanData.etiqueta || [],
+      coleta_aguardando: data.kanbanData.coleta_aguardando || [],
+      coleta_realizada: data.kanbanData.coleta_realizada || [],
+    }
+    
+    // Update progress
+    loadingProgress.value = data.metrics?.loaded || 0
+    totalOrders.value = data.metrics?.total_all || 0
+    
+    console.log('KanbanCompact data loaded:', {
+      loaded: data.metrics?.loaded,
+      total: data.metrics?.total_all,
+      columns: Object.keys(kanbanData.value).map(key => ({
+        name: key,
+        count: kanbanData.value[key as keyof KanbanData]?.length || 0
+      }))
+    })
+    
+    console.log('KanbanCompact: Faturamento column has', kanbanData.value.faturamento?.length || 0, 'orders')
+  } catch (error) {
+    console.error('Error fetching kanban compact orders:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+// Fetch orders on component mount
+onMounted(() => {
+  fetchOrdersAsync()
+})
+
 // Cleanup on unmount
 onUnmounted(() => {
   document.removeEventListener('keydown', handleEscapeKey)
@@ -606,6 +686,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   transition: all 0.3s ease;
+  position: relative;
 }
 
 /* Kanban column responsive adjustments */
@@ -1060,5 +1141,41 @@ onUnmounted(() => {
   .order-number {
     font-size: 0.9rem;
   }
+}
+
+/* Loading overlay for compact kanban */
+.loading-overlay-compact {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  border-radius: 0.75rem;
+}
+
+.loading-content-compact {
+  text-align: center;
+  padding: 1.5rem;
+}
+
+/* Spinner animation for compact */
+.spinner-compact {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 1rem;
+  border: 6px solid rgba(255, 255, 255, 0.2);
+  border-top: 6px solid #ffffff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style>

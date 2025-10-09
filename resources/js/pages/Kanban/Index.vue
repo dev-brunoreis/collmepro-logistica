@@ -19,6 +19,17 @@
       </div>
     </div>
 
+    <!-- Loading Indicator -->
+    <div v-if="loading" class="loading-overlay">
+      <div class="loading-content">
+        <div class="spinner"></div>
+        <h2 class="text-2xl font-bold text-white mb-2">Loading orders...</h2>
+        <p class="text-lg text-white/80">
+          {{ loadingProgress }} / {{ totalOrders }} orders
+        </p>
+      </div>
+    </div>
+
     <!-- Kanban Board with new structure -->
     <div class="kanban-board flex gap-3 sm:gap-4 lg:gap-6 xl:gap-8 pb-4 px-2 sm:px-4">
       
@@ -206,6 +217,23 @@
       </div>
 
     </div>
+
+    <!-- Load Older Orders Button -->
+    <div v-if="!loading && stats.loaded < stats.total_all" class="load-more-container mt-6 text-center">
+      <button 
+        @click="loadOlderOrders"
+        :disabled="loadingOlderOrders"
+        class="load-more-button bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-all duration-300"
+      >
+        <span v-if="loadingOlderOrders" class="flex items-center justify-center gap-2">
+          <div class="small-spinner"></div>
+          Loading...
+        </span>
+        <span v-else>
+          Load All Orders ({{ stats.total_all - stats.loaded }} more)
+        </span>
+      </button>
+    </div>
   </div>
 </template>
 
@@ -214,6 +242,7 @@ import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { router } from '@inertiajs/vue3'
 import { useOrderBroadcasting } from '@/composables/useBroadcasting'
 import OrderCard from '@/components/OrderCard.vue'
+import axios from 'axios'
 
 interface Order {
   id: number
@@ -247,6 +276,8 @@ interface KanbanData {
 
 interface Stats {
   total?: number
+  total_all?: number
+  loaded?: number
   pedidos_emitidos?: number
   faturamento?: number
   checkout?: number
@@ -266,26 +297,34 @@ const props = defineProps<{
   stats: Stats
 }>()
 
-// Initialize with safe defaults to handle both old and new data structures
+// Loading state
+const loading = ref(true)
+const loadingProgress = ref(0)
+const totalOrders = ref(0)
+const loadingOlderOrders = ref(false)
+
+// Initialize with empty data for async loading
 const kanbanData = ref<KanbanData>({
-  pedidos_emitidos: props.kanbanData?.pedidos_emitidos || props.kanbanData?.aguardando || [],
-  faturamento: props.kanbanData?.faturamento || [],
-  checkout: props.kanbanData?.checkout || props.kanbanData?.separado || [],
-  embalagem: props.kanbanData?.embalagem || props.kanbanData?.embalado || [],
-  etiqueta: props.kanbanData?.etiqueta || [],
-  coleta_aguardando: props.kanbanData?.coleta_aguardando || [],
-  coleta_realizada: props.kanbanData?.coleta_realizada || props.kanbanData?.coletado || [],
+  pedidos_emitidos: [],
+  faturamento: [],
+  checkout: [],
+  embalagem: [],
+  etiqueta: [],
+  coleta_aguardando: [],
+  coleta_realizada: [],
 })
 
 const stats = ref<Stats>({
-  total: props.stats?.total || 0,
-  pedidos_emitidos: props.stats?.pedidos_emitidos || props.stats?.aguardando || 0,
-  faturamento: props.stats?.faturamento || 0,
-  checkout: props.stats?.checkout || props.stats?.separado || 0,
-  embalagem: props.stats?.embalagem || props.stats?.embalado || 0,
-  etiqueta: props.stats?.etiqueta || 0,
-  coleta_aguardando: props.stats?.coleta_aguardando || 0,
-  coleta_realizada: props.stats?.coleta_realizada || props.stats?.coletado || 0,
+  total: 0,
+  total_all: 0,
+  loaded: 0,
+  pedidos_emitidos: 0,
+  faturamento: 0,
+  checkout: 0,
+  embalagem: 0,
+  etiqueta: 0,
+  coleta_aguardando: 0,
+  coleta_realizada: 0,
 })
 
 // Broadcasting setup
@@ -447,8 +486,77 @@ const getMovementHistory = (order: Order, statusType: string): string => {
   return '';
 }
 
+// Fetch orders asynchronously
+const fetchOrdersAsync = async (daysBack: number = 30, loadAll: boolean = false) => {
+  try {
+    if (loadAll) {
+      loadingOlderOrders.value = true
+    } else {
+      loading.value = true
+    }
+    
+    const response = await axios.get('/dashboard/painel/orders', {
+      params: {
+        days_back: daysBack,
+        load_all: loadAll
+      }
+    })
+    
+    const data = response.data
+    
+    // Update kanban data with received orders
+    kanbanData.value = {
+      pedidos_emitidos: data.kanbanData.pedidos_emitidos || [],
+      faturamento: data.kanbanData.faturamento || [],
+      checkout: data.kanbanData.checkout || [],
+      embalagem: data.kanbanData.embalagem || [],
+      etiqueta: data.kanbanData.etiqueta || [],
+      coleta_aguardando: data.kanbanData.coleta_aguardando || [],
+      coleta_realizada: data.kanbanData.coleta_realizada || [],
+    }
+    
+    // Update stats
+    stats.value = {
+      total: data.stats.total || 0,
+      total_all: data.stats.total_all || 0,
+      loaded: data.stats.loaded || 0,
+      pedidos_emitidos: data.stats.pedidos_emitidos || 0,
+      faturamento: data.stats.faturamento || 0,
+      checkout: data.stats.checkout || 0,
+      embalagem: data.stats.embalagem || 0,
+      etiqueta: data.stats.etiqueta || 0,
+      coleta_aguardando: data.stats.coleta_aguardando || 0,
+      coleta_realizada: data.stats.coleta_realizada || 0,
+    }
+    
+    // Update progress
+    loadingProgress.value = data.stats.loaded || 0
+    totalOrders.value = data.stats.total_all || 0
+    
+    console.log('Kanban data loaded:', {
+      loaded: data.stats.loaded,
+      total: data.stats.total_all,
+      columns: Object.keys(kanbanData.value).map(key => ({
+        name: key,
+        count: kanbanData.value[key as keyof KanbanData]?.length || 0
+      }))
+    })
+  } catch (error) {
+    console.error('Error fetching kanban orders:', error)
+  } finally {
+    loading.value = false
+    loadingOlderOrders.value = false
+  }
+}
+
+// Load older orders (all orders)
+const loadOlderOrders = async () => {
+  await fetchOrdersAsync(0, true)
+}
+
 onMounted(() => {
-    // Component mounted
+  // Fetch orders on component mount
+  fetchOrdersAsync()
 })
 </script>
 
@@ -627,6 +735,70 @@ onMounted(() => {
     max-height: calc(100vh - 160px);
     gap: 2rem;
   }
+}
+
+/* Loading overlay */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.loading-content {
+  text-align: center;
+  padding: 2rem;
+}
+
+/* Spinner animation */
+.spinner {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 1.5rem;
+  border: 8px solid rgba(255, 255, 255, 0.2);
+  border-top: 8px solid #ffffff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.small-spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top: 3px solid #ffffff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Load more button */
+.load-more-container {
+  padding: 2rem 1rem;
+}
+
+.load-more-button {
+  min-width: 250px;
+  transition: all 0.3s ease;
+}
+
+.load-more-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+}
+
+.load-more-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 </style>

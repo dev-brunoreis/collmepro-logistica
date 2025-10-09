@@ -16,6 +16,7 @@ Route::get('/', function () {
 // Dashboard routes with /dashboard prefix
 Route::group(['prefix' => 'dashboard', 'middleware' => ['auth', 'verified']], function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('data', [DashboardController::class, 'fetchDashboardData'])->name('dashboard.fetch-data');
     
     // User management routes (users with user permissions)
     Route::middleware(['permission:users.view'])->group(function () {
@@ -51,6 +52,7 @@ Route::group(['prefix' => 'dashboard', 'middleware' => ['auth', 'verified']], fu
     // Kanban routes
     Route::middleware(['permission:orders.view'])->group(function () {
         Route::get('painel', [KanbanController::class, 'index'])->name('kanban.index');
+        Route::get('painel/orders', [KanbanController::class, 'fetchOrders'])->name('kanban.fetch-orders');
     });
 
     // Orders routes (users with orders permissions)

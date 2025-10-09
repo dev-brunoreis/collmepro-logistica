@@ -15,58 +15,77 @@ use Inertia\Response;
 class KanbanController extends Controller
 {
     /**
-     * Display the kanban board.
+     * Display the kanban board (empty initial state for async loading).
      */
     public function index(): Response
     {
-        $orders = OrderSummary::with([
+        // Return empty kanban data for instant page load
+        // Orders will be fetched asynchronously via fetchOrders()
+        $emptyKanbanData = [
+            'pedidos_emitidos' => [],
+            'faturamento' => [],
+            'checkout' => [],
+            'embalagem' => [],
+            'etiqueta' => [],
+            'coleta_aguardando' => [],
+            'coleta_realizada' => [],
+        ];
+
+        $emptyStats = [
+            'total' => 0,
+            'pedidos_emitidos' => 0,
+            'faturamento' => 0,
+            'checkout' => 0,
+            'embalagem' => 0,
+            'etiqueta' => 0,
+            'coleta_aguardando' => 0,
+            'coleta_realizada' => 0,
+        ];
+
+        return Inertia::render('Kanban/Index', [
+            'kanbanData' => $emptyKanbanData,
+            'stats' => $emptyStats,
+        ]);
+    }
+
+    /**
+     * Fetch orders asynchronously for kanban board.
+     */
+    public function fetchOrders(Request $request)
+    {
+        $daysBack = $request->input('days_back', 30); // Default: last 30 days
+        $loadAll = $request->boolean('load_all', false); // Option to load all orders
+
+        // Build query
+        $query = OrderSummary::with([
             'orderStatus' => function($query) {
                 $query->with(['pickingMarkedBy', 'packingMarkedBy', 'pickedUpMarkedBy']);
             },
             'invoice',
             'orderData'
-        ])
-            ->orderBy('data', 'desc')
-            ->get();
-
-        $kanbanData = $this->organizeOrdersByStatus($orders);
-
-        // Debug: find orders with movement history
-        $ordersWithHistory = $orders->filter(function($order) {
-            return $order->orderStatus && (
-                $order->orderStatus->picking_marked_by ||
-                $order->orderStatus->packing_marked_by ||
-                $order->orderStatus->picked_up_marked_by
-            );
-        });
-
-        Log::info('Orders with movement history found:', [
-            'total_orders' => $orders->count(),
-            'orders_with_history' => $ordersWithHistory->count(),
         ]);
 
-        if ($ordersWithHistory->count() > 0) {
-            $sampleOrder = $ordersWithHistory->first();
-            Log::info('Sample order WITH history:', [
-                'order_id' => $sampleOrder->id,
-                'order_numero' => $sampleOrder->numero,
-                'picking_marked_by' => $sampleOrder->orderStatus?->pickingMarkedBy?->name,
-                'picking_marked_by_id' => $sampleOrder->orderStatus?->picking_marked_by,
-                'picking_marked_at' => $sampleOrder->orderStatus?->picking_marked_at,
-                'packing_marked_by' => $sampleOrder->orderStatus?->packingMarkedBy?->name,
-                'packing_marked_by_id' => $sampleOrder->orderStatus?->packing_marked_by,
-                'packing_marked_at' => $sampleOrder->orderStatus?->packing_marked_at,
-                'picked_up_marked_by' => $sampleOrder->orderStatus?->pickedUpMarkedBy?->name,
-                'picked_up_marked_by_id' => $sampleOrder->orderStatus?->picked_up_marked_by,
-                'picked_up_marked_at' => $sampleOrder->orderStatus?->picked_up_marked_at,
-            ]);
-        } else {
-            Log::info('No orders found with movement history');
+        // Apply date filter unless loading all
+        if (!$loadAll && $daysBack > 0) {
+            $query->where('data', '>=', now()->subDays($daysBack));
         }
 
-        return Inertia::render('Kanban/Index', [
+        $orders = $query->orderBy('data', 'desc')->get();
+
+        // Get total count for all orders (for progress tracking)
+        $totalOrdersCount = OrderSummary::count();
+
+        // Organize orders by status
+        $kanbanData = $this->organizeOrdersByStatus($orders);
+
+        // Calculate stats
+        $stats = $this->getStats($orders);
+        $stats['total_all'] = $totalOrdersCount;
+        $stats['loaded'] = $orders->count();
+
+        return response()->json([
             'kanbanData' => $kanbanData,
-            'stats' => $this->getStats($orders),
+            'stats' => $stats,
         ]);
     }
 
