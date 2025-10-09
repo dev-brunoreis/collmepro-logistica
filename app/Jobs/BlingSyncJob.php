@@ -10,6 +10,8 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use App\Services\BlingService;
+use App\Services\CollmeProBlingService;
+use App\Services\CollmeAtacadistaBlingService;
 use App\Services\OrderHistoryService;
 use App\Models\OrderSummary;
 use App\Models\Invoice;
@@ -24,75 +26,58 @@ class BlingSyncJob implements ShouldQueue
     public int $backoff = 300; // 5 minutes between retries
 
     private bool $forceUpdate;
+    private ?string $accountType;
 
     /**
      * Create a new job instance.
+     * 
+     * @param bool $forceUpdate Force update existing orders
+     * @param string|null $accountType Account type to sync ('pro', 'atacadista', or null for all)
      */
-    public function __construct(bool $forceUpdate = false)
+    public function __construct(bool $forceUpdate = false, ?string $accountType = null)
     {
         $this->forceUpdate = $forceUpdate;
+        $this->accountType = $accountType;
     }
 
     /**
      * Execute the job.
      */
-    public function handle(BlingService $blingService): void
+    public function handle(): void
     {
-        $orderHistoryService = app(OrderHistoryService::class);
         $startTime = now();
         
         Log::info('BlingSyncJob: Starting Bling synchronization', [
             'force_update' => $this->forceUpdate,
+            'account_type' => $this->accountType ?? 'all',
             'started_at' => $startTime->toDateTimeString()
         ]);
 
         try {
-            // Test connection first
-            $connectionTest = $blingService->testConnection();
-            if (!$connectionTest['success']) {
-                throw new \Exception("Bling API connection failed: {$connectionTest['error']}");
-            }
-
-            Log::info('BlingSyncJob: API connection successful');
-
-            // Get orders from Bling
-            $orders = $blingService->getAllOrders();
+            // Determine which services to sync
+            $services = $this->getBlingServices();
             
-            if (empty($orders)) {
-                Log::info('BlingSyncJob: No orders found to sync');
-                return;
-            }
+            $totalProcessed = 0;
+            $totalCreated = 0;
+            $totalUpdated = 0;
+            $totalSkipped = 0;
+            $totalErrors = 0;
 
-            Log::info('BlingSyncJob: Found orders to process', [
-                'count' => count($orders)
-            ]);
-
-            // Process orders
-            $processed = 0;
-            $created = 0;
-            $updated = 0;
-            $skipped = 0;
-            $errors = 0;
-
-            foreach ($orders as $blingOrder) {
+            foreach ($services as $accountType => $blingService) {
+                Log::info("BlingSyncJob: Syncing account: {$accountType}");
+                
                 try {
-                    $result = $this->processOrder($blingService, $blingOrder);
+                    $result = $this->syncAccount($blingService, $accountType);
                     
-                    if ($result['created']) {
-                        $created++;
-                    } elseif ($result['updated']) {
-                        $updated++;
-                    } elseif ($result['skipped'] ?? false) {
-                        $skipped++;
-                    }
+                    $totalProcessed += $result['processed'];
+                    $totalCreated += $result['created'];
+                    $totalUpdated += $result['updated'];
+                    $totalSkipped += $result['skipped'];
+                    $totalErrors += $result['errors'];
                     
-                    $processed++;
-
                 } catch (\Exception $e) {
-                    $errors++;
-                    Log::error('BlingSyncJob: Error processing order', [
-                        'bling_id' => $blingOrder['id'] ?? 'unknown',
-                        'numero' => $blingOrder['numero'] ?? 'unknown',
+                    $totalErrors++;
+                    Log::error("BlingSyncJob: Error syncing account {$accountType}", [
                         'error' => $e->getMessage(),
                         'trace' => $e->getTraceAsString()
                     ]);
@@ -101,12 +86,13 @@ class BlingSyncJob implements ShouldQueue
 
             $duration = now()->diffInSeconds($startTime);
 
-            Log::info('BlingSyncJob: Synchronization completed', [
-                'processed' => $processed,
-                'created' => $created,
-                'updated' => $updated,
-                'skipped' => $skipped,
-                'errors' => $errors,
+            Log::info('BlingSyncJob: All synchronizations completed', [
+                'accounts_synced' => count($services),
+                'total_processed' => $totalProcessed,
+                'total_created' => $totalCreated,
+                'total_updated' => $totalUpdated,
+                'total_skipped' => $totalSkipped,
+                'total_errors' => $totalErrors,
                 'duration_seconds' => $duration,
                 'completed_at' => now()->toDateTimeString()
             ]);
@@ -120,6 +106,100 @@ class BlingSyncJob implements ShouldQueue
             
             throw $e;
         }
+    }
+
+    /**
+     * Get Bling services to sync based on account type
+     */
+    private function getBlingServices(): array
+    {
+        $services = [];
+
+        if ($this->accountType === null) {
+            // Sync all accounts
+            $services['pro'] = app(CollmeProBlingService::class);
+            $services['atacadista'] = app(CollmeAtacadistaBlingService::class);
+        } elseif ($this->accountType === 'pro') {
+            $services['pro'] = app(CollmeProBlingService::class);
+        } elseif ($this->accountType === 'atacadista') {
+            $services['atacadista'] = app(CollmeAtacadistaBlingService::class);
+        } else {
+            throw new \Exception("Invalid account type: {$this->accountType}");
+        }
+
+        return $services;
+    }
+
+    /**
+     * Sync a single Bling account
+     */
+    private function syncAccount(BlingService $blingService, string $accountType): array
+    {
+        // Get orders from Bling
+        $orders = $blingService->getAllOrders();
+        
+        if (empty($orders)) {
+            Log::info("BlingSyncJob: No orders found to sync for account: {$accountType}");
+            return [
+                'processed' => 0,
+                'created' => 0,
+                'updated' => 0,
+                'skipped' => 0,
+                'errors' => 0,
+            ];
+        }
+
+        Log::info("BlingSyncJob: Found orders to process for account {$accountType}", [
+            'count' => count($orders)
+        ]);
+
+        // Process orders
+        $processed = 0;
+        $created = 0;
+        $updated = 0;
+        $skipped = 0;
+        $errors = 0;
+
+        foreach ($orders as $blingOrder) {
+            try {
+                $result = $this->processOrder($blingService, $blingOrder);
+                
+                if ($result['created']) {
+                    $created++;
+                } elseif ($result['updated']) {
+                    $updated++;
+                } elseif ($result['skipped'] ?? false) {
+                    $skipped++;
+                }
+                
+                $processed++;
+
+            } catch (\Exception $e) {
+                $errors++;
+                Log::error("BlingSyncJob: Error processing order for account {$accountType}", [
+                    'bling_id' => $blingOrder['id'] ?? 'unknown',
+                    'numero' => $blingOrder['numero'] ?? 'unknown',
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+            }
+        }
+
+        Log::info("BlingSyncJob: Account {$accountType} sync completed", [
+            'processed' => $processed,
+            'created' => $created,
+            'updated' => $updated,
+            'skipped' => $skipped,
+            'errors' => $errors,
+        ]);
+
+        return [
+            'processed' => $processed,
+            'created' => $created,
+            'updated' => $updated,
+            'skipped' => $skipped,
+            'errors' => $errors,
+        ];
     }
 
     /**
@@ -343,9 +423,9 @@ class BlingSyncJob implements ShouldQueue
             'bling_id' => $blingOrder['id'],
             'numero' => $blingOrder['numero'],
             'numero_loja' => $blingOrder['numeroLoja'] ?? $blingOrder['numero'],
-            'data' => Carbon::parse($blingOrder['data']),
-            'data_saida' => isset($blingOrder['dataSaida']) ? Carbon::parse($blingOrder['dataSaida']) : null,
-            'data_prevista' => isset($blingOrder['dataPrevista']) ? Carbon::parse($blingOrder['dataPrevista']) : null,
+            'data' => $this->parseValidDate($blingOrder['data']),
+            'data_saida' => $this->parseValidDate($blingOrder['dataSaida'] ?? null),
+            'data_prevista' => $this->parseValidDate($blingOrder['dataPrevista'] ?? null),
             'total' => (float) ($blingOrder['total'] ?? 0),
             'total_produtos' => count($blingOrder['itens'] ?? []),
             'contato_id' => $contact['id'] ?? 0,
@@ -359,6 +439,39 @@ class BlingSyncJob implements ShouldQueue
             'data_processed' => false,
             'external_updated_at' => now(),
         ];
+    }
+
+    /**
+     * Parse and validate date from Bling API
+     * Returns null for invalid dates like "0000-00-00"
+     */
+    private function parseValidDate(?string $date): ?Carbon
+    {
+        if (empty($date)) {
+            return null;
+        }
+
+        // Check for invalid dates that Bling might return
+        if (in_array($date, ['0000-00-00', '0000-00-00 00:00:00', ''])) {
+            return null;
+        }
+
+        try {
+            $parsedDate = Carbon::parse($date);
+            
+            // Additional validation: check if year is reasonable (after 1900)
+            if ($parsedDate->year < 1900) {
+                return null;
+            }
+            
+            return $parsedDate;
+        } catch (\Exception $e) {
+            Log::warning('BlingSyncJob: Failed to parse date', [
+                'date' => $date,
+                'error' => $e->getMessage()
+            ]);
+            return null;
+        }
     }
 
     /**
