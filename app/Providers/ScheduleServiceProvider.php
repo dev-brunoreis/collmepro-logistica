@@ -25,11 +25,10 @@ class ScheduleServiceProvider extends ServiceProvider
             $this->app->booted(function () {
                 $schedule = $this->app->make(Schedule::class);
                 
-                // 🚀 BLING SYNC - Orders + Invoices + Tracking
                 $schedule->job(new BlingSyncJob())
                     ->everyFifteenMinutes()
                     ->withoutOverlapping()
-                    ->description('🚀 Bling sync: Orders + Invoices + Tracking every 15 minutes');
+                    ->description('Bling sync: Orders + Invoices + Tracking every 15 minutes');
             });
         }
     }
