@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\CarrierService;
 use Database\Factories\OrderSummaryFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -153,5 +154,13 @@ class OrderSummary extends Model
     public function getAllOrderHistory(): HasMany
     {
         return $this->hasMany(OrderHistory::class);
+    }
+
+    /**
+     * Get the formatted carrier display name.
+     */
+    public function getCarrierDisplayAttribute(): string
+    {
+        return CarrierService::getCarrierDisplay($this->service_type);
     }
 }

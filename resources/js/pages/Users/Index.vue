@@ -212,12 +212,12 @@ const clearFilters = () => {
                     <table class="w-full">
                         <thead class="border-b border-sidebar-border/70 dark:border-sidebar-border">
                             <tr>
-                            <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Nome</th>
-                            <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">E-mail</th>
-                            <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Nome de Usuário</th>
-                            <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Função</th>
-                            <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Criado em</th>
-                            <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Ações</th>
+                            <th class="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Nome</th>
+                            <th class="px-4 py-3 text-center text-sm font-medium text-muted-foreground">E-mail</th>
+                            <th class="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Nome de Usuário</th>
+                            <th class="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Função</th>
+                            <th class="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Criado em</th>
+                            <th class="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Ações</th>
                             </tr>
                         </thead>
                         <tbody>

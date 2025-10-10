@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\CarrierService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -191,5 +192,13 @@ class Order extends Model
     public function isCancelled(): bool
     {
         return $this->situacao_valor === 4;
+    }
+
+    /**
+     * Get the formatted carrier display name.
+     */
+    public function getCarrierDisplayAttribute(): string
+    {
+        return CarrierService::getCarrierDisplay($this->service_type);
     }
 }

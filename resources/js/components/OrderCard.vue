@@ -50,6 +50,28 @@
       <span class="font-bold text-gray-900">{{ order.tracking_code }}</span>
     </div>
 
+    <!-- Prominent tracking code for collection columns -->
+    <div v-if="showProminentTracking && order.tracking_code" class="bg-blue-100 border-2 border-blue-300 rounded-lg p-3 mb-3">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-blue-800 font-bold text-sm">Código de Rastreio:</span>
+          <span class="font-black text-blue-900 text-base">{{ order.tracking_code }}</span>
+        </div>
+        <div class="text-blue-600 text-xs font-semibold">RASTREAMENTO</div>
+      </div>
+    </div>
+
+    <!-- Prominent invoice number for collection columns -->
+    <div v-if="showProminentTracking && order.invoice_number" class="bg-green-100 border-2 border-green-300 rounded-lg p-3 mb-3">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-green-800 font-bold text-sm">Nota Fiscal:</span>
+          <span class="font-black text-green-900 text-base">{{ order.invoice_number }}</span>
+        </div>
+        <div class="text-green-600 text-xs font-semibold">NF</div>
+      </div>
+    </div>
+
     <!-- System indicator -->
     <div class="flex items-center gap-2 text-xs">
       <div
@@ -82,6 +104,7 @@ interface Order {
 
 const props = defineProps<{
   order: Order
+  showProminentTracking?: boolean
 }>()
 
 const formatCurrency = (value: number): string => {

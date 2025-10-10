@@ -191,6 +191,11 @@ class KanbanStatusValidationTest extends TestCase
             'numero' => 'NF-001',
         ]);
 
+        // Add tracking code to the order (required for picked_up)
+        $this->order->update([
+            'tracking_code' => 'ABC123456789BR',
+        ]);
+
         OrderStatus::create([
             'order_summary_id' => $this->order->id,
             'picking' => true,

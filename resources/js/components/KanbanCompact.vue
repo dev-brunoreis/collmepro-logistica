@@ -291,6 +291,12 @@
                         <div class="font-semibold truncate">{{ order.contato_nome }}</div>
                         <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
                         <div class="opacity-90">{{ order.items_quantity }} item(s)</div>
+                        <div v-if="order.tracking_code" class="bg-blue-200 text-blue-900 px-1 py-0.5 rounded text-xs font-bold">
+                          {{ order.tracking_code }}
+                        </div>
+                        <div v-if="order.invoice_number" class="bg-green-200 text-green-900 px-1 py-0.5 rounded text-xs font-bold">
+                          NF: {{ order.invoice_number }}
+                        </div>
                         <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">R$ {{
                           formatCurrency(order.total) }}</div>
                       </div>
@@ -324,6 +330,12 @@
                         <div class="font-semibold truncate">{{ order.contato_nome }}</div>
                         <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
                         <div class="opacity-90">{{ order.items_quantity }} item(s)</div>
+                        <div v-if="order.tracking_code" class="bg-blue-200 text-blue-900 px-1 py-0.5 rounded text-xs font-bold">
+                          {{ order.tracking_code }}
+                        </div>
+                        <div v-if="order.invoice_number" class="bg-green-200 text-green-900 px-1 py-0.5 rounded text-xs font-bold">
+                          NF: {{ order.invoice_number }}
+                        </div>
                         <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">R$ {{
                           formatCurrency(order.total) }}</div>
                       </div>

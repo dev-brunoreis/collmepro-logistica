@@ -6,6 +6,7 @@ use App\Events\OrderStatusUpdated;
 use App\Models\OrderSummary;
 use App\Jobs\BlingSyncJob;
 use App\Http\Controllers\PermissionController;
+use App\Services\CarrierService;
 use App\Services\OrderHistoryService;
 use App\Services\SystemMappingService;
 use Illuminate\Http\Request;
@@ -147,10 +148,7 @@ class OrderController extends Controller
         // Logistics provider filter
         if ($request->filled('logistics_provider')) {
             $logisticsProvider = $request->get('logistics_provider');
-            $query->where(function ($q) use ($logisticsProvider) {
-                $q->whereJsonContains('raw_invoice_data->transporte->transportador->nome', $logisticsProvider)
-                  ->orWhereJsonContains('raw_tracking_data->servico->nome', $logisticsProvider);
-            });
+            $query->where('logistics_provider', $logisticsProvider);
         }
 
         // Seller filter
@@ -174,20 +172,8 @@ class OrderController extends Controller
                 $hasTrackingCode = !empty($order->tracking_code);
                 $trackingCode = $order->tracking_code;
                
-                $logisticsProvider = null;
-                
-                // Improved logic for determining logistics provider
-                $trackingCodeExists = !empty($order->raw_tracking_data['rastreamento']['codigo'] ?? null);
-
-                if ($trackingCodeExists) {
-                    $logisticsProvider =
-                        $order->raw_invoice_data['transporte']['transportador']['nome'] ?? null
-                        ?? $order->raw_tracking_data['servico']['nome'] ?? null
-                        ?? '-';
-                } else {
-                    $logisticsProvider = '-';
-                }
-
+                // Use CarrierService to get formatted carrier display
+                $logisticsProvider = CarrierService::getCarrierDisplay($order->service_type);
                 $serviceType = $order->service_type;
                 
                 $trackingUrl = null;
@@ -303,17 +289,8 @@ class OrderController extends Controller
         // Extract tracking information from raw data
         $trackingCode = $order->tracking_code;
 
-        // Improved logic for determining logistics provider
-        $trackingCodeExists = !empty($order->raw_tracking_data['rastreamento']['codigo']);
-
-        if ($trackingCodeExists) {
-            $logisticsProvider =
-                $order->raw_invoice_data['transporte']['transportador']['nome']
-                    ?? $order->raw_tracking_data['servico']['nome']
-                    ?? '-';
-        } else {
-            $logisticsProvider = '-';
-        }        
+        // Use CarrierService to get formatted carrier display
+        $logisticsProvider = CarrierService::getCarrierDisplay($order->service_type);        
 
         $trackingUrl = null;
         
@@ -632,36 +609,15 @@ class OrderController extends Controller
      */
     private function getLogisticsProviders($query)
     {
-        $providers = collect();
-        
         try {
-            // Simplified version to avoid memory issues
-            $invoiceProviders = collect();
-            $trackingProviders = collect();
-            
-            // Get providers from raw_invoice_data with limit
-            $invoiceOrders = OrderSummary::whereNotNull('raw_invoice_data')
-                ->limit(1000)
-                ->get();
-                
-            foreach ($invoiceOrders as $order) {
-                if (isset($order->raw_invoice_data['transporte']['transportador']['nome'])) {
-                    $invoiceProviders[] = $order->raw_invoice_data['transporte']['transportador']['nome'];
-                }
-            }
-                
-            // Get providers from raw_tracking_data with limit
-            $trackingOrders = OrderSummary::whereNotNull('raw_tracking_data')
-                ->limit(1000)
-                ->get();
-                
-            foreach ($trackingOrders as $order) {
-                if (isset($order->raw_tracking_data['servico']['nome'])) {
-                    $trackingProviders[] = $order->raw_tracking_data['servico']['nome'];
-                }
-            }
-                
-            $providers = $providers->merge($invoiceProviders)->merge($trackingProviders)->unique()->sort()->values();
+            // Get distinct logistics_provider values from the database
+            $providers = OrderSummary::whereNotNull('logistics_provider')
+                ->where('logistics_provider', '!=', '-')
+                ->distinct()
+                ->pluck('logistics_provider')
+                ->filter()
+                ->sort()
+                ->values();
             
             return $providers->mapWithKeys(function ($provider) {
                 return [$provider => $provider];

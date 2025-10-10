@@ -691,19 +691,18 @@ const getCurrentPerPage = () => {
                     <table class="w-full">
                         <thead class="border-b border-sidebar-border/70 dark:border-sidebar-border">
                             <tr>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Pedido</th>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Sistema</th>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Cliente</th>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Data</th>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">NFE</th>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Valor Total</th>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Rastreamento</th>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Transportadora</th>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Status</th>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Separado</th>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Embalado</th>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Coletado</th>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Ações</th>
+                                <th class="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Pedido</th>
+                                <th class="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Sistema</th>
+                                <th class="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Cliente</th>
+                                <th class="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Data</th>
+                                <th class="px-4 py-3 text-center text-sm font-medium text-muted-foreground">NFE</th>
+                                <th class="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Rastreamento</th>
+                                <th class="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Transportadora</th>
+                                <th class="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Status</th>
+                                <th class="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Separado</th>
+                                <th class="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Embalado</th>
+                                <th class="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Coletado</th>
+                                <th class="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Ações</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -748,15 +747,15 @@ const getCurrentPerPage = () => {
                                 :key="`${order.id}-${updateTrigger}`"
                                 class="border-b border-sidebar-border/70 dark:border-sidebar-border last:border-b-0 hover:bg-sidebar-border/20"
                             >
-                            <td class="px-4 py-3">
+                            <td class="px-4 py-3 text-center">
                                 <div class="font-medium">
                                     <a :href="`https://www.bling.com.br/vendas.php#edit/${order?.bling_id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center hover:bg-sidebar-border/70" :title="`Abrir pedido no Bling`">
-                                        <span class="text-sm font-medium">{{ order.numero }}</span>
+                                        <span class="text-sm">{{ order.numero }}</span>
                                             <ExternalLink class="h-3 w-3" />
                                         </a>
                                     </div>
                                 </td>
-                                <td class="px-4 py-3">
+                                <td class="px-4 py-3 text-center">
                                     <span
                                         class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
                                         :class="getSystemBadgeClass(order)"
@@ -764,20 +763,20 @@ const getCurrentPerPage = () => {
                                         {{ order.source.toUpperCase() }}
                                     </span>
                                 </td>
-                                <td class="px-4 py-3">
-                                    <div class="font-medium">{{ order.contato_nome }}</div>
+                                <td class="px-4 py-3 text-center">
+                                    <div>{{ order.contato_nome }}</div>
                                 </td>
                                 <td class="px-4 py-3 text-sm text-muted-foreground">
                                     {{ formatDate(order.data) }}
                                 </td>
-                                <td class="px-4 py-3">
+                                <td class="px-4 py-3 text-center">
                                     <div v-if="order.invoice?.numero" class="flex flex-col items-center gap-1">
                                         <!-- Número da NFE -->
                                          <a :href="`https://www.bling.com.br/notas.fiscais.php#edit/${order.invoice?.id}`" target="_blank" class="text-primary gap-1 font-small rounded-md  flex items-center hover:bg-sidebar-border/70 " :title="`Abrir nota fiscal no Bling`">
                                             {{ order.invoice.numero }}
                                             <ExternalLink class="h-3 w-3" />
                                         </a>
-                                                
+                                         <span class="flex text-sm">R$ {{ order.total }}</span>       
                                         <!-- Botões de ação -->
                                         <div class="flex items-center gap-2">
                                             <!-- Visualizar DANFE -->
@@ -805,10 +804,7 @@ const getCurrentPerPage = () => {
                                     </div>
                                     <span v-else class="text-sm text-muted-foreground">-</span>
                                 </td>
-                                <td class="px-4 py-3">
-                                    <span class="text-sm font-medium">R$ {{ order.total }}</span>
-                                </td>
-                                <td class="px-4 py-3">
+                                <td class="px-4 py-3 text-center">
                                     <a 
                                         v-if="order.raw_tracking_data?.rastreamento?.url" 
                                         :href="order.raw_tracking_data?.rastreamento?.url" 
@@ -823,16 +819,16 @@ const getCurrentPerPage = () => {
                                     </a>
                                     <span v-else class="text-sm text-muted-foreground">-</span>
                                 </td>
-                                <td class="px-4 py-3 text-sm text-muted-foreground">
+                                <td class="px-4 py-3 text-center text-sm text-muted-foreground">
                                     {{ order.logistics_provider }}
                                 </td>
-                                <td class="px-4 py-3">
-                                    <div class="flex items-center gap-2">
+                                <td class="px-4 py-3 text-center">
+                                    <div class="flex items-center justify-center gap-2">
                                         <span v-if="order.raw_tracking_data?.rastreamento?.descricao" class="text-sm">{{ order.raw_tracking_data?.rastreamento?.descricao }}</span>
                                         <span v-else class="text-sm text-muted-foreground">-</span>
                                     </div>
                                 </td>
-                                <td class="px-4 py-3">
+                                <td class="px-4 py-3 text-center">
                                     <button
                                         v-if="canUpdateStatus"
                                         @click="updateOrderStatus(order.id, 'picking', order.order_status?.picking || false, order.numero)"
@@ -856,7 +852,7 @@ const getCurrentPerPage = () => {
                                         <Package class="h-5 w-6" />
                                     </div>
                                 </td>
-                                <td class="px-4 py-3">
+                                <td class="px-4 py-3 text-center">
                                     <button
                                         v-if="canUpdateStatus"
                                         @click="updateOrderStatus(order.id, 'packing', order.order_status?.packing || false, order.numero)"
@@ -880,7 +876,7 @@ const getCurrentPerPage = () => {
                                         <Package class="h-5 w-6" />
                                     </div>
                                 </td>
-                                <td class="px-4 py-3">
+                                <td class="px-4 py-3 text-center">
                                     <button
                                         v-if="canUpdateStatus"
                                         @click="updateOrderStatus(order.id, 'picked_up', order.order_status?.picked_up || false, order.numero)"
@@ -904,7 +900,7 @@ const getCurrentPerPage = () => {
                                         <Truck class="h-5 w-6" />
                                     </div>
                                 </td>
-                                <td class="px-4 py-3">
+                                <td class="px-4 py-3 text-center">
                                     <Link
                                         :href="`/dashboard/orders/${order.id}`"
                                         class="inline-flex items-center gap-1 rounded-md px-4 py-3 text-sm text-muted-foreground hover:bg-sidebar-border/70"

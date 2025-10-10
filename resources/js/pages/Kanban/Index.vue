@@ -189,7 +189,7 @@
                   :key="order.id"
                   class="order-item bg-white p-4 sm:p-5 lg:p-6 xl:p-7 mb-3 sm:mb-4 lg:mb-5 rounded-lg border-2 border-orange-300 shadow-md hover:shadow-lg lg:hover:shadow-xl transition-all duration-300"
                 >
-                  <OrderCard :order="order" />
+                  <OrderCard :order="order" :showProminentTracking="true" />
                 </div>
               </div>
             </div>
@@ -205,7 +205,7 @@
                   :key="order.id"
                   class="order-item bg-white p-4 sm:p-5 lg:p-6 xl:p-7 mb-3 sm:mb-4 lg:mb-5 rounded-lg border-2 border-green-300 shadow-md hover:shadow-lg lg:hover:shadow-xl transition-all duration-300"
                 >
-                  <OrderCard :order="order" />
+                  <OrderCard :order="order" :showProminentTracking="true" />
                   <div v-if="getMovementHistory(order, 'picked_up')" class="text-sm sm:text-base lg:text-lg text-green-800 font-bold bg-green-200 p-2 sm:p-3 rounded-lg mt-3">
                     {{ getMovementHistory(order, 'picked_up') }}
                   </div>
