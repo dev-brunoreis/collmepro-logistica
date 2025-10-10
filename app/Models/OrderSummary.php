@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\OrderSummaryFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -10,6 +11,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class OrderSummary extends Model
 {
     use HasFactory;
+
+    /**
+     * Create a new factory instance for the model.
+     */
+    protected static function newFactory(): OrderSummaryFactory
+    {
+        return OrderSummaryFactory::new();
+    }
 
     protected $table = 'order_summary';
 

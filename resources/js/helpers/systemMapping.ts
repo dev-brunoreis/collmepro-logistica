@@ -36,6 +36,17 @@ export const systemMapping: Record<string, SystemInfo> = {
       border: 'border-blue-500'
     }
   },
+  'Atacadista': {
+    name: 'Atacadista',
+    shortName: 'Atacadista',
+    badgeColor: 'bg-blue-200 text-blue-900 border border-blue-300',
+    indicatorColor: 'bg-blue-500',
+    gradientClasses: {
+      from: 'from-blue-600',
+      to: 'to-blue-700',
+      border: 'border-blue-500'
+    }
+  },
   'TikTok': {
     name: 'TikTok',
     shortName: 'TikTok',

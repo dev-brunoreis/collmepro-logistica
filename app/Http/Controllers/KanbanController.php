@@ -92,7 +92,7 @@ class KanbanController extends Controller
     /**
      * Update order status.
      */
-    public function updateStatus(Request $request, OrderSummary $order)
+    public function updateStatus(Request $request, int $orderSummary)
     {
         $request->validate([
             'status' => 'required|in:picking,packing,picked_up,completed',
@@ -101,25 +101,146 @@ class KanbanController extends Controller
         $status = $request->status;
         $user = $request->user();
 
+        // Find the order
+        $order = OrderSummary::with(['orderStatus', 'invoice'])->findOrFail($orderSummary);
+
         // Get or create order status
-        $orderStatus = $order->orderStatus ?? OrderStatus::create([
-            'order_summary_id' => $order->id,
-        ]);
+        $orderStatus = $order->orderStatus;
+        if (!$orderStatus) {
+            $orderStatus = $order->orderStatus()->create([
+                'picking' => false,
+                'packing' => false,
+                'picked_up' => false,
+            ]);
+        }
+
+        // Check if order has invoice
+        $hasInvoice = false;
+        if ($order->invoice && $order->invoice->numero) {
+            $hasInvoice = true;
+        } elseif ($order->raw_invoice_data && isset($order->raw_invoice_data['numero'])) {
+            $hasInvoice = true;
+        }
+
+        // Validate sequential flow rules and determine action
+        switch ($status) {
+            case 'picking':
+                $newValue = !$orderStatus->picking; // Toggle
+                
+                if ($newValue) {
+                    // Validation: Cannot mark picking without invoice
+                    if (!$hasInvoice) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Não é possível marcar picking sem nota fiscal. O pedido deve estar faturado primeiro.',
+                        ], 422);
+                    }
+                } else {
+                    // Validation: Cannot unmark picking if packing is true
+                    if ($orderStatus->packing) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Não é possível desmarcar picking enquanto packing estiver marcado.',
+                        ], 422);
+                    }
+                }
+                break;
+
+            case 'packing':
+                $newValue = !$orderStatus->packing; // Toggle
+                
+                if ($newValue) {
+                    // Validation: Cannot mark packing without picking
+                    if (!$orderStatus->picking) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Não é possível marcar packing sem ter picking marcado primeiro.',
+                        ], 422);
+                    }
+                } else {
+                    // Validation: Cannot unmark packing if picked_up is true
+                    if ($orderStatus->picked_up) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Não é possível desmarcar packing enquanto picked_up estiver marcado.',
+                        ], 422);
+                    }
+                }
+                break;
+
+            case 'picked_up':
+                $newValue = !$orderStatus->picked_up; // Toggle
+                
+                if ($newValue) {
+                    // Validation: Cannot mark picked_up without packing
+                    if (!$orderStatus->packing) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Não é possível marcar picked_up sem ter packing marcado primeiro.',
+                        ], 422);
+                    }
+                    
+                    // Validation: Cannot mark picked_up without tracking code
+                    $hasTracking = false;
+                    if ($order->tracking_code && $order->tracking_code !== '') {
+                        $hasTracking = true;
+                    } elseif ($order->invoice && $order->invoice->tracking()->count() > 0) {
+                        $hasTracking = true;
+                    } elseif ($order->raw_invoice_data && isset($order->raw_invoice_data['tracking']) && !empty($order->raw_invoice_data['tracking'])) {
+                        $hasTracking = true;
+                    }
+                    
+                    if (!$hasTracking) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Não é possível marcar como coletado sem código de rastreamento.',
+                        ], 422);
+                    }
+                }
+                // No validation needed for unmarking picked_up
+                break;
+
+            case 'completed':
+                // Validation: Must have invoice for completed status
+                if (!$hasInvoice) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Não é possível completar pedido sem nota fiscal.',
+                    ], 422);
+                }
+                $newValue = true; // Completed always marks everything as true
+                break;
+        }
 
         // Update status based on action
         switch ($status) {
             case 'picking':
-                $orderStatus->markPicking($user);
-                broadcast(new OrderStatusUpdated($order, $user, 'picking', true));
+                if ($newValue) {
+                    $orderStatus->markPicking($user);
+                } else {
+                    $orderStatus->unmarkPicking($user);
+                }
+                broadcast(new OrderStatusUpdated($order, $user, 'picking', $newValue));
                 break;
+                
             case 'packing':
-                $orderStatus->markPacking($user);
-                broadcast(new OrderStatusUpdated($order, $user, 'packing', true));
+                if ($newValue) {
+                    $orderStatus->markPacking($user);
+                } else {
+                    $orderStatus->unmarkPacking($user);
+                }
+                broadcast(new OrderStatusUpdated($order, $user, 'packing', $newValue));
                 break;
+                
             case 'picked_up':
-                $orderStatus->markPickedUp($user);
-                broadcast(new OrderStatusUpdated($order, $user, 'picked_up', true));
+                if ($newValue) {
+                    $orderStatus->markPickedUp($user);
+                } else {
+                    $orderStatus->unmarkPickedUp($user);
+                }
+                broadcast(new OrderStatusUpdated($order, $user, 'picked_up', $newValue));
                 break;
+                
             case 'completed':
                 // Mark all as completed
                 $orderStatus->markPicking($user);
@@ -176,9 +297,12 @@ class KanbanController extends Controller
 
             // Get tracking code
             $trackingCode = null;
-            if ($order->invoice && $order->invoice->tracking) {
-                $trackingCode = $order->invoice->tracking;
-            } elseif ($order->raw_invoice_data && isset($order->raw_invoice_data['tracking'])) {
+            if ($order->tracking_code && $order->tracking_code !== '') {
+                $trackingCode = $order->tracking_code;
+            } elseif ($order->invoice && $order->invoice->tracking()->count() > 0) {
+                $firstTracking = $order->invoice->tracking()->first();
+                $trackingCode = $firstTracking ? $firstTracking->codigo_rastreamento : null;
+            } elseif ($order->raw_invoice_data && isset($order->raw_invoice_data['tracking']) && !empty($order->raw_invoice_data['tracking'])) {
                 $trackingCode = $order->raw_invoice_data['tracking'];
             }
             
@@ -217,44 +341,28 @@ class KanbanController extends Controller
 
     /**
      * Get the kanban status for an order.
+     * 
+     * Priority order:
+     * 1. Coleta Realizada: picked_up=true
+     * 2. Coleta Aguardando: invoice + picking + packing + tracking_code + !picked_up
+     * 3. Etiqueta: invoice + picking + packing + !tracking_code
+     * 4. Embalagem: invoice + picking + !packing
+     * 5. Checkout: invoice + !picking
+     * 6. Faturamento: !invoice
+     * 7. Pedidos Emitidos: default
      */
     private function getOrderKanbanStatus(OrderSummary $order): string
     {
         $orderStatus = $order->orderStatus;
 
-        // If picked up, goes to coleta_realizada
-        if ($orderStatus && $orderStatus->picked_up) {
-            return 'coleta_realizada';
-        }
-
-        // If packing is done but not picked up, goes to coleta_aguardando
-        if ($orderStatus && $orderStatus->packing && !$orderStatus->picked_up) {
-            return 'coleta_aguardando';
-        }
-
-        // If picking is done but not packing, goes to embalagem
-        if ($orderStatus && $orderStatus->picking && !$orderStatus->packing) {
-            return 'embalagem';
-        }
-
-        // If picking is done but no packing status, goes to checkout
-        if ($orderStatus && $orderStatus->picking) {
-            return 'checkout';
-        }
-
         // Check for tracking code (from order_summaries.tracking_code or invoice/raw data)
         $hasTracking = false;
         if ($order->tracking_code && $order->tracking_code !== '') {
             $hasTracking = true;
-        } elseif ($order->invoice && $order->invoice->tracking) {
+        } elseif ($order->invoice && $order->invoice->tracking()->count() > 0) {
             $hasTracking = true;
-        } elseif ($order->raw_invoice_data && isset($order->raw_invoice_data['tracking'])) {
+        } elseif ($order->raw_invoice_data && isset($order->raw_invoice_data['tracking']) && !empty($order->raw_invoice_data['tracking'])) {
             $hasTracking = true;
-        }
-
-        // If has tracking code but no picking status, goes to coleta_aguardando
-        if ($hasTracking && (!$orderStatus || !$orderStatus->picking)) {
-            return 'coleta_aguardando';
         }
 
         // Check for invoice number (from invoice table or raw data)
@@ -265,17 +373,37 @@ class KanbanController extends Controller
             $hasInvoice = true;
         }
 
-        // If has invoice but no picking status, goes to faturamento (waiting for picking)
-        if ($hasInvoice && (!$orderStatus || !$orderStatus->picking)) {
-            return 'faturamento';
+        // 1. Coleta Realizada: picked_up=true
+        if ($orderStatus && $orderStatus->picked_up) {
+            return 'coleta_realizada';
         }
 
-        // If no invoice and no picking status, goes to etiqueta (waiting for invoice and tracking code)
-        if (!$hasInvoice && (!$orderStatus || !$orderStatus->picking)) {
+        // 2. Coleta Aguardando: invoice + picking + packing + tracking_code + !picked_up
+        if ($hasInvoice && $orderStatus && $orderStatus->picking && $orderStatus->packing && $hasTracking) {
+            return 'coleta_aguardando';
+        }
+
+        // 3. Etiqueta: invoice + picking + packing + !tracking_code
+        if ($hasInvoice && $orderStatus && $orderStatus->picking && $orderStatus->packing && !$hasTracking) {
             return 'etiqueta';
         }
 
-        // Default to pedidos_emitidos for new orders
+        // 4. Embalagem: invoice + picking + !packing
+        if ($hasInvoice && $orderStatus && $orderStatus->picking && !$orderStatus->packing) {
+            return 'embalagem';
+        }
+
+        // 5. Checkout: invoice + !picking
+        if ($hasInvoice && (!$orderStatus || !$orderStatus->picking)) {
+            return 'checkout';
+        }
+
+        // 6. Faturamento: !invoice
+        if (!$hasInvoice) {
+            return 'faturamento';
+        }
+
+        // 7. Pedidos Emitidos: default (shouldn't reach here normally)
         return 'pedidos_emitidos';
     }
 

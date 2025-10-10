@@ -55,6 +55,11 @@ Route::group(['prefix' => 'dashboard', 'middleware' => ['auth', 'verified']], fu
         Route::get('painel/orders', [KanbanController::class, 'fetchOrders'])->name('kanban.fetch-orders');
     });
 
+    // Kanban status update (users with orders.status.update permission)
+    Route::middleware(['permission:orders.status.update'])->group(function () {
+        Route::post('painel/{orderSummary}/status', [KanbanController::class, 'updateStatus'])->name('kanban.update-status');
+    });
+
     // Orders routes (users with orders permissions)
     Route::middleware(['permission:orders.view'])->group(function () {
         Route::get('orders', [OrderController::class, 'index'])->name('orders.index');

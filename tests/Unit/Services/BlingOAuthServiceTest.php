@@ -65,8 +65,9 @@ class BlingOAuthServiceTest extends TestCase
         $refreshToken = 'old_refresh_token';
         $clientId = 'test_client_id';
         $clientSecret = 'test_client_secret';
+        $accountType = 'pro';
 
-        $result = $this->oauthService->refreshToken($refreshToken, $clientId, $clientSecret);
+        $result = $this->oauthService->refreshToken($refreshToken, $clientId, $clientSecret, $accountType);
 
         $this->assertEquals('new_access_token', $result);
 
@@ -87,8 +88,9 @@ class BlingOAuthServiceTest extends TestCase
         $refreshToken = 'invalid_refresh_token';
         $clientId = 'test_client_id';
         $clientSecret = 'test_client_secret';
+        $accountType = 'pro';
 
-        $result = $this->oauthService->refreshToken($refreshToken, $clientId, $clientSecret);
+        $result = $this->oauthService->refreshToken($refreshToken, $clientId, $clientSecret, $accountType);
 
         $this->assertNull($result);
     }

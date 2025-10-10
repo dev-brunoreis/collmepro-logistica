@@ -14,10 +14,18 @@ class PermissionSeeder extends Seeder
     public function run(): void
     {
         // Clear existing data
-        \DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        $driver = \DB::getDriverName();
+        
+        if ($driver === 'mysql') {
+            \DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        }
+        
         RolePermission::truncate();
         Permission::truncate();
-        \DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        
+        if ($driver === 'mysql') {
+            \DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        }
 
         // Define permissions - developer has same permissions as admin
         $permissions = [

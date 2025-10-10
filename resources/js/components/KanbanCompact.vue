@@ -4,7 +4,7 @@
     <div v-if="loading" class="loading-overlay-compact">
       <div class="loading-content-compact">
         <div class="spinner-compact"></div>
-        <h3 class="text-xl font-bold text-white mb-2">Loading orders...</h3>
+        <h3 class="text-xl font-bold text-white mb-2">Carregando pedidos...</h3>
         <p class="text-sm text-white/80">
           {{ loadingProgress }} / {{ totalOrders }} orders
         </p>
@@ -26,12 +26,12 @@
     <div class="bg-gray-800 rounded-lg shadow-lg">
       <!-- Flex Layout - Responsive -->
       <div class="flex gap-0 w-full" style="max-height: 600px;">
-        <!-- Pedidos Emitidos Column (spans 2 columns) -->
+        <!-- Pedidos Emitidos Column (spans 3 columns) -->
         <div class="border-r border-gray-600 flex-1" style="max-width: 30%; min-width: 200px;">
           <div class="bg-gray-700 px-4 py-3 text-center border-b border-gray-600">
             <h3 class="text-white font-semibold">Pedidos Emitidos</h3>
           </div>
-          <div class="grid grid-cols-2 h-full">
+          <div class="grid grid-cols-3 h-full">
             <!-- Collme Pro Sub-column -->
             <div class="border-r border-gray-600">
               <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
@@ -66,7 +66,7 @@
             </div>
 
             <!-- Collme Beauty Sub-column -->
-            <div>
+            <div class="border-r border-gray-600">
               <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
                 <h4 class="text-white text-xs font-medium">Collme Beauty</h4>
               </div>
@@ -97,17 +97,50 @@
                 </div>
               </div>
             </div>
+
+            <!-- Atacadista Sub-column -->
+            <div>
+              <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
+                <h4 class="text-white text-xs font-medium">Atacadista</h4>
+              </div>
+              <div class="p-2 bg-gray-800 overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
+                <div class="space-y-1">
+                  <div v-for="order in getOrdersBySource('Atacadista')" :key="order.id"
+                    class="bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 border border-blue-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white"
+                    >
+                    <div class="flex flex-col gap-0.5">
+                      <div class="flex justify-between items-center">
+                        <span class="font-bold text-xs">{{ order.numero }}</span>
+                        <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{
+                          getOrderSource(order) }}</span>
+                      </div>
+                      <div class="flex flex-col gap-0.5 text-xs">
+                        <div class="font-semibold truncate">{{ order.contato_nome }}</div>
+                        <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
+                        <div class="opacity-90">{{ order.items_quantity }} item(s)</div>
+                        <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">R$ {{
+                          formatCurrency(order.total) }}</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div v-if="getOrdersBySource('Atacadista').length === 0"
+                    class="text-center text-gray-400 py-2 text-xs italic">
+                    Nenhum pedido
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
         <!-- Faturamento/Emissão de NF Column -->
-        <div class="border-r border-gray-600 flex-1" style="max-width: 15%; min-width: 120px;">
+        <div class="border-r border-gray-600 flex-1" style="max-width: 12.5%; min-width: 120px;">
           <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
             <h3 class="text-white text-xs font-semibold leading-tight">Faturamento/Emissão de NF</h3>
           </div>
           <div class="p-2 bg-gray-800 overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
             <div class="space-y-1">
-              <div v-for="order in getFaturamentoOrders()" :key="order.id"
+              <div v-for="order in kanbanData.faturamento || []" :key="order.id"
                 class="bg-gradient-to-br from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 border border-emerald-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white">
                 <div class="flex flex-col gap-0.5">
                   <div class="flex justify-between items-center">
@@ -118,13 +151,13 @@
                   <div class="flex flex-col gap-0.5 text-xs">
                     <div class="font-semibold truncate">{{ order.contato_nome }}</div>
                     <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
-                    <div class="opacity-90 text-yellow-300">Aguardando NF</div>
+                    <div class="opacity-90" v-if="order.invoice_number">NF: {{ order.invoice_number }}</div>
                     <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">R$ {{
                       formatCurrency(order.total) }}</div>
                   </div>
                 </div>
               </div>
-              <div v-if="getFaturamentoOrders().length === 0"
+              <div v-if="(kanbanData.faturamento || []).length === 0"
                 class="text-center text-gray-400 py-2 text-xs italic">
                 Nenhum pedido
               </div>
@@ -133,7 +166,7 @@
         </div>
 
         <!-- Checkout (Picking) Column -->
-        <div class="border-r border-gray-600 flex-1" style="max-width: 15%; min-width: 120px;">
+        <div class="border-r border-gray-600 flex-1" style="max-width: 12.5%; min-width: 120px;">
           <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
             <h3 class="text-white text-xs font-semibold">Checkout (Picking)</h3>
           </div>
@@ -167,7 +200,7 @@
         </div>
 
         <!-- Embalagem (Packing) Column -->
-        <div class="border-r border-gray-600 flex-1" style="max-width: 15%; min-width: 120px;">
+        <div class="border-r border-gray-600 flex-1" style="max-width: 12.5%; min-width: 120px;">
           <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
             <h3 class="text-white text-xs font-semibold">Embalagem (Packing)</h3>
           </div>
@@ -201,13 +234,13 @@
         </div>
 
         <!-- Etiqueta (Cód. Rastreio) Column -->
-        <div class="border-r border-gray-600 flex-1" style="max-width: 15%; min-width: 120px;">
+        <div class="border-r border-gray-600 flex-1" style="max-width: 12.5%; min-width: 120px;">
           <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
             <h3 class="text-white text-xs font-semibold">Etiqueta (Cód. Rastreio)</h3>
           </div>
           <div class="p-2 bg-gray-800 overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
             <div class="space-y-1">
-              <div v-for="order in getEtiquetaOrders()" :key="order.id"
+              <div v-for="order in kanbanData.etiqueta || []" :key="order.id"
                 class="bg-gradient-to-br from-cyan-600 to-cyan-700 hover:from-cyan-700 hover:to-cyan-800 border border-cyan-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white">
                 <div class="flex flex-col gap-0.5">
                   <div class="flex justify-between items-center">
@@ -218,13 +251,13 @@
                   <div class="flex flex-col gap-0.5 text-xs">
                     <div class="font-semibold truncate">{{ order.contato_nome }}</div>
                     <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
-                    <div class="opacity-90 text-yellow-300">Aguardando código</div>
+                    <div class="opacity-90" v-if="order.tracking_code">Código: {{ order.tracking_code }}</div>
                     <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">R$ {{
                       formatCurrency(order.total) }}</div>
                   </div>
                 </div>
               </div>
-              <div v-if="getEtiquetaOrders().length === 0"
+              <div v-if="(kanbanData.etiqueta || []).length === 0"
                 class="text-center text-gray-400 py-2 text-xs italic">
                 Nenhum pedido
               </div>
@@ -233,7 +266,7 @@
         </div>
 
         <!-- Coleta Column -->
-        <div class="flex-1" style="max-width: 30%; min-width: 200px;">
+        <div class="flex-1" style="max-width: 25%; min-width: 200px;">
           <div class="bg-gray-700 px-4 py-3 text-center border-b border-gray-600">
             <h3 class="text-white font-semibold">Coleta</h3>
           </div>
@@ -445,18 +478,38 @@ watch(lastUpdate, (update) => {
           column.splice(orderIndex, 1)
         }
 
-        // Determine new column based on status
+        // Determine new column based on status (following backend logic)
+        // Priority order:
+        // 1. Coleta Realizada: picked_up=true
+        // 2. Coleta Aguardando: invoice + picking + packing + tracking_code + !picked_up
+        // 3. Etiqueta: invoice + picking + packing + !tracking_code
+        // 4. Embalagem: invoice + picking + !packing
+        // 5. Checkout: invoice + !picking
+        // 6. Faturamento: !invoice
+        // 7. Pedidos Emitidos: default
+        
         let newColumn = 'pedidos_emitidos'
+        const hasInvoice = !!order.invoice_number
+        const hasTracking = !!(order as any).tracking_code
+        
         if (order.order_status.picked_up) {
+          // 1. Coleta Realizada
           newColumn = 'coleta_realizada'
-        } else if (order.order_status.packing) {
+        } else if (hasInvoice && order.order_status.picking && order.order_status.packing && hasTracking) {
+          // 2. Coleta Aguardando
           newColumn = 'coleta_aguardando'
-        } else if (order.order_status.picking) {
-          newColumn = 'embalagem'
-        } else if (order.invoice_number) {
-          newColumn = 'faturamento'
-        } else if ((order as any).tracking_code) {
+        } else if (hasInvoice && order.order_status.picking && order.order_status.packing && !hasTracking) {
+          // 3. Etiqueta
           newColumn = 'etiqueta'
+        } else if (hasInvoice && order.order_status.picking && !order.order_status.packing) {
+          // 4. Embalagem
+          newColumn = 'embalagem'
+        } else if (hasInvoice && !order.order_status.picking) {
+          // 5. Checkout
+          newColumn = 'checkout'
+        } else if (!hasInvoice) {
+          // 6. Faturamento
+          newColumn = 'faturamento'
         }
 
         // Add to new column
@@ -568,44 +621,22 @@ const getMovementHistory = (order: Order, statusType: string): string => {
   return '';
 }
 
-// Get orders by source (Collme Pro or Collme Beauty) - only unprocessed orders
+// Get orders by source (Collme Pro, Collme Beauty or Atacadista) - just show what backend provides
 const getOrdersBySource = (source: string): Order[] => {
-  // Get orders from all columns
-  const allOrders = [
-    ...(kanbanData.value.pedidos_emitidos || []),
-    ...(kanbanData.value.faturamento || []),
-    ...(kanbanData.value.checkout || []),
-    ...(kanbanData.value.embalagem || []),
-    ...(kanbanData.value.etiqueta || []),
-    ...(kanbanData.value.coleta_aguardando || []),
-    ...(kanbanData.value.coleta_realizada || [])
-  ]
+  // Get orders from pedidos_emitidos column (backend already filtered)
+  const pedidosEmitidos = kanbanData.value.pedidos_emitidos || []
   
-  return allOrders.filter(order => {
+  return pedidosEmitidos.filter(order => {
     // Must match the source
-    let sourceMatches = false
     if (source === 'Collme Pro') {
-      sourceMatches = order.source === 'Collme Pro'
+      return order.source === 'Collme Pro'
     } else if (source === 'Collme Beauty') {
-      sourceMatches = order.source === 'Collme Beauty'
+      return order.source === 'Collme Beauty'
+    } else if (source === 'Atacadista') {
+      return order.source === 'Atacadista'
     }
     
-    if (!sourceMatches) return false
-    
-    // Exclude orders that are in coleta_aguardando or coleta_realizada
-    const isInColetaAguardando = (kanbanData.value.coleta_aguardando || []).some(o => o.id === order.id)
-    const isInColetaRealizada = (kanbanData.value.coleta_realizada || []).some(o => o.id === order.id)
-    
-    if (isInColetaAguardando || isInColetaRealizada) return false
-    
-    // Exclude orders with any status checkbox marked
-    if (order.order_status) {
-      if (order.order_status.picking || order.order_status.packing || order.order_status.picked_up) {
-        return false
-      }
-    }
-    
-    return true
+    return false
   })
 }
 
@@ -622,21 +653,6 @@ const getOrderCardClass = (order: Order): string => {
     return 'collme-beauty'
   }
   return 'default'
-}
-
-// Get orders for Faturamento column - only orders WITHOUT invoice_number
-const getFaturamentoOrders = (): Order[] => {
-  return (kanbanData.value.faturamento || []).filter(order => !order.invoice_number)
-}
-
-// Get orders for Etiqueta column - only orders WITHOUT tracking_code
-const getEtiquetaOrders = (): Order[] => {
-  return (kanbanData.value.etiqueta || []).filter(order => {
-    // Check if order has tracking code in different possible locations
-    const hasTrackingCode = (order as any).tracking_code
-    
-    return !hasTrackingCode
-  })
 }
 
 // Handle add order action

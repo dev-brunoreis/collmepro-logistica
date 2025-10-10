@@ -23,7 +23,7 @@
     <div v-if="loading" class="loading-overlay">
       <div class="loading-content">
         <div class="spinner"></div>
-        <h2 class="text-2xl font-bold text-white mb-2">Loading orders...</h2>
+        <h2 class="text-2xl font-bold text-white mb-2">Carregando pedidos...</h2>
         <p class="text-lg text-white/80">
           {{ loadingProgress }} / {{ totalOrders }} orders
         </p>
@@ -379,18 +379,38 @@ watch(lastUpdate, (update) => {
         // Remove from current column
         column.splice(orderIndex, 1)
         
-        // Determine new column based on status
+        // Determine new column based on status (following backend logic)
+        // Priority order:
+        // 1. Coleta Realizada: picked_up=true
+        // 2. Coleta Aguardando: invoice + picking + packing + tracking_code + !picked_up
+        // 3. Etiqueta: invoice + picking + packing + !tracking_code
+        // 4. Embalagem: invoice + picking + !packing
+        // 5. Checkout: invoice + !picking
+        // 6. Faturamento: !invoice
+        // 7. Pedidos Emitidos: default
+        
         let newColumn = 'pedidos_emitidos'
+        const hasInvoice = !!order.invoice_number
+        const hasTracking = !!order.tracking_code
+        
         if (order.order_status.picked_up) {
+          // 1. Coleta Realizada
           newColumn = 'coleta_realizada'
-        } else if (order.order_status.packing) {
+        } else if (hasInvoice && order.order_status.picking && order.order_status.packing && hasTracking) {
+          // 2. Coleta Aguardando
           newColumn = 'coleta_aguardando'
-        } else if (order.order_status.picking) {
-          newColumn = 'embalagem'
-        } else if (order.invoice_number) {
-          newColumn = 'faturamento'
-        } else if (order.tracking_code) {
+        } else if (hasInvoice && order.order_status.picking && order.order_status.packing && !hasTracking) {
+          // 3. Etiqueta
           newColumn = 'etiqueta'
+        } else if (hasInvoice && order.order_status.picking && !order.order_status.packing) {
+          // 4. Embalagem
+          newColumn = 'embalagem'
+        } else if (hasInvoice && !order.order_status.picking) {
+          // 5. Checkout
+          newColumn = 'checkout'
+        } else if (!hasInvoice) {
+          // 6. Faturamento
+          newColumn = 'faturamento'
         }
         
         // Add to new column

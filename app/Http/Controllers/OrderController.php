@@ -398,6 +398,71 @@ class OrderController extends Controller
             'picked_up' => false,
         ]);
 
+        // Check if order has invoice
+        $hasInvoice = false;
+        if ($order->invoice && $order->invoice->numero) {
+            $hasInvoice = true;
+        } elseif ($order->raw_invoice_data && isset($order->raw_invoice_data['numero'])) {
+            $hasInvoice = true;
+        }
+
+        // Validate sequential flow rules (only when marking as true)
+        if ($status) {
+            switch ($action) {
+                case 'picking':
+                    // Validation: Cannot mark picking without invoice
+                    if (!$hasInvoice) {
+                        return back()->with('error', 'Não é possível marcar picking sem nota fiscal. O pedido deve estar faturado primeiro.');
+                    }
+                    break;
+
+                case 'packing':
+                    // Validation: Cannot mark packing without picking
+                    if (!$orderStatus->picking) {
+                        return back()->with('error', 'Não é possível marcar packing sem ter picking marcado primeiro.');
+                    }
+                    break;
+
+                case 'picked_up':
+                    // Validation: Cannot mark picked_up without packing
+                    if (!$orderStatus->packing) {
+                        return back()->with('error', 'Não é possível marcar picked_up sem ter packing marcado primeiro.');
+                    }
+                    
+                    // Validation: Cannot mark picked_up without tracking code
+                    $hasTracking = false;
+                    if ($order->tracking_code && $order->tracking_code !== '') {
+                        $hasTracking = true;
+                    } elseif ($order->invoice && $order->invoice->tracking()->count() > 0) {
+                        $hasTracking = true;
+                    } elseif ($order->raw_invoice_data && isset($order->raw_invoice_data['tracking']) && !empty($order->raw_invoice_data['tracking'])) {
+                        $hasTracking = true;
+                    }
+                    
+                    if (!$hasTracking) {
+                        return back()->with('error', 'Não é possível marcar como coletado sem código de rastreamento.');
+                    }
+                    break;
+            }
+        } else {
+            // Validate when unmarking (setting to false)
+            switch ($action) {
+                case 'picking':
+                    // Validation: Cannot unmark picking if packing is true
+                    if ($orderStatus->packing) {
+                        return back()->with('error', 'Não é possível desmarcar picking enquanto packing estiver marcado.');
+                    }
+                    break;
+
+                case 'packing':
+                    // Validation: Cannot unmark packing if picked_up is true
+                    if ($orderStatus->picked_up) {
+                        return back()->with('error', 'Não é possível desmarcar packing enquanto picked_up estiver marcado.');
+                    }
+                    break;
+            }
+        }
+
         // Update the specific status
         $updateData = [
             $action => $status,

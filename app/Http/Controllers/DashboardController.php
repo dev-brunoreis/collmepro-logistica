@@ -339,9 +339,12 @@ class DashboardController extends Controller
 
             // Get tracking code
             $trackingCode = null;
-            if ($order->invoice && $order->invoice->tracking) {
-                $trackingCode = $order->invoice->tracking;
-            } elseif ($order->raw_invoice_data && isset($order->raw_invoice_data['tracking'])) {
+            if ($order->tracking_code && $order->tracking_code !== '') {
+                $trackingCode = $order->tracking_code;
+            } elseif ($order->invoice && $order->invoice->tracking()->count() > 0) {
+                $firstTracking = $order->invoice->tracking()->first();
+                $trackingCode = $firstTracking ? $firstTracking->codigo_rastreamento : null;
+            } elseif ($order->raw_invoice_data && isset($order->raw_invoice_data['tracking']) && !empty($order->raw_invoice_data['tracking'])) {
                 $trackingCode = $order->raw_invoice_data['tracking'];
             }
             
@@ -380,44 +383,28 @@ class DashboardController extends Controller
 
     /**
      * Get the kanban status for an order (new structure).
+     * 
+     * Priority order:
+     * 1. Coleta Realizada: picked_up=true
+     * 2. Coleta Aguardando: invoice + picking + packing + tracking_code + !picked_up
+     * 3. Etiqueta: invoice + picking + packing + !tracking_code
+     * 4. Embalagem: invoice + picking + !packing
+     * 5. Checkout: invoice + !picking
+     * 6. Faturamento: !invoice
+     * 7. Pedidos Emitidos: default
      */
     private function getOrderKanbanStatusNew($order): string
     {
         $orderStatus = $order->orderStatus;
 
-        // If picked up, goes to coleta_realizada
-        if ($orderStatus && $orderStatus->picked_up) {
-            return 'coleta_realizada';
-        }
-
-        // If packing is done but not picked up, goes to coleta_aguardando
-        if ($orderStatus && $orderStatus->packing && !$orderStatus->picked_up) {
-            return 'coleta_aguardando';
-        }
-
-        // If picking is done but not packing, goes to embalagem
-        if ($orderStatus && $orderStatus->picking && !$orderStatus->packing) {
-            return 'embalagem';
-        }
-
-        // If picking is done but no packing status, goes to checkout
-        if ($orderStatus && $orderStatus->picking) {
-            return 'checkout';
-        }
-
-        // Check for tracking code FIRST (from order_summaries.tracking_code or invoice/raw data)
+        // Check for tracking code (from order_summaries.tracking_code or invoice/raw data)
         $hasTracking = false;
         if ($order->tracking_code && $order->tracking_code !== '') {
             $hasTracking = true;
-        } elseif ($order->invoice && $order->invoice->tracking) {
+        } elseif ($order->invoice && $order->invoice->tracking()->count() > 0) {
             $hasTracking = true;
-        } elseif ($order->raw_invoice_data && isset($order->raw_invoice_data['tracking'])) {
+        } elseif ($order->raw_invoice_data && isset($order->raw_invoice_data['tracking']) && !empty($order->raw_invoice_data['tracking'])) {
             $hasTracking = true;
-        }
-
-        // If has tracking code but no picking status, goes to etiqueta
-        if ($hasTracking && (!$orderStatus || !$orderStatus->picking)) {
-            return 'etiqueta';
         }
 
         // Check for invoice number (from invoice table or raw data)
@@ -428,12 +415,37 @@ class DashboardController extends Controller
             $hasInvoice = true;
         }
 
-        // If has invoice but no picking status, goes to faturamento
+        // 1. Coleta Realizada: picked_up=true
+        if ($orderStatus && $orderStatus->picked_up) {
+            return 'coleta_realizada';
+        }
+
+        // 2. Coleta Aguardando: invoice + picking + packing + tracking_code + !picked_up
+        if ($hasInvoice && $orderStatus && $orderStatus->picking && $orderStatus->packing && $hasTracking) {
+            return 'coleta_aguardando';
+        }
+
+        // 3. Etiqueta: invoice + picking + packing + !tracking_code
+        if ($hasInvoice && $orderStatus && $orderStatus->picking && $orderStatus->packing && !$hasTracking) {
+            return 'etiqueta';
+        }
+
+        // 4. Embalagem: invoice + picking + !packing
+        if ($hasInvoice && $orderStatus && $orderStatus->picking && !$orderStatus->packing) {
+            return 'embalagem';
+        }
+
+        // 5. Checkout: invoice + !picking
         if ($hasInvoice && (!$orderStatus || !$orderStatus->picking)) {
+            return 'checkout';
+        }
+
+        // 6. Faturamento: !invoice
+        if (!$hasInvoice) {
             return 'faturamento';
         }
 
-        // Default to pedidos_emitidos for new orders
+        // 7. Pedidos Emitidos: default (shouldn't reach here normally)
         return 'pedidos_emitidos';
     }
 }

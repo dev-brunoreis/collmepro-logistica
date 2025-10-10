@@ -273,6 +273,60 @@ const clearFilters = () => {
     });
 };
 
+const isStatusButtonDisabled = (order: Order, action: string): boolean => {
+    const status = order.order_status;
+    const hasInvoice = !!(order.invoice_id || order.raw_invoice_data?.numero);
+    const hasTracking = !!(order.tracking_code || order.raw_tracking_data?.codigo_rastreamento);
+    
+    switch (action) {
+        case 'picking':
+            // Can't mark without invoice
+            if (!status?.picking && !hasInvoice) return true;
+            // Can't unmark if packing is true
+            if (status?.picking && status?.packing) return true;
+            return false;
+            
+        case 'packing':
+            // Can't mark without picking
+            if (!status?.packing && !status?.picking) return true;
+            // Can't unmark if picked_up is true
+            if (status?.packing && status?.picked_up) return true;
+            return false;
+            
+        case 'picked_up':
+            // Can't mark without packing
+            if (!status?.picked_up && !status?.packing) return true;
+            // Can't mark without tracking code
+            if (!status?.picked_up && !hasTracking) return true;
+            return false;
+    }
+    return false;
+};
+
+const getStatusButtonTooltip = (order: Order, action: string): string => {
+    const status = order.order_status;
+    const hasInvoice = !!(order.invoice_id || order.raw_invoice_data?.numero);
+    const hasTracking = !!(order.tracking_code || order.raw_tracking_data?.codigo_rastreamento);
+    
+    switch (action) {
+        case 'picking':
+            if (!status?.picking && !hasInvoice) return 'Requer nota fiscal para marcar como separado';
+            if (status?.picking && status?.packing) return 'Não é possível desmarcar enquanto embalado estiver marcado';
+            return status?.picking ? 'Desmarcar como separado' : 'Marcar como separado';
+            
+        case 'packing':
+            if (!status?.packing && !status?.picking) return 'Requer separado marcado primeiro';
+            if (status?.packing && status?.picked_up) return 'Não é possível desmarcar enquanto coletado estiver marcado';
+            return status?.packing ? 'Desmarcar como embalado' : 'Marcar como embalado';
+            
+        case 'picked_up':
+            if (!status?.picked_up && !status?.packing) return 'Requer embalado marcado primeiro';
+            if (!status?.picked_up && !hasTracking) return 'Requer código de rastreamento para marcar como coletado';
+            return status?.picked_up ? 'Desmarcar como coletado' : 'Marcar como coletado';
+    }
+    return '';
+};
+
 const updateOrderStatus = (orderId: number, action: string, currentStatus: boolean, orderNumber: string) => {
     const actionNames = {
         picking: 'Separado',
@@ -782,9 +836,15 @@ const getCurrentPerPage = () => {
                                     <button
                                         v-if="canUpdateStatus"
                                         @click="updateOrderStatus(order.id, 'picking', order.order_status?.picking || false, order.numero)"
-                                        class="inline-flex items-center gap-1 rounded-md px-4 py-3 cursor-pointer text-sm hover:bg-sidebar-border/70"
-                                        :class="order.order_status?.picking ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'"
-                                        :title="order.order_status?.picking ? 'Desmarcar como separado' :  'Marcar como separado'"
+                                        :disabled="isStatusButtonDisabled(order, 'picking')"
+                                        class="inline-flex items-center gap-1 rounded-md px-4 py-3 text-sm transition-colors"
+                                        :class="[
+                                            order.order_status?.picking ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground',
+                                            isStatusButtonDisabled(order, 'picking') 
+                                                ? 'opacity-40 cursor-not-allowed' 
+                                                : 'cursor-pointer hover:bg-sidebar-border/70'
+                                        ]"
+                                        :title="getStatusButtonTooltip(order, 'picking')"
                                     >
                                         <CheckCircle v-if="order.order_status?.picking" class="h-5 w-6" />
                                         <XCircle v-else class="h-5 w-6" />
@@ -800,9 +860,15 @@ const getCurrentPerPage = () => {
                                     <button
                                         v-if="canUpdateStatus"
                                         @click="updateOrderStatus(order.id, 'packing', order.order_status?.packing || false, order.numero)"
-                                        class="inline-flex items-center gap-1 rounded-md px-4 py-3 cursor-pointer text-sm hover:bg-sidebar-border/70"
-                                        :class="order.order_status?.packing ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'"
-                                        :title="order.order_status?.packing ? 'Desmarcar como embalado' : 'Marcar como embalado'"
+                                        :disabled="isStatusButtonDisabled(order, 'packing')"
+                                        class="inline-flex items-center gap-1 rounded-md px-4 py-3 text-sm transition-colors"
+                                        :class="[
+                                            order.order_status?.packing ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground',
+                                            isStatusButtonDisabled(order, 'packing') 
+                                                ? 'opacity-40 cursor-not-allowed' 
+                                                : 'cursor-pointer hover:bg-sidebar-border/70'
+                                        ]"
+                                        :title="getStatusButtonTooltip(order, 'packing')"
                                     >
                                         <CheckCircle v-if="order.order_status?.packing" class="h-5 w-6" />
                                         <XCircle v-else class="h-5 w-6" />
@@ -818,9 +884,15 @@ const getCurrentPerPage = () => {
                                     <button
                                         v-if="canUpdateStatus"
                                         @click="updateOrderStatus(order.id, 'picked_up', order.order_status?.picked_up || false, order.numero)"
-                                        class="inline-flex items-center gap-1 rounded-md px-4 py-3 cursor-pointer text-sm hover:bg-sidebar-border/70"
-                                        :class="order.order_status?.picked_up ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'"
-                                        :title="order.order_status?.picked_up ? 'Desmarcar como coletado' : 'Marcar como coletado'"
+                                        :disabled="isStatusButtonDisabled(order, 'picked_up')"
+                                        class="inline-flex items-center gap-1 rounded-md px-4 py-3 text-sm transition-colors"
+                                        :class="[
+                                            order.order_status?.picked_up ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground',
+                                            isStatusButtonDisabled(order, 'picked_up') 
+                                                ? 'opacity-40 cursor-not-allowed' 
+                                                : 'cursor-pointer hover:bg-sidebar-border/70'
+                                        ]"
+                                        :title="getStatusButtonTooltip(order, 'picked_up')"
                                     >
                                         <CheckCircle v-if="order.order_status?.picked_up" class="h-5 w-6" />
                                         <XCircle v-else class="h-5 w-6" />
