@@ -18,10 +18,6 @@ class DashboardController extends Controller
         // Data will be fetched asynchronously via fetchDashboardData()
         $emptyMetrics = [
             'total_orders' => 0,
-            'pending_orders' => 0,
-            'picking_orders' => 0,
-            'packing_orders' => 0,
-            'picked_up_orders' => 0,
             'completed_orders' => 0,
         ];
 
@@ -56,7 +52,7 @@ class DashboardController extends Controller
      */
     public function fetchDashboardData(Request $request)
     {
-        $daysBack = $request->input('days_back', 30); // Default: last 30 days
+        $daysBack = $request->input('days_back', 15); // Default: last 15 days
         $loadAll = $request->boolean('load_all', false); // Option to load all orders
 
         // Build query
@@ -101,47 +97,19 @@ class DashboardController extends Controller
     }
 
     /**
-     * Calculate dashboard metrics (using same logic as Kanban).
+     * Calculate dashboard metrics (simplified for 2 cards).
      */
     private function calculateMetrics($orders): array
     {
         $total = $orders->count();
         
-        // Use same logic as Kanban for consistency
-        $pending = 0;
-        $picking = 0;
-        $packing = 0;
-        $pickedUp = 0;
-        $completed = 0;
-        
-        foreach ($orders as $order) {
-            $orderStatus = $order->orderStatus;
-            
-            if (!$orderStatus) {
-                $pending++;
-            } else {
-                if ($orderStatus->picked_up) {
-                    $pickedUp++;
-                } elseif ($orderStatus->packing) {
-                    $packing++;
-                } elseif ($orderStatus->picking) {
-                    $picking++;
-                } else {
-                    $pending++;
-                }
-                
-                if ($orderStatus->isCompleted()) {
-                    $completed++;
-                }
-            }
-        }
+        // Count completed orders (picked_up = true)
+        $completed = $orders->filter(function($order) {
+            return $order->orderStatus && $order->orderStatus->picked_up;
+        })->count();
 
         return [
             'total_orders' => $total,
-            'pending_orders' => $pending,
-            'picking_orders' => $picking,
-            'packing_orders' => $packing,
-            'picked_up_orders' => $pickedUp,
             'completed_orders' => $completed,
         ];
     }

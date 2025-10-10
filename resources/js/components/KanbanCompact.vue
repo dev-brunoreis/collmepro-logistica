@@ -344,7 +344,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted, watchEffect } from 'vue'
 import { Maximize, Plus } from 'lucide-vue-next'
 import { useOrderBroadcasting } from '@/composables/useBroadcasting'
 import { getSystemShortName, getSystemBadgeColor } from '@/helpers/systemMapping'
@@ -411,7 +411,7 @@ const emit = defineEmits<{
 const isFullscreen = ref(false)
 
 // Loading state
-const loading = ref(true)
+const loading = ref(false) // Start as false since data comes from props
 const loadingProgress = ref(0)
 const totalOrders = ref(0)
 
@@ -683,7 +683,7 @@ const handleEscapeKey = (event: KeyboardEvent) => {
 }
 
 // Fetch orders asynchronously
-const fetchOrdersAsync = async (daysBack: number = 30, loadAll: boolean = false) => {
+const fetchOrdersAsync = async (daysBack: number = 15, loadAll: boolean = false) => {
   try {
     console.log('KanbanCompact: Starting to fetch orders...')
     loading.value = true
@@ -730,9 +730,45 @@ const fetchOrdersAsync = async (daysBack: number = 30, loadAll: boolean = false)
   }
 }
 
-// Fetch orders on component mount
+// Watch for changes in props and update local data
+watch(() => props.kanbanData, (newData) => {
+  if (newData) {
+    kanbanData.value = {
+      pedidos_emitidos: newData.pedidos_emitidos || [],
+      faturamento: newData.faturamento || [],
+      checkout: newData.checkout || [],
+      embalagem: newData.embalagem || [],
+      etiqueta: newData.etiqueta || [],
+      coleta_aguardando: newData.coleta_aguardando || [],
+      coleta_realizada: newData.coleta_realizada || [],
+    }
+    
+    // Ensure loading is false when data is received
+    loading.value = false
+    
+    console.log('KanbanCompact data updated from props:', {
+      pedidos_emitidos: kanbanData.value.pedidos_emitidos?.length || 0,
+      faturamento: kanbanData.value.faturamento?.length || 0,
+      checkout: kanbanData.value.checkout?.length || 0,
+      embalagem: kanbanData.value.embalagem?.length || 0,
+      etiqueta: kanbanData.value.etiqueta?.length || 0,
+      coleta_aguardando: kanbanData.value.coleta_aguardando?.length || 0,
+      coleta_realizada: kanbanData.value.coleta_realizada?.length || 0,
+    })
+  }
+}, { immediate: true, deep: true })
+
+// Initialize with props data (no need to fetch on mount)
 onMounted(() => {
-  fetchOrdersAsync()
+  console.log('KanbanCompact mounted with data:', {
+    pedidos_emitidos: kanbanData.value.pedidos_emitidos?.length || 0,
+    faturamento: kanbanData.value.faturamento?.length || 0,
+    checkout: kanbanData.value.checkout?.length || 0,
+    embalagem: kanbanData.value.embalagem?.length || 0,
+    etiqueta: kanbanData.value.etiqueta?.length || 0,
+    coleta_aguardando: kanbanData.value.coleta_aguardando?.length || 0,
+    coleta_realizada: kanbanData.value.coleta_realizada?.length || 0,
+  })
 })
 
 // Cleanup on unmount

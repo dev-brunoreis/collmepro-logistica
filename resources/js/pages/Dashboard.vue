@@ -6,8 +6,9 @@ import { Head, router } from '@inertiajs/vue3';
 import PlaceholderPattern from '../components/PlaceholderPattern.vue';
 import KanbanCompact from '../components/KanbanCompact.vue';
 import MetricCard from '../components/MetricCard.vue';
-import { ref } from 'vue';
-import { Package, ShoppingCart, CheckCircle } from 'lucide-vue-next';
+import { ref, onMounted } from 'vue';
+import { Package, CheckCircle } from 'lucide-vue-next';
+import axios from 'axios';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -24,10 +25,46 @@ const props = defineProps<{
 }>();
 
 const showKanbanFullscreen = ref(false);
+const selectedPeriod = ref(15); // Default: 15 days
+const metrics = ref(props.metrics);
+const kanbanData = ref(props.kanbanData);
+const loading = ref(false);
 
 const openKanbanFullscreen = () => {
     router.visit('/dashboard/painel');
 };
+
+const fetchDashboardData = async () => {
+    loading.value = true;
+    try {
+        const response = await axios.get('/dashboard/data', {
+            params: {
+                days_back: selectedPeriod.value
+            }
+        });
+        
+        metrics.value = response.data.metrics;
+        kanbanData.value = response.data.kanbanData;
+        
+        console.log('Dashboard data updated:', {
+            period: selectedPeriod.value,
+            totalOrders: metrics.value.total_orders,
+            completedOrders: metrics.value.completed_orders,
+            kanbanColumns: Object.keys(kanbanData.value).map(key => ({
+                name: key,
+                count: kanbanData.value[key]?.length || 0
+            }))
+        });
+    } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+    } finally {
+        loading.value = false;
+    }
+};
+
+onMounted(() => {
+    fetchDashboardData();
+});
 </script>
 
 <template>
@@ -37,17 +74,33 @@ const openKanbanFullscreen = () => {
         <div
             class="flex h-full flex-1 flex-col gap-4 overflow-hidden rounded-xl p-4"
         >
+            <!-- Period Filter -->
+            <div class="flex items-center gap-4">
+                <label for="period-select" class="text-sm font-medium text-white">
+                    Período:
+                </label>
+                <select 
+                    id="period-select"
+                    v-model="selectedPeriod" 
+                    @change="fetchDashboardData"
+                    :disabled="loading"
+                    class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
+                >
+                    <option value="15">Últimos 15 dias</option>
+                    <option value="30">Últimos 30 dias</option>
+                    <option value="60">Últimos 60 dias</option>
+                </select>
+                <div v-if="loading" class="text-sm text-gray-400">
+                    Carregando...
+                </div>
+            </div>
+
             <!-- Metrics Cards -->
-            <div class="grid auto-rows-min gap-4 md:grid-cols-3">
+            <div class="grid auto-rows-min gap-4 md:grid-cols-2">
                 <MetricCard
                     :value="metrics.total_orders || 0"
                     label="Total de Pedidos"
                     :icon="Package"
-                />
-                <MetricCard
-                    :value="metrics.pending_orders || 0"
-                    label="Aguardando"
-                    :icon="ShoppingCart"
                 />
                 <MetricCard
                     :value="metrics.completed_orders || 0"
