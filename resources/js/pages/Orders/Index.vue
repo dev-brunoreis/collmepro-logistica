@@ -5,6 +5,9 @@ import { ref, onMounted, onUnmounted, watch, reactive } from 'vue';
 import { Search, Filter, Eye, CheckCircle, XCircle, Package, Truck, ExternalLink, RefreshCw, AlertTriangle, ZoomIn, Download, Loader2 } from 'lucide-vue-next';
 import axios from '@/lib/axios';
 import { useOrderBroadcasting } from '@/composables/useBroadcasting';
+import { BreadcrumbItem } from '@/types';
+import { dashboard } from '@/routes';
+import orders from '@/routes/orders';
 // import orders from '@/routes/orders'; // Removed as file doesn't exist
 
 interface OrderStatus {
@@ -116,6 +119,12 @@ interface Props {
 const props = defineProps<Props>();
 const page = usePage();
 const user = page.props.auth.user as User;
+const breadcrumbs: BreadcrumbItem[] = [
+    {
+        title: 'Pedidos',
+        href: orders.index.url(),
+    }
+];
 
 // Broadcasting setup
 const { isConnected, lastUpdate, connectToOrdersChannel } = useOrderBroadcasting();
@@ -530,7 +539,7 @@ const getCurrentPerPage = () => {
 <template>
     <Head title="Pedidos" />
 
-    <AppLayout>
+    <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">

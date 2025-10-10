@@ -12,7 +12,7 @@ import axios from 'axios';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Dashboard',
+        title: 'Painel',
         href: dashboard().url,
     },
 ];
