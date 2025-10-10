@@ -242,6 +242,21 @@ class KanbanController extends Controller
             return 'checkout';
         }
 
+        // Check for tracking code FIRST (from order_summaries.tracking_code or invoice/raw data)
+        $hasTracking = false;
+        if ($order->tracking_code && $order->tracking_code !== '') {
+            $hasTracking = true;
+        } elseif ($order->invoice && $order->invoice->tracking) {
+            $hasTracking = true;
+        } elseif ($order->raw_invoice_data && isset($order->raw_invoice_data['tracking'])) {
+            $hasTracking = true;
+        }
+
+        // If has tracking code but no picking status, goes to etiqueta
+        if ($hasTracking && (!$orderStatus || !$orderStatus->picking)) {
+            return 'etiqueta';
+        }
+
         // Check for invoice number (from invoice table or raw data)
         $hasInvoice = false;
         if ($order->invoice && $order->invoice->numero) {
@@ -253,19 +268,6 @@ class KanbanController extends Controller
         // If has invoice but no picking status, goes to faturamento
         if ($hasInvoice && (!$orderStatus || !$orderStatus->picking)) {
             return 'faturamento';
-        }
-
-        // Check for tracking code (from invoice table or raw data)
-        $hasTracking = false;
-        if ($order->invoice && $order->invoice->tracking) {
-            $hasTracking = true;
-        } elseif ($order->raw_invoice_data && isset($order->raw_invoice_data['tracking'])) {
-            $hasTracking = true;
-        }
-
-        // If has tracking code but no picking status, goes to etiqueta
-        if ($hasTracking && (!$orderStatus || !$orderStatus->picking)) {
-            return 'etiqueta';
         }
 
         // Default to pedidos_emitidos for new orders
