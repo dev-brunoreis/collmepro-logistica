@@ -39,7 +39,7 @@ class UpdateCarrierDisplayCommand extends Command
             $this->warn('Running in DRY-RUN mode - no changes will be made');
         }
 
-        $totalRecords = OrderSummary::whereNotNull('raw_tracking_data')->count();
+        $totalRecords = OrderSummary::whereHas('invoice.tracking')->count();
         $this->info("Total records to process: {$totalRecords}");
 
         $processedCount = 0;
@@ -50,7 +50,8 @@ class UpdateCarrierDisplayCommand extends Command
         $progressBar = $this->output->createProgressBar($totalRecords);
         $progressBar->start();
 
-        OrderSummary::whereNotNull('raw_tracking_data')
+        OrderSummary::whereHas('invoice.tracking')
+            ->with(['invoice.tracking'])
             ->chunkById($chunkSize, function ($orders) use (
                 &$processedCount,
                 &$updatedCount,
@@ -61,8 +62,9 @@ class UpdateCarrierDisplayCommand extends Command
             ) {
                 foreach ($orders as $order) {
                     try {
-                        // Extract service type from raw_tracking_data
-                        $serviceType = CarrierService::extractServiceType($order->raw_tracking_data);
+                        // Extract service type from tracking relationship
+                        $firstTracking = $order->invoice?->tracking->first();
+                        $serviceType = $firstTracking ? CarrierService::extractServiceType($firstTracking->raw_data) : null;
                         
                         // Get formatted carrier display
                         $newCarrierDisplay = CarrierService::getCarrierDisplay($serviceType);

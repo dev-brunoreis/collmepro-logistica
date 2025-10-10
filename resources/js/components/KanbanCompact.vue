@@ -374,7 +374,6 @@ interface Order {
   invoice_number?: string
   items_quantity: number
   order_status: any
-  raw_invoice_data?: any
   tracking_code?: string
   rastreamento?: {
     codigo?: string

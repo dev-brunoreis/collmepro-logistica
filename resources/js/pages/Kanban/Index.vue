@@ -219,7 +219,8 @@
     </div>
 
     <!-- Load Older Orders Button -->
-    <div v-if="!loading && stats.loaded < stats.total_all" class="load-more-container mt-6 text-center">
+    <!-- TODO: Uncomment when backend route is implemented -->
+    <!-- <div v-if="!loading && stats.loaded < stats.total_all" class="load-more-container mt-6 text-center">
       <button 
         @click="loadOlderOrders"
         :disabled="loadingOlderOrders"
@@ -233,7 +234,7 @@
           Load All Orders ({{ stats.total_all - stats.loaded }} more)
         </span>
       </button>
-    </div>
+    </div> -->
   </div>
 </template>
 
@@ -256,7 +257,6 @@ interface Order {
   items_quantity: number
   tracking_code?: string
   order_status?: any
-  raw_invoice_data?: any
 }
 
 interface KanbanData {
@@ -506,77 +506,79 @@ const getMovementHistory = (order: Order, statusType: string): string => {
   return '';
 }
 
-// Fetch orders asynchronously
-const fetchOrdersAsync = async (daysBack: number = 30, loadAll: boolean = false) => {
-  try {
-    if (loadAll) {
-      loadingOlderOrders.value = true
-    } else {
-      loading.value = true
-    }
-    
-    const response = await axios.get('/dashboard/painel/orders', {
-      params: {
-        days_back: daysBack,
-        load_all: loadAll
-      }
-    })
-    
-    const data = response.data
-    
-    // Update kanban data with received orders
-    kanbanData.value = {
-      pedidos_emitidos: data.kanbanData.pedidos_emitidos || [],
-      faturamento: data.kanbanData.faturamento || [],
-      checkout: data.kanbanData.checkout || [],
-      embalagem: data.kanbanData.embalagem || [],
-      etiqueta: data.kanbanData.etiqueta || [],
-      coleta_aguardando: data.kanbanData.coleta_aguardando || [],
-      coleta_realizada: data.kanbanData.coleta_realizada || [],
-    }
-    
-    // Update stats
-    stats.value = {
-      total: data.stats.total || 0,
-      total_all: data.stats.total_all || 0,
-      loaded: data.stats.loaded || 0,
-      pedidos_emitidos: data.stats.pedidos_emitidos || 0,
-      faturamento: data.stats.faturamento || 0,
-      checkout: data.stats.checkout || 0,
-      embalagem: data.stats.embalagem || 0,
-      etiqueta: data.stats.etiqueta || 0,
-      coleta_aguardando: data.stats.coleta_aguardando || 0,
-      coleta_realizada: data.stats.coleta_realizada || 0,
-    }
-    
-    // Update progress
-    loadingProgress.value = data.stats.loaded || 0
-    totalOrders.value = data.stats.total_all || 0
-    
-    console.log('Kanban data loaded:', {
-      loaded: data.stats.loaded,
-      total: data.stats.total_all,
-      columns: Object.keys(kanbanData.value).map(key => ({
-        name: key,
-        count: kanbanData.value[key as keyof KanbanData]?.length || 0
-      }))
-    })
-  } catch (error) {
-    console.error('Error fetching kanban orders:', error)
-  } finally {
-    loading.value = false
-    loadingOlderOrders.value = false
-  }
-}
+// TODO: Implement async order fetching when backend route is ready
+// Route /dashboard/painel/orders needs to be implemented in KanbanController
+// const fetchOrdersAsync = async (daysBack: number = 30, loadAll: boolean = false) => {
+//   try {
+//     if (loadAll) {
+//       loadingOlderOrders.value = true
+//     } else {
+//       loading.value = true
+//     }
+//     
+//     const response = await axios.get('/dashboard/painel/orders', {
+//       params: {
+//         days_back: daysBack,
+//         load_all: loadAll
+//       }
+//     })
+//     
+//     const data = response.data
+//     
+//     // Update kanban data with received orders
+//     kanbanData.value = {
+//       pedidos_emitidos: data.kanbanData.pedidos_emitidos || [],
+//       faturamento: data.kanbanData.faturamento || [],
+//       checkout: data.kanbanData.checkout || [],
+//       embalagem: data.kanbanData.embalagem || [],
+//       etiqueta: data.kanbanData.etiqueta || [],
+//       coleta_aguardando: data.kanbanData.coleta_aguardando || [],
+//       coleta_realizada: data.kanbanData.coleta_realizada || [],
+//     }
+//     
+//     // Update stats
+//     stats.value = {
+//       total: data.stats.total || 0,
+//       total_all: data.stats.total_all || 0,
+//       loaded: data.stats.loaded || 0,
+//       pedidos_emitidos: data.stats.pedidos_emitidos || 0,
+//       faturamento: data.stats.faturamento || 0,
+//       checkout: data.stats.checkout || 0,
+//       embalagem: data.stats.embalagem || 0,
+//       etiqueta: data.stats.etiqueta || 0,
+//       coleta_aguardando: data.stats.coleta_aguardando || 0,
+//       coleta_realizada: data.stats.coleta_realizada || 0,
+//     }
+//     
+//     // Update progress
+//     loadingProgress.value = data.stats.loaded || 0
+//     totalOrders.value = data.stats.total_all || 0
+//     
+//     console.log('Kanban data loaded:', {
+//       loaded: data.stats.loaded,
+//       total: data.stats.total_all,
+//       columns: Object.keys(kanbanData.value).map(key => ({
+//         name: key,
+//         count: kanbanData.value[key as keyof KanbanData]?.length || 0
+//       }))
+//     })
+//   } catch (error) {
+//     console.error('Error fetching kanban orders:', error)
+//   } finally {
+//     loading.value = false
+//     loadingOlderOrders.value = false
+//   }
+// }
 
 // Load older orders (all orders)
-const loadOlderOrders = async () => {
-  await fetchOrdersAsync(0, true)
-}
+// const loadOlderOrders = async () => {
+//   await fetchOrdersAsync(0, true)
+// }
 
 onMounted(() => {
   // Fetch orders on component mount
-  fetchOrdersAsync()
+  // TODO: Uncomment when fetchOrdersAsync is implemented
+  // fetchOrdersAsync()
 })
 </script>
 

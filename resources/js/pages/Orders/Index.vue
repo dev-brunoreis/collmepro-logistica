@@ -61,8 +61,8 @@ interface Order {
     nota_fiscal_id?: number;
     invoice_id?: string;
     invoice_chave_acesso?: string;
-    invoice?: any; // raw_invoice_data
-    tracking?: any; // raw_tracking_data
+    invoice?: any; // Invoice relationship
+    tracking?: any; // Tracking relationship array
     carrier?: string;
     has_tracking_code?: boolean;
     tracking_code?: string;
@@ -74,8 +74,6 @@ interface Order {
     volume?: number;
     weight?: number;
     raw_order_data?: any;
-    raw_invoice_data?: any;
-    raw_tracking_data?: any;
 }
 
 interface Props {
@@ -284,8 +282,8 @@ const clearFilters = () => {
 
 const isStatusButtonDisabled = (order: Order, action: string): boolean => {
     const status = order.order_status;
-    const hasInvoice = !!(order.invoice_id || order.raw_invoice_data?.numero);
-    const hasTracking = !!(order.tracking_code || order.raw_tracking_data?.codigo_rastreamento);
+    const hasInvoice = !!(order.invoice_id || order.invoice?.numero);
+    const hasTracking = !!(order.tracking_code || (order.tracking && order.tracking.length > 0));
     
     switch (action) {
         case 'picking':
@@ -314,8 +312,8 @@ const isStatusButtonDisabled = (order: Order, action: string): boolean => {
 
 const getStatusButtonTooltip = (order: Order, action: string): string => {
     const status = order.order_status;
-    const hasInvoice = !!(order.invoice_id || order.raw_invoice_data?.numero);
-    const hasTracking = !!(order.tracking_code || order.raw_tracking_data?.codigo_rastreamento);
+    const hasInvoice = !!(order.invoice_id || order.invoice?.numero);
+    const hasTracking = !!(order.tracking_code || (order.tracking && order.tracking.length > 0));
     
     switch (action) {
         case 'picking':
@@ -433,9 +431,9 @@ onUnmounted(() => {
 
 
 const getSystemBadgeClass = (order: Order) => {
-    // Try to find the system by loja_id from raw_invoice_data first
-    if (order.raw_invoice_data?.loja?.id) {
-        const lojaId = order.raw_invoice_data.loja.id.toString();
+    // Try to find the system by loja_id from invoice first
+    if (order.invoice?.loja_id) {
+        const lojaId = order.invoice.loja_id.toString();
         const systemConfig = props.systems_with_colors?.[lojaId];
         if (systemConfig) {
             return systemConfig.color;
@@ -816,8 +814,8 @@ const getCurrentPerPage = () => {
                                 <td class="px-4 py-3 text-center">
                                     <div v-if="order.has_tracking_code" class="flex items-center gap-2">
                                         <a 
-                                            v-if="order.raw_tracking_data?.rastreamento?.url" 
-                                            :href="order.raw_tracking_data?.rastreamento?.url" 
+                                            v-if="order.tracking_url" 
+                                            :href="order.tracking_url" 
                                             target="_blank" 
                                             class="inline-flex items-center gap-1 font-medium rounded-md px-1 py-0.5 text-xs hover:bg-sidebar-border/70"
                                             title="Abrir rastreamento"
@@ -834,7 +832,7 @@ const getCurrentPerPage = () => {
                                 </td>
                                 <td class="px-4 py-3 text-center">
                                     <div class="flex items-center justify-center gap-2">
-                                        <span v-if="order.raw_tracking_data?.rastreamento?.descricao" class="text-sm">{{ order.raw_tracking_data?.rastreamento?.descricao }}</span>
+                                        <span v-if="order.tracking && order.tracking[0]?.descricao" class="text-sm">{{ order.tracking[0].descricao }}</span>
                                         <span v-else class="text-sm text-muted-foreground">-</span>
                                     </div>
                                 </td>

@@ -202,8 +202,6 @@ class DashboardController extends Controller
             $invoiceNumber = null;
             if ($order->invoice && $order->invoice->numero) {
                 $invoiceNumber = $order->invoice->numero;
-            } elseif ($order->raw_invoice_data && isset($order->raw_invoice_data['numero'])) {
-                $invoiceNumber = $order->raw_invoice_data['numero'];
             }
             
             // Get items quantity
@@ -212,8 +210,8 @@ class DashboardController extends Controller
                 $itemsQuantity = count($order->orderData->itens);
             } elseif ($order->raw_order_data && isset($order->raw_order_data['itens'])) {
                 $itemsQuantity = count($order->raw_order_data['itens']);
-            } elseif ($order->raw_invoice_data && isset($order->raw_invoice_data['itens'])) {
-                $itemsQuantity = count($order->raw_invoice_data['itens']);
+            } elseif ($order->invoice && $order->invoice->itens) {
+                $itemsQuantity = count($order->invoice->itens);
             }
             
             $kanbanData[$status][] = [
@@ -291,8 +289,6 @@ class DashboardController extends Controller
             $invoiceNumber = null;
             if ($order->invoice && $order->invoice->numero) {
                 $invoiceNumber = $order->invoice->numero;
-            } elseif ($order->raw_invoice_data && isset($order->raw_invoice_data['numero'])) {
-                $invoiceNumber = $order->raw_invoice_data['numero'];
             }
             
             // Get items quantity
@@ -301,8 +297,8 @@ class DashboardController extends Controller
                 $itemsQuantity = count($order->orderData->itens);
             } elseif ($order->raw_order_data && isset($order->raw_order_data['itens'])) {
                 $itemsQuantity = count($order->raw_order_data['itens']);
-            } elseif ($order->raw_invoice_data && isset($order->raw_invoice_data['itens'])) {
-                $itemsQuantity = count($order->raw_invoice_data['itens']);
+            } elseif ($order->invoice && $order->invoice->itens) {
+                $itemsQuantity = count($order->invoice->itens);
             }
 
             // Get tracking code
@@ -312,8 +308,6 @@ class DashboardController extends Controller
             } elseif ($order->invoice && $order->invoice->tracking()->count() > 0) {
                 $firstTracking = $order->invoice->tracking()->first();
                 $trackingCode = $firstTracking ? $firstTracking->codigo_rastreamento : null;
-            } elseif ($order->raw_invoice_data && isset($order->raw_invoice_data['tracking']) && !empty($order->raw_invoice_data['tracking'])) {
-                $trackingCode = $order->raw_invoice_data['tracking'];
             }
             
             // Source is already mapped correctly from SystemMappingService
@@ -371,15 +365,11 @@ class DashboardController extends Controller
             $hasTracking = true;
         } elseif ($order->invoice && $order->invoice->tracking()->count() > 0) {
             $hasTracking = true;
-        } elseif ($order->raw_invoice_data && isset($order->raw_invoice_data['tracking']) && !empty($order->raw_invoice_data['tracking'])) {
-            $hasTracking = true;
         }
 
-        // Check for invoice number (from invoice table or raw data)
+        // Check for invoice number
         $hasInvoice = false;
         if ($order->invoice && $order->invoice->numero) {
-            $hasInvoice = true;
-        } elseif ($order->raw_invoice_data && isset($order->raw_invoice_data['numero'])) {
             $hasInvoice = true;
         }
 

@@ -45,7 +45,7 @@ class OrderController extends Controller
      */
     public function index(Request $request)
     {
-        $query = OrderSummary::with(['orderStatus']);
+        $query = OrderSummary::with(['orderStatus', 'invoice.tracking']);
 
         // Search filter - improved to include seller name, tracking and NFE number
         if ($request->filled('search')) {
@@ -56,9 +56,10 @@ class OrderController extends Controller
                   ->orWhere('bling_id', 'like', "%{$search}%")
                   ->orWhere('tracking_code', 'like', "%{$search}%")
                   ->orWhereJsonContains('raw_order_data->vendedor->nome', $search)
-                  ->orWhereJsonContains('raw_invoice_data->numero', $search)
-                  ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(raw_invoice_data, '$.numero')) LIKE ?", ["%{$search}%"])
-                  ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(raw_order_data, '$.vendedor.nome')) LIKE ?", ["%{$search}%"]);
+                  ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(raw_order_data, '$.vendedor.nome')) LIKE ?", ["%{$search}%"])
+                  ->orWhereHas('invoice', function ($q) use ($search) {
+                      $q->where('numero', 'like', "%{$search}%");
+                  });
             });
         }
 
@@ -133,15 +134,17 @@ class OrderController extends Controller
                 
                 if ($targetDescription) {
                     $query->where(function ($q) use ($targetDescription) {
-                        $q->whereJsonContains('raw_tracking_data->rastreamento->descricao', $targetDescription)
-                          ->orWhereJsonContains('raw_invoice_data->rastreamento->descricao', $targetDescription)
-                          ->orWhereJsonContains('raw_invoice_data->transporte->rastreamento->descricao', $targetDescription);
+                        $q->whereHas('invoice.tracking', function ($q) use ($targetDescription) {
+                            $q->where('descricao', $targetDescription);
+                        });
                     });
                 }
             } elseif (str_starts_with($trackingStatus, 'situacao_')) {
                 // Filter by specific tracking situacao (numeric code)
                 $situacao = (int) str_replace('situacao_', '', $trackingStatus);
-                $query->whereJsonContains('raw_tracking_data->rastreamento->situacao', $situacao);
+                $query->whereHas('invoice.tracking', function ($q) use ($situacao) {
+                    $q->where('situacao', $situacao);
+                });
             }
         }
 
@@ -167,20 +170,15 @@ class OrderController extends Controller
 
         return Inertia::render('Orders/Index', [
             'orders' => $orders->through(function ($order) {
-                // Get tracking data from raw_tracking_data or direct fields
-                $trackingData = $order->raw_tracking_data;
+                // Get first tracking record from relationship
+                $firstTracking = $order->invoice?->tracking->first();
                 
-                // Check for tracking code in multiple sources
+                // Check for tracking code from direct field or relationship
                 $trackingCode = $order->tracking_code;
                 
-                // Fallback to raw_tracking_data if tracking_code is empty
-                if (empty($trackingCode) && $order->raw_tracking_data && isset($order->raw_tracking_data['rastreamento']['codigo'])) {
-                    $trackingCode = $order->raw_tracking_data['rastreamento']['codigo'];
-                }
-                
-                // Fallback to raw_invoice_data if still empty
-                if (empty($trackingCode) && $order->raw_invoice_data && isset($order->raw_invoice_data['rastreamento']['codigo'])) {
-                    $trackingCode = $order->raw_invoice_data['rastreamento']['codigo'];
+                // Fallback to tracking relationship if tracking_code is empty
+                if (empty($trackingCode) && $firstTracking) {
+                    $trackingCode = $firstTracking->codigo_rastreamento;
                 }
                 
                 $hasTrackingCode = !empty($trackingCode);
@@ -194,35 +192,25 @@ class OrderController extends Controller
                 $invoiceId = null;
 
                 if ($trackingCode && $logisticsProvider) {
-                    $trackingData = $order->raw_invoice_data;
-
-                    if(isset($trackingData['rastreamento']['url'])) {
-                        $trackingUrl = $trackingData['rastreamento']['url'];
+                    // Get tracking URL from relationship
+                    if ($firstTracking) {
+                        $trackingUrl = $firstTracking->url_rastreamento;
                     }
                     
-                    if(isset($order->raw_invoice_data['transporte']['transportador']['nome'])) {
-                        $carrier = $order->raw_invoice_data['transporte']['transportador']['nome'];
-                    }
-
-                    if(isset($order->raw_invoice_data['numero'])) {
-                        $invoiceId = $order->raw_invoice_data['numero'];
+                    // Get carrier from invoice
+                    if ($order->invoice) {
+                        $carrier = $order->invoice->transportador_nome;
+                        $invoiceId = $order->invoice->numero;
                     }
                 }
                 
-                // Get tracking status from raw data
+                // Get tracking status from relationship
                 $trackingStatus = null;
-                if ($trackingData && isset($trackingData['rastreamento']['situacao'])) {
-                    $statusCode = $trackingData['rastreamento']['situacao'];
-                    $trackingStatus = $this->mapTrackingStatus($statusCode);
+                if ($firstTracking && $firstTracking->situacao) {
+                    $trackingStatus = $this->mapTrackingStatus($firstTracking->situacao);
                 }
                 
-                // Also check invoice data for tracking status
-                if (!$trackingStatus && isset($order->raw_invoice_data['rastreamento']['situacao'])) {
-                    $statusCode = $order->raw_invoice_data['rastreamento']['situacao'];
-                    $trackingStatus = $this->mapTrackingStatus($statusCode);
-                }
-                
-                // Define source based on loja_id from raw_invoice_data
+                // Define source based on loja_id from invoice relationship
                 $source = $this->determineSourceFromInvoiceData($order);
 
                 return [
@@ -248,20 +236,17 @@ class OrderController extends Controller
                     'created_at' => $order->created_at,
                     'updated_at' => $order->updated_at,
                     'raw_order_data' => $order->raw_order_data,
-                    'raw_invoice_data' => $order->raw_invoice_data,
-                    'raw_tracking_data' => $order->raw_tracking_data,
                     'logistics_provider' => $logisticsProvider,
                     'service_type' => $serviceType,
                     'volume' => $order->volume,
                     'weight' => $order->weight,
                     'order_status' => $order->orderStatus,
-                    'tracking_data' => $trackingData,
                     'has_tracking_code' => $hasTrackingCode,
                     'tracking_code' => $trackingCode,
                     'tracking_url' => $trackingUrl,
                     'tracking_status' => $trackingStatus,
-                    'invoice' => $order->raw_invoice_data,
-                    'tracking' => $order->raw_tracking_data
+                    'invoice' => $order->invoice,
+                    'tracking' => $order->invoice?->tracking->toArray()
                 ];
             }),
             'filters' => $request->only([
@@ -299,17 +284,13 @@ class OrderController extends Controller
         // Load status history (if exists)
         $statusHistory = collect([]);
 
-        // Extract tracking information from raw data
+        // Extract tracking information from relationships
         $trackingCode = $order->tracking_code;
+        $firstTracking = $trackingData?->first();
         
-        // Fallback to raw_tracking_data if tracking_code is empty
-        if (empty($trackingCode) && $order->raw_tracking_data && isset($order->raw_tracking_data['rastreamento']['codigo'])) {
-            $trackingCode = $order->raw_tracking_data['rastreamento']['codigo'];
-        }
-        
-        // Fallback to raw_invoice_data if still empty
-        if (empty($trackingCode) && $order->raw_invoice_data && isset($order->raw_invoice_data['rastreamento']['codigo'])) {
-            $trackingCode = $order->raw_invoice_data['rastreamento']['codigo'];
+        // Fallback to tracking relationship if tracking_code is empty
+        if (empty($trackingCode) && $firstTracking) {
+            $trackingCode = $firstTracking->codigo_rastreamento;
         }
 
         // Use CarrierService to get formatted carrier display
@@ -317,8 +298,8 @@ class OrderController extends Controller
 
         $trackingUrl = null;
         
-        if ($trackingCode && $logisticsProvider && $order->raw_tracking_data) {
-            $trackingUrl = $order->raw_tracking_data['rastreamento']['url'] ?? null;
+        if ($trackingCode && $logisticsProvider && $firstTracking) {
+            $trackingUrl = $firstTracking->url_rastreamento;
         }
         
         // Define source based on loja_id from raw_invoice_data
@@ -359,8 +340,6 @@ class OrderController extends Controller
                 
                 // Raw data from Bling API
                 'raw_order_data' => $order->raw_order_data,
-                'raw_invoice_data' => $order->raw_invoice_data,
-                'raw_tracking_data' => $order->raw_tracking_data,
                 
                 // Legacy fields for compatibility
                 'order_data' => $order->orderData,
@@ -558,70 +537,26 @@ class OrderController extends Controller
     }
 
     /**
-     * Get all tracking descriptions from orders
+     * Get all tracking descriptions from tracking table
      */
     private function getAllTrackingDescriptions()
     {
-        $descriptions = collect();
-        
         try {
-            // 1. From raw_tracking_data
-            $trackingData = OrderSummary::whereNotNull('raw_tracking_data')
-                ->get()
-                ->pluck('raw_tracking_data')
-                ->filter()
-                ->map(function ($data) {
-                    if (is_array($data) && isset($data['rastreamento']['descricao'])) {
-                        return $data['rastreamento']['descricao'];
-                    }
-                    return null;
-                })
-                ->filter()
-                ->unique();
-            
-            // 2. From raw_invoice_data (rastreamento)
-            $invoiceTrackingData = OrderSummary::whereNotNull('raw_invoice_data')
-                ->get()
-                ->pluck('raw_invoice_data')
-                ->filter()
-                ->map(function ($data) {
-                    if (is_array($data) && isset($data['rastreamento']['descricao'])) {
-                        return $data['rastreamento']['descricao'];
-                    }
-                    return null;
-                })
-                ->filter()
-                ->unique();
-            
-            // 3. From raw_invoice_data (transporte)
-            $invoiceTransportData = OrderSummary::whereNotNull('raw_invoice_data')
-                ->get()
-                ->pluck('raw_invoice_data')
-                ->filter()
-                ->map(function ($data) {
-                    if (is_array($data) && isset($data['transporte']['rastreamento']['descricao'])) {
-                        return $data['transporte']['rastreamento']['descricao'];
-                    }
-                    return null;
-                })
-                ->filter()
-                ->unique();
-            
-            // Combine all descriptions
-            $allDescriptions = $trackingData
-                ->merge($invoiceTrackingData)
-                ->merge($invoiceTransportData)
+            // Get unique descriptions from tracking table
+            $descriptions = \App\Models\Tracking::whereNotNull('descricao')
+                ->where('descricao', '!=', '')
+                ->distinct()
+                ->pluck('descricao')
                 ->filter()
                 ->unique()
                 ->sort()
-                ->map(function ($descricao) {
+                ->mapWithKeys(function ($descricao) {
                     // Create a safe key from the description
                     $key = 'descricao_' . md5($descricao);
                     return [$key => $descricao];
-                })
-                ->collapse();
+                });
                 
-            return $allDescriptions->toArray();
+            return $descriptions->toArray();
         } catch (\Exception $e) {
             return [];
         }
@@ -682,13 +617,13 @@ class OrderController extends Controller
     }
 
     /**
-     * Determine source based on loja_id from raw_invoice_data
+     * Determine source based on loja_id from invoice relationship
      */
     private function determineSourceFromInvoiceData($order): string
     {
-        // Check if raw_invoice_data exists and has loja_id
-        if ($order->raw_invoice_data && isset($order->raw_invoice_data['loja']['id'])) {
-            $lojaId = (string) $order->raw_invoice_data['loja']['id'];
+        // Check if invoice exists and has loja_id
+        if ($order->invoice && $order->invoice->loja_id) {
+            $lojaId = (string) $order->invoice->loja_id;
             $systemsMap = $this->getSystemsMap();
             
             if (isset($systemsMap[$lojaId])) {

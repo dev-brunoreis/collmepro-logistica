@@ -41,8 +41,6 @@ erDiagram
         decimal volume
         decimal weight
         json raw_order_data
-        json raw_invoice_data
-        json raw_tracking_data
         timestamp created_at
         timestamp updated_at
     }
@@ -268,5 +266,7 @@ erDiagram
 - `order_statuses.packing_marked_by` stores username as string (not FK)
 - `order_statuses.picked_up_marked_by` stores username as string (not FK)
 - All tables include `created_at` and `updated_at` timestamps
-- JSON fields store raw API data for complete audit trail
+- `raw_order_data` in `order_summary` stores original order data from Bling
+- `raw_data` in `invoices` stores complete invoice data for audit trail
+- `raw_data` in `tracking` stores complete tracking data for audit trail
 - `tracking` table includes sync management fields for external API integration

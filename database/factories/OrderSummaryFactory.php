@@ -49,8 +49,6 @@ class OrderSummaryFactory extends Factory
             'volume' => null,
             'weight' => null,
             'raw_order_data' => null,
-            'raw_invoice_data' => null,
-            'raw_tracking_data' => null,
         ];
     }
 

@@ -48,8 +48,6 @@ class OrderSummary extends Model
         'volume',
         'weight',
         'raw_order_data',
-        'raw_invoice_data',
-        'raw_tracking_data',
     ];
 
     protected $casts = [
@@ -64,8 +62,6 @@ class OrderSummary extends Model
         'volume' => 'decimal:2',
         'weight' => 'decimal:2',
         'raw_order_data' => 'array',
-        'raw_invoice_data' => 'array',
-        'raw_tracking_data' => 'array',
     ];
 
     /**

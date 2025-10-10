@@ -296,6 +296,69 @@ class BlingSyncJob implements ShouldQueue
     }
 
     /**
+     * Map Bling invoice data to Invoice model
+     */
+    private function mapBlingInvoiceToInvoice(array $blingInvoice, int $orderSummaryId): array
+    {
+        $contato = $blingInvoice['contato'] ?? [];
+        $endereco = $contato['endereco'] ?? [];
+        $transporte = $blingInvoice['transporte'] ?? [];
+        $transportador = $transporte['transportador'] ?? [];
+        $etiqueta = $transporte['etiqueta'] ?? [];
+        
+        return [
+            'order_summary_id' => $orderSummaryId,
+            'bling_id' => $blingInvoice['id'],
+            'tipo' => $blingInvoice['tipo'] ?? null,
+            'situacao' => $blingInvoice['situacao'] ?? null,
+            'numero' => $blingInvoice['numero'] ?? null,
+            'data_emissao' => $this->parseValidDate($blingInvoice['dataEmissao'] ?? null),
+            'data_operacao' => $this->parseValidDate($blingInvoice['dataOperacao'] ?? null),
+            'chave_acesso' => $blingInvoice['chaveAcesso'] ?? null,
+            'valor_nota' => (float) ($blingInvoice['valorNota'] ?? 0),
+            'valor_frete' => (float) ($blingInvoice['valorFrete'] ?? 0),
+            'xml' => $blingInvoice['xml'] ?? null,
+            'link_danfe' => $blingInvoice['linkDanfe'] ?? null,
+            'link_pdf' => $blingInvoice['linkPDF'] ?? null,
+            'optante_simples_nacional' => $blingInvoice['optanteSimplesNacional'] ?? false,
+            'numero_pedido_loja' => $blingInvoice['numeroPedidoLoja'] ?? null,
+            'serie' => $blingInvoice['serie'] ?? null,
+            'contato_id' => $contato['id'] ?? null,
+            'contato_nome' => $contato['nome'] ?? null,
+            'contato_documento' => $contato['numeroDocumento'] ?? null,
+            'contato_ie' => $contato['ie'] ?? null,
+            'contato_rg' => $contato['rg'] ?? null,
+            'contato_telefone' => $contato['telefone'] ?? null,
+            'contato_email' => $contato['email'] ?? null,
+            'contato_endereco' => $endereco['endereco'] ?? null,
+            'contato_numero' => $endereco['numero'] ?? null,
+            'contato_complemento' => $endereco['complemento'] ?? null,
+            'contato_bairro' => $endereco['bairro'] ?? null,
+            'contato_cep' => $endereco['cep'] ?? null,
+            'contato_municipio' => $endereco['municipio'] ?? null,
+            'contato_uf' => $endereco['uf'] ?? null,
+            'contato_pais' => $endereco['nomePais'] ?? null,
+            'natureza_operacao_id' => $blingInvoice['naturezaOperacao']['id'] ?? null,
+            'loja_id' => $blingInvoice['loja']['id'] ?? null,
+            'vendedor_id' => $blingInvoice['vendedor']['id'] ?? null,
+            'frete_por_conta' => $transporte['fretePorConta'] ?? null,
+            'transportador_nome' => $transportador['nome'] ?? null,
+            'transportador_documento' => $transportador['numeroDocumento'] ?? null,
+            'etiqueta_nome' => $etiqueta['nome'] ?? null,
+            'etiqueta_endereco' => $etiqueta['endereco'] ?? null,
+            'etiqueta_numero' => $etiqueta['numero'] ?? null,
+            'etiqueta_complemento' => $etiqueta['complemento'] ?? null,
+            'etiqueta_municipio' => $etiqueta['municipio'] ?? null,
+            'etiqueta_uf' => $etiqueta['uf'] ?? null,
+            'etiqueta_cep' => $etiqueta['cep'] ?? null,
+            'etiqueta_bairro' => $etiqueta['bairro'] ?? null,
+            'itens' => $blingInvoice['itens'] ?? [],
+            'parcelas' => $blingInvoice['parcelas'] ?? [],
+            'volumes' => $transporte['volumes'] ?? [],
+        ];
+    }
+
+    /**
      * Sync invoices and tracking for an order with complete data
      */
     private function syncInvoicesAndTrackingWithCompleteData(BlingService $blingService, OrderSummary $order, array $completeOrderData): void
@@ -322,9 +385,17 @@ class BlingSyncJob implements ShouldQueue
             return;
         }
 
-        // Store complete invoice data
+        // Create or update invoice record in invoices table
+        $invoiceData = $this->mapBlingInvoiceToInvoice($completeInvoiceData, $order->id);
+        $invoiceData['raw_data'] = $completeInvoiceData;
+        
+        $invoice = \App\Models\Invoice::updateOrCreate(
+            ['bling_id' => $invoiceId],
+            $invoiceData
+        );
+
+        // Update order timestamp
         $order->update([
-            'raw_invoice_data' => $completeInvoiceData,
             'external_updated_at' => now(),
         ]);
 
@@ -332,7 +403,13 @@ class BlingSyncJob implements ShouldQueue
         app(OrderHistoryService::class)->recordInvoiceSynced($order, [
             'invoice_id' => $invoiceId,
             'numero' => $completeInvoiceData['numero'] ?? null,
-            'valor_total' => $completeInvoiceData['valorTotal'] ?? null,
+            'valor_total' => $completeInvoiceData['valorNota'] ?? null,
+        ]);
+        
+        Log::debug('BlingSyncJob: Invoice created/updated', [
+            'invoice_id' => $invoice->id,
+            'bling_id' => $invoiceId,
+            'numero' => $invoice->numero
         ]);
 
         // Check for tracking data in invoice transport volumes
@@ -349,9 +426,8 @@ class BlingSyncJob implements ShouldQueue
                 if ($completeTrackingData) {
                     $trackingData = $completeTrackingData;
                     
-                    // Store complete tracking data
+                    // Store tracking summary data (full data in tracking table)
                     $order->update([
-                        'raw_tracking_data' => $completeTrackingData,
                         'tracking_code' => $completeTrackingData['rastreamento']['codigo'] ?? null,
                         'logistics_provider' => $this->extractLogisticsProvider($completeTrackingData, $completeInvoiceData),
                         'service_type' => $completeTrackingData['servico']['id'] ?? null,
@@ -478,24 +554,6 @@ class BlingSyncJob implements ShouldQueue
             ]);
             return null;
         }
-    }
-
-    /**
-     * Map Bling invoice data to our Invoice model
-     */
-    private function mapBlingInvoiceToInvoice(array $blingInvoice, int $orderId): array
-    {
-        return [
-            'order_id' => $orderId,
-            'bling_id' => $blingInvoice['id'],
-            'numero' => $blingInvoice['numero'],
-            'serie' => $blingInvoice['serie'] ?? null,
-            'data_emissao' => Carbon::parse($blingInvoice['dataEmissao']),
-            'valor_total' => (float) ($blingInvoice['valorTotal'] ?? 0),
-            'chave_acesso' => $blingInvoice['chaveAcesso'] ?? null,
-            'link_danfe' => $blingInvoice['linkDanfe'] ?? null,
-            'status' => $blingInvoice['situacao'] ?? 'unknown',
-        ];
     }
 
     /**
