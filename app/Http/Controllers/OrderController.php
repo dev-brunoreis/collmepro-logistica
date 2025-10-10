@@ -169,8 +169,21 @@ class OrderController extends Controller
             'orders' => $orders->through(function ($order) {
                 // Get tracking data from raw_tracking_data or direct fields
                 $trackingData = $order->raw_tracking_data;
-                $hasTrackingCode = !empty($order->tracking_code);
+                
+                // Check for tracking code in multiple sources
                 $trackingCode = $order->tracking_code;
+                
+                // Fallback to raw_tracking_data if tracking_code is empty
+                if (empty($trackingCode) && $order->raw_tracking_data && isset($order->raw_tracking_data['rastreamento']['codigo'])) {
+                    $trackingCode = $order->raw_tracking_data['rastreamento']['codigo'];
+                }
+                
+                // Fallback to raw_invoice_data if still empty
+                if (empty($trackingCode) && $order->raw_invoice_data && isset($order->raw_invoice_data['rastreamento']['codigo'])) {
+                    $trackingCode = $order->raw_invoice_data['rastreamento']['codigo'];
+                }
+                
+                $hasTrackingCode = !empty($trackingCode);
                
                 // Use CarrierService to get formatted carrier display
                 $logisticsProvider = CarrierService::getCarrierDisplay($order->service_type);
@@ -288,6 +301,16 @@ class OrderController extends Controller
 
         // Extract tracking information from raw data
         $trackingCode = $order->tracking_code;
+        
+        // Fallback to raw_tracking_data if tracking_code is empty
+        if (empty($trackingCode) && $order->raw_tracking_data && isset($order->raw_tracking_data['rastreamento']['codigo'])) {
+            $trackingCode = $order->raw_tracking_data['rastreamento']['codigo'];
+        }
+        
+        // Fallback to raw_invoice_data if still empty
+        if (empty($trackingCode) && $order->raw_invoice_data && isset($order->raw_invoice_data['rastreamento']['codigo'])) {
+            $trackingCode = $order->raw_invoice_data['rastreamento']['codigo'];
+        }
 
         // Use CarrierService to get formatted carrier display
         $logisticsProvider = CarrierService::getCarrierDisplay($order->service_type);        

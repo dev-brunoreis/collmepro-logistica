@@ -663,7 +663,7 @@ const getCurrentPerPage = () => {
                     <div class="text-sm text-muted-foreground">
                         Mostrando {{ props.orders.from || 0 }} a {{ props.orders.to || 0 }} de {{ props.orders.total || 0 }} resultados
                     </div>
-                    <div class="flex items-center gap-2">
+                    <!-- <div class="flex items-center gap-2">
                         <label class="text-sm text-muted-foreground">Por página:</label>
                         <select 
                             @change="updatePerPage"
@@ -676,7 +676,7 @@ const getCurrentPerPage = () => {
                             <option value="200">200</option>
                             <option value="500">500</option>
                         </select>
-                    </div>
+                    </div> -->
                 </div>
                 <div class="flex items-center gap-2">
                     <Link
@@ -814,18 +814,19 @@ const getCurrentPerPage = () => {
                                     <span v-else class="text-sm text-muted-foreground">-</span>
                                 </td>
                                 <td class="px-4 py-3 text-center">
-                                    <a 
-                                        v-if="order.raw_tracking_data?.rastreamento?.url" 
-                                        :href="order.raw_tracking_data?.rastreamento?.url" 
-                                        target="_blank" 
-                                        class="inline-flex items-center gap-1 font-medium rounded-md px-1 py-0.5 text-xs hover:bg-sidebar-border/70"
-                                        title="Abrir rastreamento"
-                                    >
                                     <div v-if="order.has_tracking_code" class="flex items-center gap-2">
-                                        <span class="text-sm">{{ order.tracking_code }}</span>
+                                        <a 
+                                            v-if="order.raw_tracking_data?.rastreamento?.url" 
+                                            :href="order.raw_tracking_data?.rastreamento?.url" 
+                                            target="_blank" 
+                                            class="inline-flex items-center gap-1 font-medium rounded-md px-1 py-0.5 text-xs hover:bg-sidebar-border/70"
+                                            title="Abrir rastreamento"
+                                        >
+                                            <span class="text-sm">{{ order.tracking_code }}</span>
                                             <ExternalLink class="h-3 w-3" />
-                                        </div>
-                                    </a>
+                                        </a>
+                                        <span v-else class="text-sm">{{ order.tracking_code }}</span>
+                                    </div>
                                     <span v-else class="text-sm text-muted-foreground">-</span>
                                 </td>
                                 <td class="px-4 py-3 text-center text-sm text-muted-foreground">
@@ -931,7 +932,7 @@ const getCurrentPerPage = () => {
                     <div class="text-sm text-muted-foreground">
                         Mostrando {{ props.orders.from || 0 }} a {{ props.orders.to || 0 }} de {{ props.orders.total || 0 }} resultados
                     </div>
-                    <div class="flex items-center gap-2">
+                    <!-- <div class="flex items-center gap-2">
                         <label class="text-sm text-muted-foreground">Por página:</label>
                         <select 
                             @change="updatePerPage"
@@ -944,7 +945,7 @@ const getCurrentPerPage = () => {
                             <option value="200">200</option>
                             <option value="500">500</option>
                         </select>
-                    </div>
+                    </div> -->
                 </div>
                 <div class="flex items-center gap-2">
                     <Link
