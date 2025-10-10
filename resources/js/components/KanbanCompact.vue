@@ -40,12 +40,12 @@
               <div class="p-2 bg-gray-800 h-full overflow-y-auto">
                 <div class="space-y-1">
                   <div v-for="order in getOrdersBySource('Collme Pro')" :key="order.id"
-                    class="bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 border border-blue-500 rounded p-1.5 cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-1 hover:shadow-lg text-white"
+                    class="bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 border border-blue-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white"
                     @click="handleAddOrder(order)">
                     <div class="flex flex-col gap-0.5">
                       <div class="flex justify-between items-center">
                         <span class="font-bold text-xs">{{ order.numero }}</span>
-                        <span class="text-xs font-semibold bg-white bg-opacity-20 px-1 py-0.5 rounded">{{
+                        <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{
                           getOrderSource(order) }}</span>
                       </div>
                       <div class="flex flex-col gap-0.5 text-xs">
@@ -73,12 +73,12 @@
               <div class="p-2 bg-gray-800 h-full overflow-y-auto">
                 <div class="space-y-1">
                   <div v-for="order in getOrdersBySource('Collme Beauty')" :key="order.id"
-                    class="bg-gradient-to-br from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 border border-yellow-400 rounded p-1.5 cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-1 hover:shadow-lg text-gray-900"
+                    class="bg-gradient-to-br from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 border border-yellow-400 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-gray-900"
                     @click="handleAddOrder(order)">
                     <div class="flex flex-col gap-0.5">
                       <div class="flex justify-between items-center">
                         <span class="font-bold text-xs">{{ order.numero }}</span>
-                        <span class="text-xs font-semibold bg-gray-200 bg-opacity-10 px-1 py-0.5 rounded">{{
+                        <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{
                           getOrderSource(order) }}</span>
                       </div>
                       <div class="flex flex-col gap-0.5 text-xs">
@@ -108,12 +108,11 @@
           <div class="p-2 bg-gray-800 h-full overflow-y-auto">
             <div class="space-y-1">
               <div v-for="order in kanbanData.faturamento || []" :key="order.id"
-                class="bg-gradient-to-br from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 border border-green-500 rounded p-1.5 cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-1 hover:shadow-lg text-white"
-                @click="handleAddOrder(order)">
+                class="bg-gradient-to-br from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 border border-emerald-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white">
                 <div class="flex flex-col gap-0.5">
                   <div class="flex justify-between items-center">
                     <span class="font-bold text-xs">{{ order.numero }}</span>
-                    <span class="text-xs font-semibold bg-white bg-opacity-20 px-1 py-0.5 rounded">{{
+                    <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{
                       getOrderSource(order) }}</span>
                   </div>
                   <div class="flex flex-col gap-0.5 text-xs">
@@ -141,12 +140,11 @@
           <div class="p-2 bg-gray-800 h-full overflow-y-auto">
             <div class="space-y-1">
               <div v-for="order in kanbanData.checkout || []" :key="order.id"
-                class="bg-gradient-to-br from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 border border-orange-500 rounded p-1.5 cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-1 hover:shadow-lg text-white"
-                @click="handleAddOrder(order)">
+                class="bg-gradient-to-br from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 border border-amber-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white">
                 <div class="flex flex-col gap-0.5">
                   <div class="flex justify-between items-center">
                     <span class="font-bold text-xs">{{ order.numero }}</span>
-                    <span class="text-xs font-semibold bg-white bg-opacity-20 px-1 py-0.5 rounded">{{
+                    <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{
                       getOrderSource(order) }}</span>
                   </div>
                   <div class="flex flex-col gap-0.5 text-xs">
@@ -176,12 +174,11 @@
           <div class="p-2 bg-gray-800 h-full overflow-y-auto">
             <div class="space-y-1">
               <div v-for="order in kanbanData.embalagem || []" :key="order.id"
-                class="bg-gradient-to-br from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border border-purple-500 rounded p-1.5 cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-1 hover:shadow-lg text-white"
-                @click="handleAddOrder(order)">
+                class="bg-gradient-to-br from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border border-purple-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white">
                 <div class="flex flex-col gap-0.5">
                   <div class="flex justify-between items-center">
                     <span class="font-bold text-xs">{{ order.numero }}</span>
-                    <span class="text-xs font-semibold bg-white bg-opacity-20 px-1 py-0.5 rounded">{{
+                    <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{
                       getOrderSource(order) }}</span>
                   </div>
                   <div class="flex flex-col gap-0.5 text-xs">
@@ -211,12 +208,11 @@
           <div class="p-2 bg-gray-800 h-full overflow-y-auto">
             <div class="space-y-1">
               <div v-for="order in kanbanData.etiqueta || []" :key="order.id"
-                class="bg-gradient-to-br from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 border border-teal-500 rounded p-1.5 cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-1 hover:shadow-lg text-white"
-                @click="handleAddOrder(order)">
+                class="bg-gradient-to-br from-cyan-600 to-cyan-700 hover:from-cyan-700 hover:to-cyan-800 border border-cyan-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white">
                 <div class="flex flex-col gap-0.5">
                   <div class="flex justify-between items-center">
                     <span class="font-bold text-xs">{{ order.numero }}</span>
-                    <span class="text-xs font-semibold bg-white bg-opacity-20 px-1 py-0.5 rounded">{{
+                    <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{
                       getOrderSource(order) }}</span>
                   </div>
                   <div class="flex flex-col gap-0.5 text-xs">
@@ -252,12 +248,12 @@
               <div class="p-2 bg-gray-800 h-full overflow-y-auto">
                 <div class="space-y-1">
                   <div v-for="order in kanbanData.coleta_aguardando || []" :key="order.id"
-                    class="bg-gradient-to-br from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 border border-orange-500 rounded p-1.5 cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-1 hover:shadow-lg text-white"
+                    class="bg-gradient-to-br from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 border border-red-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white"
                     @click="handleAddOrder(order)">
                     <div class="flex flex-col gap-0.5">
                       <div class="flex justify-between items-center">
                         <span class="font-bold text-xs">{{ order.numero }}</span>
-                        <span class="text-xs font-semibold bg-white bg-opacity-20 px-1 py-0.5 rounded">{{
+                        <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{
                           getOrderSource(order) }}</span>
                       </div>
                       <div class="flex flex-col gap-0.5 text-xs">
@@ -285,12 +281,12 @@
               <div class="p-2 bg-gray-800 h-full overflow-y-auto">
                 <div class="space-y-1">
                   <div v-for="order in kanbanData.coleta_realizada || []" :key="order.id"
-                    class="bg-gradient-to-br from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 border border-green-500 rounded p-1.5 cursor-pointer transition-all duration-200 hover:transform hover:-translate-y-1 hover:shadow-lg text-white"
+                    class="bg-gradient-to-br from-lime-600 to-lime-700 hover:from-lime-700 hover:to-lime-800 border border-lime-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white"
                     @click="handleAddOrder(order)">
                     <div class="flex flex-col gap-0.5">
                       <div class="flex justify-between items-center">
                         <span class="font-bold text-xs">{{ order.numero }}</span>
-                        <span class="text-xs font-semibold bg-white bg-opacity-20 px-1 py-0.5 rounded">{{
+                        <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{
                           getOrderSource(order) }}</span>
                       </div>
                       <div class="flex flex-col gap-0.5 text-xs">
@@ -320,7 +316,7 @@
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { Maximize, Plus } from 'lucide-vue-next'
 import { useOrderBroadcasting } from '@/composables/useBroadcasting'
-import { getSystemShortName } from '@/helpers/systemMapping'
+import { getSystemShortName, getSystemBadgeColor } from '@/helpers/systemMapping'
 import OrderCard from './OrderCard.vue'
 import axios from 'axios'
 

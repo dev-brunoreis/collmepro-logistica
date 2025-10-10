@@ -17,7 +17,7 @@ export const systemMapping: Record<string, SystemInfo> = {
   'Collme Beauty': {
     name: 'Collme Beauty',
     shortName: 'Beauty',
-    badgeColor: 'bg-yellow-100 text-yellow-800 border border-yellow-200',
+    badgeColor: 'bg-yellow-200 text-yellow-900 border border-yellow-300',
     indicatorColor: 'bg-yellow-500',
     gradientClasses: {
       from: 'from-yellow-400',
@@ -28,7 +28,7 @@ export const systemMapping: Record<string, SystemInfo> = {
   'Collme Pro': {
     name: 'Collme Pro',
     shortName: 'Pro',
-    badgeColor: 'bg-blue-100 text-blue-800 border border-blue-200',
+    badgeColor: 'bg-blue-200 text-blue-900 border border-blue-300',
     indicatorColor: 'bg-blue-500',
     gradientClasses: {
       from: 'from-blue-600',
@@ -39,18 +39,18 @@ export const systemMapping: Record<string, SystemInfo> = {
   'TikTok': {
     name: 'TikTok',
     shortName: 'TikTok',
-    badgeColor: 'bg-gray-100 text-gray-800 border border-gray-200',
-    indicatorColor: 'bg-gray-500',
+    badgeColor: 'bg-slate-200 text-slate-900 border border-slate-300',
+    indicatorColor: 'bg-slate-500',
     gradientClasses: {
-      from: 'from-gray-400',
-      to: 'to-gray-500',
-      border: 'border-gray-400'
+      from: 'from-slate-400',
+      to: 'to-slate-500',
+      border: 'border-slate-400'
     }
   },
   'Legacy Orders': {
     name: 'Legacy Orders',
     shortName: 'Legacy',
-    badgeColor: 'bg-gray-100 text-gray-800 border border-gray-200',
+    badgeColor: 'bg-gray-200 text-gray-900 border border-gray-300',
     indicatorColor: 'bg-gray-500',
     gradientClasses: {
       from: 'from-gray-600',
