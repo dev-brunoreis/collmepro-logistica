@@ -25,9 +25,9 @@
     <!-- Pedidos Emitidos Layout -->
     <div class="bg-gray-800 rounded-lg shadow-lg">
       <!-- Flex Layout - Responsive -->
-      <div class="flex min-h-96 gap-0 w-full">
+      <div class="flex gap-0 w-full" style="max-height: 600px;">
         <!-- Pedidos Emitidos Column (spans 2 columns) -->
-        <div class="border-r border-gray-600 flex-1" style="max-width: 25%; min-width: 200px;">
+        <div class="border-r border-gray-600 flex-1" style="max-width: 30%; min-width: 200px;">
           <div class="bg-gray-700 px-4 py-3 text-center border-b border-gray-600">
             <h3 class="text-white font-semibold">Pedidos Emitidos</h3>
           </div>
@@ -37,7 +37,7 @@
               <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
                 <h4 class="text-white text-xs font-medium">Collme Pro</h4>
               </div>
-              <div class="p-2 bg-gray-800 h-full overflow-y-auto">
+              <div class="p-2 bg-gray-800 overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
                 <div class="space-y-1">
                   <div v-for="order in getOrdersBySource('Collme Pro')" :key="order.id"
                     class="bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 border border-blue-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white"
@@ -70,7 +70,7 @@
               <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
                 <h4 class="text-white text-xs font-medium">Collme Beauty</h4>
               </div>
-              <div class="p-2 bg-gray-800 h-full overflow-y-auto">
+              <div class="p-2 bg-gray-800 overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
                 <div class="space-y-1">
                   <div v-for="order in getOrdersBySource('Collme Beauty')" :key="order.id"
                     class="bg-gradient-to-br from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 border border-yellow-400 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-gray-900"
@@ -105,7 +105,7 @@
           <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
             <h3 class="text-white text-xs font-semibold leading-tight">Faturamento/Emissão de NF</h3>
           </div>
-          <div class="p-2 bg-gray-800 h-full overflow-y-auto">
+          <div class="p-2 bg-gray-800 overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
             <div class="space-y-1">
               <div v-for="order in kanbanData.faturamento || []" :key="order.id"
                 class="bg-gradient-to-br from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 border border-emerald-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white">
@@ -137,7 +137,7 @@
           <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
             <h3 class="text-white text-xs font-semibold">Checkout (Picking)</h3>
           </div>
-          <div class="p-2 bg-gray-800 h-full overflow-y-auto">
+          <div class="p-2 bg-gray-800 overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
             <div class="space-y-1">
               <div v-for="order in kanbanData.checkout || []" :key="order.id"
                 class="bg-gradient-to-br from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 border border-amber-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white">
@@ -171,7 +171,7 @@
           <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
             <h3 class="text-white text-xs font-semibold">Embalagem (Packing)</h3>
           </div>
-          <div class="p-2 bg-gray-800 h-full overflow-y-auto">
+          <div class="p-2 bg-gray-800 overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
             <div class="space-y-1">
               <div v-for="order in kanbanData.embalagem || []" :key="order.id"
                 class="bg-gradient-to-br from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border border-purple-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white">
@@ -205,7 +205,7 @@
           <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
             <h3 class="text-white text-xs font-semibold">Etiqueta (Cód. Rastreio)</h3>
           </div>
-          <div class="p-2 bg-gray-800 h-full overflow-y-auto">
+          <div class="p-2 bg-gray-800 overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
             <div class="space-y-1">
               <div v-for="order in kanbanData.etiqueta || []" :key="order.id"
                 class="bg-gradient-to-br from-cyan-600 to-cyan-700 hover:from-cyan-700 hover:to-cyan-800 border border-cyan-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white">
@@ -235,7 +235,7 @@
         </div>
 
         <!-- Coleta Column -->
-        <div class="flex-1" style="max-width: 25%; min-width: 200px;">
+        <div class="flex-1" style="max-width: 30%; min-width: 200px;">
           <div class="bg-gray-700 px-4 py-3 text-center border-b border-gray-600">
             <h3 class="text-white font-semibold">Coleta</h3>
           </div>
@@ -245,7 +245,7 @@
               <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
                 <h4 class="text-white text-xs font-medium">Aguardando</h4>
               </div>
-              <div class="p-2 bg-gray-800 h-full overflow-y-auto">
+              <div class="p-2 bg-gray-800 overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
                 <div class="space-y-1">
                   <div v-for="order in kanbanData.coleta_aguardando || []" :key="order.id"
                     class="bg-gradient-to-br from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 border border-red-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white"
@@ -278,7 +278,7 @@
               <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
                 <h4 class="text-white text-xs font-medium">Realizada</h4>
               </div>
-              <div class="p-2 bg-gray-800 h-full overflow-y-auto">
+              <div class="p-2 bg-gray-800 overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
                 <div class="space-y-1">
                   <div v-for="order in kanbanData.coleta_realizada || []" :key="order.id"
                     class="bg-gradient-to-br from-lime-600 to-lime-700 hover:from-lime-700 hover:to-lime-800 border border-lime-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white"
@@ -767,6 +767,25 @@ onUnmounted(() => {
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Custom scrollbar for kanban columns */
+.kanban-column-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.kanban-column-scroll::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.kanban-column-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.kanban-column-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
 }
 
 /* Custom scrollbar */
