@@ -1,3 +1,7 @@
+# Increase PHP memory limit to handle large JSON data processing
+php_value memory_limit 256M
+php_value max_execution_time 300
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
