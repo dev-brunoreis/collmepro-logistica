@@ -733,28 +733,34 @@ const fetchOrdersAsync = async (daysBack: number = 15, loadAll: boolean = false)
 // Watch for changes in props and update local data
 watch(() => props.kanbanData, (newData) => {
   if (newData) {
-    kanbanData.value = {
-      pedidos_emitidos: newData.pedidos_emitidos || [],
-      faturamento: newData.faturamento || [],
-      checkout: newData.checkout || [],
-      embalagem: newData.embalagem || [],
-      etiqueta: newData.etiqueta || [],
-      coleta_aguardando: newData.coleta_aguardando || [],
-      coleta_realizada: newData.coleta_realizada || [],
-    }
+    // Show loading briefly when data is being updated
+    loading.value = true
     
-    // Ensure loading is false when data is received
-    loading.value = false
-    
-    console.log('KanbanCompact data updated from props:', {
-      pedidos_emitidos: kanbanData.value.pedidos_emitidos?.length || 0,
-      faturamento: kanbanData.value.faturamento?.length || 0,
-      checkout: kanbanData.value.checkout?.length || 0,
-      embalagem: kanbanData.value.embalagem?.length || 0,
-      etiqueta: kanbanData.value.etiqueta?.length || 0,
-      coleta_aguardando: kanbanData.value.coleta_aguardando?.length || 0,
-      coleta_realizada: kanbanData.value.coleta_realizada?.length || 0,
-    })
+    // Small delay to show loading animation
+    setTimeout(() => {
+      kanbanData.value = {
+        pedidos_emitidos: newData.pedidos_emitidos || [],
+        faturamento: newData.faturamento || [],
+        checkout: newData.checkout || [],
+        embalagem: newData.embalagem || [],
+        etiqueta: newData.etiqueta || [],
+        coleta_aguardando: newData.coleta_aguardando || [],
+        coleta_realizada: newData.coleta_realizada || [],
+      }
+      
+      // Hide loading after data is updated
+      loading.value = false
+      
+      console.log('KanbanCompact data updated from props:', {
+        pedidos_emitidos: kanbanData.value.pedidos_emitidos?.length || 0,
+        faturamento: kanbanData.value.faturamento?.length || 0,
+        checkout: kanbanData.value.checkout?.length || 0,
+        embalagem: kanbanData.value.embalagem?.length || 0,
+        etiqueta: kanbanData.value.etiqueta?.length || 0,
+        coleta_aguardando: kanbanData.value.coleta_aguardando?.length || 0,
+        coleta_realizada: kanbanData.value.coleta_realizada?.length || 0,
+      })
+    }, 300)
   }
 }, { immediate: true, deep: true })
 

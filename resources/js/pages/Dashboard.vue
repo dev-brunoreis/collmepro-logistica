@@ -58,7 +58,10 @@ const fetchDashboardData = async () => {
     } catch (error) {
         console.error('Error fetching dashboard data:', error);
     } finally {
-        loading.value = false;
+        // Small delay to show loading animation
+        setTimeout(() => {
+            loading.value = false;
+        }, 500);
     }
 };
 
@@ -113,6 +116,17 @@ onMounted(() => {
             <div
                 class="relative flex-1 rounded-xl border border-sidebar-border/70 dark:border-sidebar-border p-4 bg-gradient-to-br from-gray-900 to-gray-800"
             >
+                <!-- Loading Overlay -->
+                <div v-if="loading" class="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 rounded-xl">
+                    <div class="text-center">
+                        <div class="w-16 h-16 border-4 border-white border-opacity-20 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
+                        <h3 class="text-xl font-bold text-white mb-2">Carregando dados...</h3>
+                        <p class="text-sm text-white opacity-80">
+                            Período: {{ selectedPeriod }} dias
+                        </p>
+                    </div>
+                </div>
+                
                 <KanbanCompact 
                     :kanban-data="kanbanData"
                     @open-fullscreen="openKanbanFullscreen"
