@@ -446,6 +446,7 @@ interface Order {
   items_quantity: number
   order_status: any
   tracking_code?: string
+  tracking_url?: string
   rastreamento?: {
     codigo?: string
     descricao?: string
@@ -509,7 +510,7 @@ const kanbanData = ref<KanbanData>({
 })
 
 // Broadcasting setup
-const { isConnected, lastUpdate } = useOrderBroadcasting()
+const { isConnected, lastUpdate, lastNewOrder } = useOrderBroadcasting()
 
 // Watch for real-time updates and update kanban data
 watch(lastUpdate, (update) => {
@@ -605,6 +606,70 @@ watch(lastUpdate, (update) => {
     })
 
     console.log('Kanban Compact updated with new data')
+  }
+})
+
+// Watch for new orders from broadcasting
+watch(lastNewOrder, (newOrderEvent) => {
+  if (newOrderEvent && newOrderEvent.order) {
+    console.log('Kanban Compact received new order:', newOrderEvent)
+
+    const order = newOrderEvent.order
+
+    // Check if order already exists to avoid duplicates
+    const orderExists = Object.keys(kanbanData.value).some(columnKey => {
+      const column = kanbanData.value[columnKey as keyof KanbanData]
+      return column && column.some(existingOrder => existingOrder.id === order.id)
+    })
+
+    if (orderExists) {
+      console.log('Order already exists in Kanban, skipping:', order.id)
+      return
+    }
+
+    // Determine the appropriate column based on order status and data
+    // Priority order (same as backend logic):
+    // 1. Coleta Realizada: picked_up=true
+    // 2. Coleta Aguardando: invoice + picking + packing + tracking_code + !picked_up
+    // 3. Etiqueta: invoice + picking + packing + !tracking_code
+    // 4. Embalagem: invoice + picking + !packing
+    // 5. Checkout: invoice + !picking
+    // 6. Faturamento: !invoice
+    // 7. Pedidos Emitidos: default
+    
+    let targetColumn = 'pedidos_emitidos'
+    const hasInvoice = !!order.invoice_number
+    const hasTracking = !!order.tracking_code
+    const orderStatus = order.order_status || { picking: false, packing: false, picked_up: false }
+    
+    if (orderStatus.picked_up) {
+      // 1. Coleta Realizada
+      targetColumn = 'coleta_realizada'
+    } else if (hasInvoice && orderStatus.picking && orderStatus.packing && hasTracking) {
+      // 2. Coleta Aguardando
+      targetColumn = 'coleta_aguardando'
+    } else if (hasInvoice && orderStatus.picking && orderStatus.packing && !hasTracking) {
+      // 3. Etiqueta
+      targetColumn = 'etiqueta'
+    } else if (hasInvoice && orderStatus.picking && !orderStatus.packing) {
+      // 4. Embalagem
+      targetColumn = 'embalagem'
+    } else if (hasInvoice && !orderStatus.picking) {
+      // 5. Checkout
+      targetColumn = 'checkout'
+    } else if (!hasInvoice) {
+      // 6. Faturamento
+      targetColumn = 'faturamento'
+    }
+
+    // Add the new order to the appropriate column
+    const column = kanbanData.value[targetColumn as keyof KanbanData]
+    if (column) {
+      column.push(order as any)
+      console.log(`New order ${order.id} (${order.numero}) added to column: ${targetColumn}`)
+    } else {
+      console.warn(`Target column ${targetColumn} not found for new order ${order.id}`)
+    }
   }
 })
 

@@ -287,6 +287,28 @@ class BlingSyncJob implements ShouldQueue
                 'action' => $created ? 'created' : 'updated'
             ]);
 
+            // Broadcast new order event if it was just created
+            if ($created) {
+                // Get system user for automated imports (try admin first, then manager, then any user)
+                $systemUser = \App\Models\User::whereIn('role', ['admin', 'manager'])
+                    ->orderByRaw("FIELD(role, 'admin', 'manager')")
+                    ->first();
+                
+                // Fallback to any user if no admin/manager exists
+                if (!$systemUser) {
+                    $systemUser = \App\Models\User::first();
+                }
+                
+                if ($systemUser) {
+                    // Reload order with relationships before broadcasting
+                    $order->load('orderStatus');
+                    event(new \App\Events\OrderCreated($order, $systemUser));
+                    Log::debug('BlingSyncJob: OrderCreated event dispatched', ['order_id' => $order->id, 'user_id' => $systemUser->id]);
+                } else {
+                    Log::warning('BlingSyncJob: Cannot dispatch OrderCreated event: no users found in system', ['order_id' => $order->id]);
+                }
+            }
+
             return ['created' => $created, 'updated' => $updated, 'order' => $order];
 
         } catch (\Exception $e) {

@@ -16,9 +16,42 @@ interface OrderStatusUpdate {
     timestamp: string;
 }
 
+interface NewOrder {
+    order: {
+        id: number;
+        bling_id: number;
+        numero: string;
+        contato_nome: string;
+        total: number;
+        data: string;
+        source: string;
+        invoice_number?: string;
+        items_quantity: number;
+        tracking_code?: string;
+        tracking_url?: string;
+        order_status?: {
+            picking: boolean;
+            packing: boolean;
+            picked_up: boolean;
+            picking_marked_by?: string;
+            picking_marked_at?: string;
+            packing_marked_by?: string;
+            packing_marked_at?: string;
+            picked_up_marked_by?: string;
+            picked_up_marked_at?: string;
+        };
+    };
+    user: {
+        id: number;
+        name: string;
+    };
+    timestamp: string;
+}
+
 export function useOrderBroadcasting() {
     const isConnected = ref(false);
     const lastUpdate = ref<OrderStatusUpdate | null>(null);
+    const lastNewOrder = ref<NewOrder | null>(null);
     const connectionRetryCount = ref(0);
     const maxRetries = 3;
     let retryTimeout: NodeJS.Timeout | null = null;
@@ -96,6 +129,7 @@ export function useOrderBroadcasting() {
         // Listen to the orders channel for all order updates
         const channel = echo.channel('orders');
         
+        // Listen for status updates
         channel.listen('status.updated', (data: any) => {
             console.log('Raw data received:', data);
             
@@ -115,6 +149,28 @@ export function useOrderBroadcasting() {
         // Also listen to the event with a different syntax
         channel.listen('.status.updated', (data: any) => {
             lastUpdate.value = data;
+        });
+
+        // Listen for new orders
+        channel.listen('order.created', (data: any) => {
+            console.log('New order received:', data);
+            
+            // Parse the data if it's a string (double-encoded JSON)
+            let parsedData: NewOrder;
+            if (typeof data.data === 'string') {
+                parsedData = JSON.parse(data.data);
+            } else {
+                parsedData = data.data || data;
+            }
+            
+            console.log('Parsed new order data:', parsedData);
+            lastNewOrder.value = parsedData;
+            console.log('New order created:', parsedData);
+        });
+
+        // Also listen to the event with a different syntax
+        channel.listen('.order.created', (data: any) => {
+            lastNewOrder.value = data;
         });
     };
 
@@ -195,6 +251,7 @@ export function useOrderBroadcasting() {
     return {
         isConnected,
         lastUpdate,
+        lastNewOrder,
         connectToOrdersChannel,
         connectToSpecificOrder,
         disconnectFromOrdersChannel,
