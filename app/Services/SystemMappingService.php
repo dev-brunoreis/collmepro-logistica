@@ -9,7 +9,7 @@ class SystemMappingService
      */
     private static array $systemsMap = [
         205404185 => [
-            'name' => 'Collme Beauty',
+            'name' => 'Beauty',
             'short_name' => 'Beauty',
             'color' => 'bg-yellow-100 text-yellow-800 border border-yellow-200',
             'indicator_color' => 'bg-yellow-500',
@@ -18,7 +18,7 @@ class SystemMappingService
             'border_color' => 'border-yellow-400',
         ],
         205274224 => [
-            'name' => 'Collme Pro',
+            'name' => 'Pro',
             'short_name' => 'Pro',
             'color' => 'bg-blue-100 text-blue-800 border border-blue-200',
             'indicator_color' => 'bg-blue-500',
@@ -54,7 +54,7 @@ class SystemMappingService
     {
         // Handle special case for loja_id = 0 (usually old orders or imports)
         if ($lojaId === 0) {
-            return 'Legacy Orders';
+            return '-';
         }
         
         return self::$systemsMap[$lojaId]['name'] ?? 'Unknown System';
@@ -201,7 +201,7 @@ class SystemMappingService
             }
         }
         // Add legacy orders
-        $sources[] = 'Legacy Orders';
+        $sources[] = '-';
         return $sources;
     }
 
@@ -214,8 +214,8 @@ class SystemMappingService
         foreach (self::$systemsMap as $lojaId => $config) {
             $dropdown[$lojaId] = $config['name'];
         }
-        // Add legacy orders
-        $dropdown[0] = 'Legacy Orders';
+        // Add -
+        $dropdown[0] = '-';
         return $dropdown;
     }
 }

@@ -15,7 +15,7 @@ export interface SystemInfo {
 
 export const systemMapping: Record<string, SystemInfo> = {
   'Collme Beauty': {
-    name: 'Collme Beauty',
+    name: 'Beauty',
     shortName: 'Beauty',
     badgeColor: 'bg-yellow-200 text-yellow-900 border border-yellow-300',
     indicatorColor: 'bg-yellow-500',
@@ -26,7 +26,7 @@ export const systemMapping: Record<string, SystemInfo> = {
     }
   },
   'Collme Pro': {
-    name: 'Collme Pro',
+    name: 'Pro',
     shortName: 'Pro',
     badgeColor: 'bg-blue-200 text-blue-900 border border-blue-300',
     indicatorColor: 'bg-blue-500',
@@ -59,8 +59,8 @@ export const systemMapping: Record<string, SystemInfo> = {
     }
   },
   'Legacy Orders': {
-    name: 'Legacy Orders',
-    shortName: 'Legacy',
+    name: '-',
+    shortName: '-',
     badgeColor: 'bg-gray-200 text-gray-900 border border-gray-300',
     indicatorColor: 'bg-gray-500',
     gradientClasses: {

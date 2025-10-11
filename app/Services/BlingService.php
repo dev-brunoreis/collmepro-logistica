@@ -549,11 +549,38 @@ abstract class BlingService
                     $order->update([
                         'tracking_code' => $completeTrackingData['rastreamento']['codigo'] ?? null,
                         'logistics_provider' => $this->extractLogisticsProvider($completeTrackingData, $completeInvoiceData),
-                        'service_type' => $completeTrackingData['servico']['id'] ?? null,
+                        'service_type' => $completeTrackingData['servico']['nome'] ?? null, // Fix: store service name instead of ID
                         'volume' => $completeTrackingData['dimensao']['peso'] ?? null,
                         'weight' => $completeTrackingData['dimensao']['peso'] ?? null,
                         'external_updated_at' => now(),
                     ]);
+
+                    // Create or update tracking record in tracking table
+                    \App\Models\Tracking::updateOrCreate(
+                        ['invoice_id' => $invoice->id, 'volume_id' => $volumeId],
+                        [
+                            'codigo_rastreamento' => $completeTrackingData['rastreamento']['codigo'] ?? null,
+                            'servico_id' => $completeTrackingData['servico']['id'] ?? null,
+                            'descricao' => $completeTrackingData['rastreamento']['descricao'] ?? null,
+                            'situacao' => $completeTrackingData['rastreamento']['situacao'] ?? null,
+                            'url_rastreamento' => $completeTrackingData['rastreamento']['urlRastreamento'] ?? null,
+                            'origem' => $completeTrackingData['origem'] ?? null,
+                            'destino' => $completeTrackingData['destino'] ?? null,
+                            'ultima_alteracao' => isset($completeTrackingData['rastreamento']['ultimaAlteracao']) 
+                                && $completeTrackingData['rastreamento']['ultimaAlteracao'] !== '0000-00-00 00:00:00'
+                                && $completeTrackingData['rastreamento']['ultimaAlteracao'] !== ''
+                                && $completeTrackingData['rastreamento']['ultimaAlteracao'] !== '-0001-11-30 00:00:00'
+                                ? \Carbon\Carbon::parse($completeTrackingData['rastreamento']['ultimaAlteracao']) 
+                                : null,
+                            'peso' => $completeTrackingData['dimensao']['peso'] ?? null,
+                            'altura' => $completeTrackingData['dimensao']['altura'] ?? null,
+                            'largura' => $completeTrackingData['dimensao']['largura'] ?? null,
+                            'comprimento' => $completeTrackingData['dimensao']['comprimento'] ?? null,
+                            'diametro' => $completeTrackingData['dimensao']['diametro'] ?? null,
+                            'raw_data' => $completeTrackingData,
+                            'last_sync_at' => now(),
+                        ]
+                    );
 
                     // Record tracking fetch in history
                     if (class_exists(OrderHistoryService::class)) {
@@ -567,7 +594,8 @@ abstract class BlingService
                     Log::debug('Complete tracking data updated for order', [
                         'order_id' => $order->id,
                         'tracking_code' => $completeTrackingData['rastreamento']['codigo'] ?? null,
-                        'volume_id' => $volumeId
+                        'volume_id' => $volumeId,
+                        'service_name' => $completeTrackingData['servico']['nome'] ?? null,
                     ]);
                 }
             }
@@ -615,12 +643,23 @@ abstract class BlingService
      */
     protected function parseBlingDate(?string $date): ?Carbon
     {
-        if (empty($date) || $date === '0000-00-00' || $date === '0000-00-00 00:00:00') {
+        // Check for invalid or empty dates
+        if (empty($date) || 
+            $date === '0000-00-00' || 
+            $date === '0000-00-00 00:00:00' ||
+            $date === '-0001-11-30 00:00:00' ||
+            $date === '0000-00-00 00:00:00' ||
+            $date === '-0001-11-30') {
             return null;
         }
         
         try {
-            return Carbon::parse($date);
+            $parsed = Carbon::parse($date);
+            // Additional check for invalid years
+            if ($parsed->year < 1900 || $parsed->year > 2100) {
+                return null;
+            }
+            return $parsed;
         } catch (\Exception $e) {
             return null;
         }

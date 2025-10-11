@@ -183,23 +183,46 @@ class OrderController extends Controller
                 
                 $hasTrackingCode = !empty($trackingCode);
                
-                // Use CarrierService to get formatted carrier display
-                $logisticsProvider = CarrierService::getCarrierDisplay($order->service_type);
+                // Get carrier name using priority order:
+                // 1. invoice.raw_data['transporte']['nome'] (primary source from JSON)
+                // 2. invoice.transportador_nome (normalized field fallback)
+                // 3. order_summary.logistics_provider (secondary fallback)
+                $logisticsProvider = null;
+                if ($order->invoice) {
+                    // Try raw_data first (primary source)
+                    $rawData = $order->invoice->raw_data;
+                    if ($rawData && isset($rawData['transporte']['nome'])) {
+                        $logisticsProvider = $rawData['transporte']['nome'];
+                    } else {
+                        // Fallback to normalized field
+                        $logisticsProvider = $order->invoice->transportador_nome;
+                    }
+                }
+                
+                // Final fallback to order_summary field
+                if (empty($logisticsProvider)) {
+                    $logisticsProvider = $order->logistics_provider;
+                }
+                
+                // Default to "-" if still empty
+                if (empty($logisticsProvider)) {
+                    $logisticsProvider = '-';
+                }
+                
                 $serviceType = $order->service_type;
                 
                 $trackingUrl = null;
-                $carrier = null;
+                $carrier = $logisticsProvider;
                 $invoiceId = null;
 
-                if ($trackingCode && $logisticsProvider) {
+                if ($trackingCode) {
                     // Get tracking URL from relationship
                     if ($firstTracking) {
                         $trackingUrl = $firstTracking->url_rastreamento;
                     }
                     
-                    // Get carrier from invoice
+                    // Get invoice number
                     if ($order->invoice) {
-                        $carrier = $order->invoice->transportador_nome;
                         $invoiceId = $order->invoice->numero;
                     }
                 }
@@ -293,12 +316,35 @@ class OrderController extends Controller
             $trackingCode = $firstTracking->codigo_rastreamento;
         }
 
-        // Use CarrierService to get formatted carrier display
-        $logisticsProvider = CarrierService::getCarrierDisplay($order->service_type);        
+        // Get carrier name using priority order:
+        // 1. invoice.raw_data['transporte']['nome'] (primary source from JSON)
+        // 2. invoice.transportador_nome (normalized field fallback)
+        // 3. order_summary.logistics_provider (secondary fallback)
+        $logisticsProvider = null;
+        if ($order->invoice) {
+            // Try raw_data first (primary source)
+            $rawData = $order->invoice->raw_data;
+            if ($rawData && isset($rawData['transporte']['nome'])) {
+                $logisticsProvider = $rawData['transporte']['nome'];
+            } else {
+                // Fallback to normalized field
+                $logisticsProvider = $order->invoice->transportador_nome;
+            }
+        }
+        
+        // Final fallback to order_summary field
+        if (empty($logisticsProvider)) {
+            $logisticsProvider = $order->logistics_provider;
+        }
+        
+        // Default to "-" if still empty
+        if (empty($logisticsProvider)) {
+            $logisticsProvider = '-';
+        }
 
         $trackingUrl = null;
         
-        if ($trackingCode && $logisticsProvider && $firstTracking) {
+        if ($trackingCode && $firstTracking) {
             $trackingUrl = $firstTracking->url_rastreamento;
         }
         
