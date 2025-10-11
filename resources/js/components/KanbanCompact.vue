@@ -335,7 +335,7 @@
                         <div class="opacity-90">{{ order.items_quantity }} item(s)</div>
                         <a
                             v-if="order.tracking_code" 
-                            :href="order.tracking?.url" 
+                            :href="order.tracking_url" 
                             target="_blank" 
                             class="justify-center inline-flex items-center gap-1 font-medium rounded-md px-1 py-0.5 text-xs hover:bg-sidebar-border/70"
                             title="Abrir rastreamento"
@@ -385,10 +385,9 @@
                         <div v-if="order.invoice_number" class="bg-green-200 text-green-900 px-1 py-0.5 rounded text-xs font-bold text-center">
                           NF: {{ order.invoice_number }}
                         </div>
-                        {{ order.tracking?.url }}
                         <a
                             v-if="order.tracking_code" 
-                            :href="order.tracking?.url" 
+                            :href="order.tracking_url" 
                             target="_blank" 
                             class="justify-center inline-flex items-center gap-1 font-medium rounded-md px-1 py-0.5 text-xs hover:bg-sidebar-border/70"
                             title="Abrir rastreamento"
