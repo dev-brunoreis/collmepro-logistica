@@ -3,7 +3,10 @@
     <!-- Header with order number and date -->
     <div class="flex justify-between items-start mb-3">
       <div class="flex items-center gap-2">
-        <span class="font-black text-gray-900 text-lg sm:text-xl lg:text-2xl">#{{ order.numero }}</span>
+        <a :href="`https://www.bling.com.br/vendas.php#edit/${order?.bling_id}`" target="_blank" class="font-black text-gray-900 text-lg sm:text-xl lg:text-2xl" :title="`Abrir pedido no Bling`">
+        <span class="text-sm">{{ order.numero }}</span>
+            <ExternalLink class="h-3 w-3" />
+        </a>
         <span 
           :class="[
             'px-2 py-1 rounded-full text-xs font-bold',

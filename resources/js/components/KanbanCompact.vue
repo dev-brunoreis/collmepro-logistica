@@ -44,7 +44,10 @@
                     >
                     <div class="flex flex-col gap-0.5">
                       <div class="flex justify-between items-center">
-                        <span class="font-bold text-xs">{{ order.numero }}</span>
+                        <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center hover:bg-sidebar-border/70" :title="`Abrir pedido no Bling`">
+                            <span class="text-sm">{{ order.numero }}</span>
+                            <ExternalLink class="h-3 w-3" />
+                        </a>
                         <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{
                           getOrderSource(order) }}</span>
                       </div>
@@ -77,7 +80,10 @@
                     >
                     <div class="flex flex-col gap-0.5">
                       <div class="flex justify-between items-center">
-                        <span class="font-bold text-xs">{{ order.numero }}</span>
+                        <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center hover:bg-sidebar-border/70" :title="`Abrir pedido no Bling`">
+                            <span class="text-sm">{{ order.numero }}</span>
+                            <ExternalLink class="h-3 w-3" />
+                        </a>
                         <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{
                           getOrderSource(order) }}</span>
                       </div>
@@ -110,7 +116,10 @@
                     >
                     <div class="flex flex-col gap-0.5">
                       <div class="flex justify-between items-center">
-                        <span class="font-bold text-xs">{{ order.numero }}</span>
+                        <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center hover:bg-sidebar-border/70" :title="`Abrir pedido no Bling`">
+                            <span class="text-sm">{{ order.numero }}</span>
+                            <ExternalLink class="h-3 w-3" />
+                        </a>
                         <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{
                           getOrderSource(order) }}</span>
                       </div>
@@ -144,7 +153,10 @@
                 class="bg-gradient-to-br from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 border border-emerald-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white">
                 <div class="flex flex-col gap-0.5">
                   <div class="flex justify-between items-center">
-                    <span class="font-bold text-xs">{{ order.numero }}</span>
+                    <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center hover:bg-sidebar-border/70" :title="`Abrir pedido no Bling`">
+                            <span class="text-sm">{{ order.numero }}</span>
+                            <ExternalLink class="h-3 w-3" />
+                        </a>
                     <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{
                       getOrderSource(order) }}</span>
                   </div>
@@ -176,7 +188,10 @@
                 class="bg-gradient-to-br from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 border border-amber-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white">
                 <div class="flex flex-col gap-0.5">
                   <div class="flex justify-between items-center">
-                    <span class="font-bold text-xs">{{ order.numero }}</span>
+                    <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center hover:bg-sidebar-border/70" :title="`Abrir pedido no Bling`">
+                            <span class="text-sm">{{ order.numero }}</span>
+                            <ExternalLink class="h-3 w-3" />
+                        </a>
                     <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{
                       getOrderSource(order) }}</span>
                   </div>
@@ -210,7 +225,10 @@
                 class="bg-gradient-to-br from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border border-purple-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white">
                 <div class="flex flex-col gap-0.5">
                   <div class="flex justify-between items-center">
-                    <span class="font-bold text-xs">{{ order.numero }}</span>
+                    <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center hover:bg-sidebar-border/70" :title="`Abrir pedido no Bling`">
+                            <span class="text-sm">{{ order.numero }}</span>
+                            <ExternalLink class="h-3 w-3" />
+                        </a>
                     <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{
                       getOrderSource(order) }}</span>
                   </div>
@@ -244,7 +262,10 @@
                 class="bg-gradient-to-br from-cyan-600 to-cyan-700 hover:from-cyan-700 hover:to-cyan-800 border border-cyan-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white">
                 <div class="flex flex-col gap-0.5">
                   <div class="flex justify-between items-center">
-                    <span class="font-bold text-xs">{{ order.numero }}</span>
+                    <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center hover:bg-sidebar-border/70" :title="`Abrir pedido no Bling`">
+                            <span class="text-sm">{{ order.numero }}</span>
+                            <ExternalLink class="h-3 w-3" />
+                        </a>
                     <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{
                       getOrderSource(order) }}</span>
                   </div>
@@ -283,7 +304,10 @@
                     >
                     <div class="flex flex-col gap-0.5">
                       <div class="flex justify-between items-center">
-                        <span class="font-bold text-xs">{{ order.numero }}</span>
+                        <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center hover:bg-sidebar-border/70" :title="`Abrir pedido no Bling`">
+                            <span class="text-sm">{{ order.numero }}</span>
+                            <ExternalLink class="h-3 w-3" />
+                        </a>
                         <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{
                           getOrderSource(order) }}</span>
                       </div>
@@ -291,10 +315,10 @@
                         <div class="font-semibold truncate">{{ order.contato_nome }}</div>
                         <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
                         <div class="opacity-90">{{ order.items_quantity }} item(s)</div>
-                        <div v-if="order.tracking_code" class="bg-blue-200 text-blue-900 px-1 py-0.5 rounded text-xs font-bold">
+                        <div v-if="order.tracking_code" class="bg-blue-200 text-center text-blue-900 px-1 py-0.5 rounded text-xs font-bold">
                           {{ order.tracking_code }}
                         </div>
-                        <div v-if="order.invoice_number" class="bg-green-200 text-green-900 px-1 py-0.5 rounded text-xs font-bold">
+                        <div v-if="order.invoice_number" class="text-center bg-green-200 text-green-900 px-1 py-0.5 rounded text-xs font-bold">
                           NF: {{ order.invoice_number }}
                         </div>
                         <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">R$ {{
@@ -322,7 +346,10 @@
                     >
                     <div class="flex flex-col gap-0.5">
                       <div class="flex justify-between items-center">
-                        <span class="font-bold text-xs">{{ order.numero }}</span>
+                        <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center hover:bg-sidebar-border/70" :title="`Abrir pedido no Bling`">
+                            <span class="text-sm">{{ order.numero }}</span>
+                            <ExternalLink class="h-3 w-3" />
+                        </a>
                         <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{
                           getOrderSource(order) }}</span>
                       </div>
@@ -330,9 +357,23 @@
                         <div class="font-semibold truncate">{{ order.contato_nome }}</div>
                         <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
                         <div class="opacity-90">{{ order.items_quantity }} item(s)</div>
-                        <div v-if="order.tracking_code" class="bg-blue-200 text-blue-900 px-1 py-0.5 rounded text-xs font-bold">
-                          {{ order.tracking_code }}
-                        </div>
+                        <a
+                            v-if="order.tracking_code && order.tracking_url" 
+                            :href="order.tracking_url" 
+                            target="_blank" 
+                            class="inline-flex items-center gap-1 font-medium rounded-md px-1 py-0.5 text-xs hover:bg-sidebar-border/70"
+                            title="Abrir rastreamento"
+                        >
+                            <span class="text-sm">{{ order.tracking_code }}</span>
+                            <ExternalLink class="h-3 w-3" />
+                        </a>
+                        <span
+                            v-else-if="order.tracking_code && !order.tracking_url"
+                            class="inline-flex items-center gap-1 font-medium rounded-md px-1 py-0.5 text-xs text-gray-400"
+                            title="URL de rastreamento não disponível"
+                        >
+                            <span class="text-sm">{{ order.tracking_code }}</span>
+                        </span>
                         <div v-if="order.invoice_number" class="bg-green-200 text-green-900 px-1 py-0.5 rounded text-xs font-bold">
                           NF: {{ order.invoice_number }}
                         </div>
@@ -361,6 +402,7 @@ import { Maximize, Plus } from 'lucide-vue-next'
 import { useOrderBroadcasting } from '@/composables/useBroadcasting'
 import { getSystemShortName, getSystemBadgeColor } from '@/helpers/systemMapping'
 import OrderCard from './OrderCard.vue'
+import { ExternalLink } from 'lucide-vue-next'
 import axios from 'axios'
 
 interface Order {

@@ -15,7 +15,7 @@ export interface SystemInfo {
 
 export const systemMapping: Record<string, SystemInfo> = {
   'Collme Beauty': {
-    name: 'Beauty',
+    name: 'Coll Me! Beauty',
     shortName: 'Beauty',
     badgeColor: 'bg-yellow-200 text-yellow-900 border border-yellow-300',
     indicatorColor: 'bg-yellow-500',
@@ -26,7 +26,7 @@ export const systemMapping: Record<string, SystemInfo> = {
     }
   },
   'Collme Pro': {
-    name: 'Pro',
+    name: 'Coll Me! Pro',
     shortName: 'Pro',
     badgeColor: 'bg-blue-200 text-blue-900 border border-blue-300',
     indicatorColor: 'bg-blue-500',
@@ -37,7 +37,7 @@ export const systemMapping: Record<string, SystemInfo> = {
     }
   },
   'Atacadista': {
-    name: 'Atacadista',
+    name: 'Coll Me! Atacadista',
     shortName: 'Atacadista',
     badgeColor: 'bg-blue-200 text-blue-900 border border-blue-300',
     indicatorColor: 'bg-blue-500',
@@ -72,7 +72,7 @@ export const systemMapping: Record<string, SystemInfo> = {
 }
 
 export function getSystemShortName(source: string): string {
-  return systemMapping[source]?.shortName || 'UN'
+  return systemMapping[source]?.shortName || '-'
 }
 
 export function getSystemBadgeColor(source: string): string {

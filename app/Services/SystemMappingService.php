@@ -10,7 +10,7 @@ class SystemMappingService
     private static array $systemsMap = [
         205404185 => [
             'name' => 'Beauty',
-            'short_name' => 'Beauty',
+            'short_name' => 'Coll Me! Beauty',
             'color' => 'bg-yellow-100 text-yellow-800 border border-yellow-200',
             'indicator_color' => 'bg-yellow-500',
             'gradient_from' => 'from-yellow-400',
@@ -19,7 +19,7 @@ class SystemMappingService
         ],
         205274224 => [
             'name' => 'Pro',
-            'short_name' => 'Pro',
+            'short_name' => 'Coll Me! Pro',
             'color' => 'bg-blue-100 text-blue-800 border border-blue-200',
             'indicator_color' => 'bg-blue-500',
             'gradient_from' => 'from-blue-600',
@@ -37,7 +37,7 @@ class SystemMappingService
         ],
         205432408 => [
             'name' => 'Atacadista', // Atacadista is also Pro system
-            'short_name' => 'Atacadista',
+            'short_name' => 'Coll Me! Atacadista',
             'color' => 'bg-blue-100 text-blue-800 border border-blue-200',
             'indicator_color' => 'bg-blue-500',
             'gradient_from' => 'from-blue-600',
@@ -65,7 +65,7 @@ class SystemMappingService
      */
     public static function getSystemShortName(int $lojaId): string
     {
-        return self::$systemsMap[$lojaId]['short_name'] ?? 'UN';
+        return self::$systemsMap[$lojaId]['short_name'] ?? '-';
     }
 
     /**
@@ -143,7 +143,7 @@ class SystemMappingService
                 return $config['short_name'];
             }
         }
-        return 'UN'; // Unknown
+        return '-'; // Unknown
     }
 
     /**

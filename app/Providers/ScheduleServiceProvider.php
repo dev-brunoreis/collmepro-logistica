@@ -28,7 +28,7 @@ class ScheduleServiceProvider extends ServiceProvider
                 $schedule->job(new BlingSyncJob())
                     ->everyFiveMinutes()
                     ->withoutOverlapping()
-                    ->description('Bling sync: Orders + Invoices + Tracking every 15 minutes');
+                    ->description('Bling sync: Orders + Invoices + Tracking every 5 minutes');
             });
         }
     }

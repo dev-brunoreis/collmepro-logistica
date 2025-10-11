@@ -444,7 +444,7 @@ class BlingSyncJob implements ShouldQueue
                             'servico_id' => $completeTrackingData['servico']['id'] ?? null,
                             'descricao' => $completeTrackingData['rastreamento']['descricao'] ?? null,
                             'situacao' => $completeTrackingData['rastreamento']['situacao'] ?? null,
-                            'url_rastreamento' => $completeTrackingData['rastreamento']['urlRastreamento'] ?? null,
+                            'url_rastreamento' => $completeTrackingData['rastreamento']['url'] ?? null,
                             'origem' => $completeTrackingData['origem'] ?? null,
                             'destino' => $completeTrackingData['destino'] ?? null,
                             'ultima_alteracao' => isset($completeTrackingData['rastreamento']['ultimaAlteracao']) 
