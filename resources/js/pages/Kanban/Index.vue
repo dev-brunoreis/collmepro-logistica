@@ -441,7 +441,17 @@ const formatDateTime = (dateString: string): string => {
   if (!dateString) return '-';
   
   try {
-    const date = new Date(dateString);
+    let date: Date;
+    
+    // Handle ISO format - extract date part only to avoid timezone conversion
+    if (dateString.includes('T')) {
+      const datePart = dateString.split('T')[0];
+      const [year, month, day] = datePart.split('-');
+      date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    } else {
+      date = new Date(dateString);
+    }
+    
     if (isNaN(date.getTime())) {
       return '-';
     }

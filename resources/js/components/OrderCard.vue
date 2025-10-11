@@ -31,13 +31,13 @@
 
     <!-- Order details row -->
     <div class="flex justify-between items-center text-sm text-gray-700 mb-3">
-      <!-- NF (Invoice) -->
+      <!-- NF (Invoice) - More prominent display -->
       <div class="flex items-center gap-2">
-        <span class="font-bold text-gray-800">Invoice:</span>
-        <span v-if="order.invoice_number" class="font-bold text-gray-900">
+        <span class="font-bold text-gray-800">NF:</span>
+        <span v-if="order.invoice_number && order.invoice_number.trim() !== ''" class="font-black text-blue-900 bg-blue-100 px-2 py-1 rounded">
           {{ order.invoice_number }}
         </span>
-        <span v-else class="text-gray-600 font-bold">No Invoice</span>
+        <span v-else class="text-gray-600 font-bold">Sem NF</span>
       </div>
 
       <!-- Items quantity -->
@@ -110,6 +110,7 @@ const props = defineProps<{
   showProminentTracking?: boolean
 }>()
 
+
 const formatCurrency = (value: number): string => {
   return new Intl.NumberFormat('pt-BR', {
     minimumFractionDigits: 2,
@@ -128,7 +129,15 @@ const formatDateOnly = (dateString: string): string => {
         const [datePart] = dateString.split(' ');
         return datePart;
       }
-      date = new Date(dateString);
+      
+      // Handle ISO format - extract date part only to avoid timezone conversion
+      if (dateString.includes('T')) {
+        const datePart = dateString.split('T')[0];
+        const [year, month, day] = datePart.split('-');
+        date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      } else {
+        date = new Date(dateString);
+      }
     } else {
       date = dateString;
     }

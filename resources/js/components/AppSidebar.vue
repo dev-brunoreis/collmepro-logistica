@@ -45,15 +45,15 @@ const mainNavItems: NavItem[] = [
         visible: user?.permissions?.some(p => p.name === 'orders.view') || false,
     },
     // {
+    //     title: 'Etiquetas',
+    //     href: '/dashboard/labels',
+    //     icon: Tag,
+    //     visible: user?.permissions?.some(p => p.name === 'labels.view') || false,
+    // },
+    // {
     //     title: 'Kanban',
     //     href: '#', // TODO: Implementar rota de kanban
     //     icon: Kanban,
-    //     visible: true, // Todos os perfis podem acessar
-    // },
-    // {
-    //     title: 'Etiquetas',
-    //     href: '#', // TODO: Implementar rota de etiquetas
-    //     icon: Tag,
     //     visible: true, // Todos os perfis podem acessar
     // },
     {

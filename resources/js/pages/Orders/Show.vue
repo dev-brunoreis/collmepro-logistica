@@ -182,8 +182,18 @@ const formatDate = (dateString: string) => {
     if (!dateString) return '-';
     
     try {
-        // Handle ISO 8601 format with timezone
-        const date = new Date(dateString);
+        // Handle ISO 8601 format - extract date part only to avoid timezone conversion
+        let date: Date;
+        
+        if (dateString.includes('T')) {
+            // For ISO format like "2025-10-11T00:00:00.000000Z", extract just the date part
+            const datePart = dateString.split('T')[0];
+            const [year, month, day] = datePart.split('-');
+            date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+        } else {
+            // Fallback for other formats
+            date = new Date(dateString);
+        }
         
         // Check if date is valid
         if (isNaN(date.getTime())) {

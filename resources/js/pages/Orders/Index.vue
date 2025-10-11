@@ -461,8 +461,15 @@ const formatDate = (dateString: string) => {
         let date: Date;
         
         if (dateString.includes(' ')) {
-            // Format: 2025-10-03 00:00:00
-            date = new Date(dateString + 'Z'); // Add Z to treat as UTC
+            // Format: 2025-10-03 00:00:00 - extract just the date part
+            const datePart = dateString.split(' ')[0];
+            const [year, month, day] = datePart.split('-');
+            date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+        } else if (dateString.includes('T')) {
+            // Handle ISO format - extract date part only to avoid timezone conversion
+            const datePart = dateString.split('T')[0];
+            const [year, month, day] = datePart.split('-');
+            date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
         } else {
             // Fallback for other formats
             date = new Date(dateString);

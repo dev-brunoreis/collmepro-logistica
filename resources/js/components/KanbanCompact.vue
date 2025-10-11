@@ -198,6 +198,9 @@
                   <div class="flex flex-col gap-0.5 text-xs">
                     <div class="font-semibold truncate">{{ order.contato_nome }}</div>
                     <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
+                    <div v-if="order.invoice_number" class="bg-green-200 text-green-900 px-1 py-0.5 rounded text-xs font-bold text-center">
+                          NF: {{ order.invoice_number }}
+                    </div>
                     <div class="opacity-90" v-if="order.order_status?.picking_marked_by">
                       Separado por: {{ order.order_status.picking_marked_by }}
                     </div>
@@ -235,6 +238,9 @@
                   <div class="flex flex-col gap-0.5 text-xs">
                     <div class="font-semibold truncate">{{ order.contato_nome }}</div>
                     <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
+                    <div v-if="order.invoice_number" class="bg-green-200 text-green-900 px-1 py-0.5 rounded text-xs font-bold text-center">
+                          NF: {{ order.invoice_number }}
+                    </div>
                     <div class="opacity-90" v-if="order.order_status?.packing_marked_by">
                       Embalado por: {{ order.order_status.packing_marked_by }}
                     </div>
@@ -272,7 +278,19 @@
                   <div class="flex flex-col gap-0.5 text-xs">
                     <div class="font-semibold truncate">{{ order.contato_nome }}</div>
                     <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
-                    <div class="opacity-90" v-if="order.tracking_code">Código: {{ order.tracking_code }}</div>
+                    <div v-if="order.invoice_number" class="bg-green-200 text-green-900 px-1 py-0.5 rounded text-xs font-bold text-center">
+                          NF: {{ order.invoice_number }}
+                    </div>
+                    <a
+                            v-if="order.tracking_code" 
+                            :href="order.tracking_url" 
+                            target="_blank" 
+                            class="justify-center inline-flex items-center gap-1 font-medium rounded-md px-1 py-0.5 text-xs hover:bg-sidebar-border/70"
+                            title="Abrir rastreamento"
+                        >
+                            <span class="text-sm">{{ order.tracking_code }}</span>
+                            <ExternalLink class="h-3 w-3" />
+                        </a>
                     <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">R$ {{
                       formatCurrency(order.total) }}</div>
                   </div>
@@ -315,9 +333,16 @@
                         <div class="font-semibold truncate">{{ order.contato_nome }}</div>
                         <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
                         <div class="opacity-90">{{ order.items_quantity }} item(s)</div>
-                        <div v-if="order.tracking_code" class="bg-blue-200 text-center text-blue-900 px-1 py-0.5 rounded text-xs font-bold">
-                          {{ order.tracking_code }}
-                        </div>
+                        <a
+                            v-if="order.tracking_code" 
+                            :href="order.tracking?.url" 
+                            target="_blank" 
+                            class="justify-center inline-flex items-center gap-1 font-medium rounded-md px-1 py-0.5 text-xs hover:bg-sidebar-border/70"
+                            title="Abrir rastreamento"
+                        >
+                            <span class="text-sm">{{ order.tracking_code }}</span>
+                            <ExternalLink class="h-3 w-3" />
+                        </a>
                         <div v-if="order.invoice_number" class="text-center bg-green-200 text-green-900 px-1 py-0.5 rounded text-xs font-bold">
                           NF: {{ order.invoice_number }}
                         </div>
@@ -357,24 +382,28 @@
                         <div class="font-semibold truncate">{{ order.contato_nome }}</div>
                         <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
                         <div class="opacity-90">{{ order.items_quantity }} item(s)</div>
+                        <div v-if="order.invoice_number" class="bg-green-200 text-green-900 px-1 py-0.5 rounded text-xs font-bold text-center">
+                          NF: {{ order.invoice_number }}
+                        </div>
+                        {{ order.tracking?.url }}
                         <a
-                            v-if="order.tracking_code && order.tracking_url" 
-                            :href="order.tracking_url" 
+                            v-if="order.tracking_code" 
+                            :href="order.tracking?.url" 
                             target="_blank" 
-                            class="inline-flex items-center gap-1 font-medium rounded-md px-1 py-0.5 text-xs hover:bg-sidebar-border/70"
+                            class="justify-center inline-flex items-center gap-1 font-medium rounded-md px-1 py-0.5 text-xs hover:bg-sidebar-border/70"
                             title="Abrir rastreamento"
                         >
                             <span class="text-sm">{{ order.tracking_code }}</span>
                             <ExternalLink class="h-3 w-3" />
                         </a>
                         <span
-                            v-else-if="order.tracking_code && !order.tracking_url"
+                            v-else-if="order.tracking_code && !order.tracking?.url"
                             class="inline-flex items-center gap-1 font-medium rounded-md px-1 py-0.5 text-xs text-gray-400"
                             title="URL de rastreamento não disponível"
                         >
                             <span class="text-sm">{{ order.tracking_code }}</span>
                         </span>
-                        <div v-if="order.invoice_number" class="bg-green-200 text-green-900 px-1 py-0.5 rounded text-xs font-bold">
+                        <div v-if="order.invoice_number" class="bg-green-200 text-green-900 px-1 py-0.5 rounded text-xs font-bold text-center">
                           NF: {{ order.invoice_number }}
                         </div>
                         <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">R$ {{
@@ -597,7 +626,15 @@ const formatDateOnly = (dateString: string): string => {
         const [datePart] = dateString.split(' ');
         return datePart;
       }
-      date = new Date(dateString);
+      
+      // Handle ISO format - extract date part only to avoid timezone conversion
+      if (dateString.includes('T')) {
+        const datePart = dateString.split('T')[0];
+        const [year, month, day] = datePart.split('-');
+        date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      } else {
+        date = new Date(dateString);
+      }
     } else {
       date = dateString;
     }

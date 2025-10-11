@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KanbanController;
+use App\Http\Controllers\LabelController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
@@ -73,6 +74,12 @@ Route::group(['prefix' => 'dashboard', 'middleware' => ['auth', 'verified']], fu
         Route::post('orders/import-and-sync', [OrderController::class, 'importAndSync'])->name('orders.import-and-sync');
         Route::post('orders/sync-bling', [OrderController::class, 'syncBlingData'])->name('orders.sync-bling');
         Route::post('orders/{order}/sync-bling', [OrderController::class, 'syncBlingDataForOrder'])->name('orders.sync-bling-order');
+    });
+
+    // Labels routes (users with labels.view permission)
+    Route::middleware(['permission:labels.view'])->group(function () {
+        Route::get('labels', [LabelController::class, 'index'])->name('labels.index');
+        Route::post('labels/export', [LabelController::class, 'export'])->name('labels.export');
     });
 });
 

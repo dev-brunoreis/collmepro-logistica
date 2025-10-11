@@ -313,6 +313,12 @@ class DashboardController extends Controller
             // Source is already mapped correctly from SystemMappingService
             $source = $order->source;
             
+            $trackingUrl = null;
+            if ($order->invoice && $order->invoice->tracking()->count() > 0) {
+                $firstTracking = $order->invoice->tracking()->first();
+                $trackingUrl = $firstTracking != ''? $firstTracking->url_rastreamento : null;
+            }
+
             $orderData = [
                 'id' => $order->id,
                 'bling_id' => $order->bling_id,
@@ -324,6 +330,7 @@ class DashboardController extends Controller
                 'invoice_number' => $invoiceNumber,
                 'items_quantity' => $itemsQuantity,
                 'tracking_code' => $trackingCode,
+                'tracking_url' => $trackingUrl,
                 'order_status' => $order->orderStatus ? [
                     'picking' => $order->orderStatus->picking,
                     'packing' => $order->orderStatus->packing,
