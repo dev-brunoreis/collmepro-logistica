@@ -14,7 +14,7 @@ export interface SystemInfo {
 }
 
 export const systemMapping: Record<string, SystemInfo> = {
-  'Collme Beauty': {
+  'Beauty': {
     name: 'Coll Me! Beauty',
     shortName: 'Beauty',
     badgeColor: 'bg-yellow-200 text-yellow-900 border border-yellow-300',
@@ -25,7 +25,7 @@ export const systemMapping: Record<string, SystemInfo> = {
       border: 'border-yellow-400'
     }
   },
-  'Collme Pro': {
+  'Pro': {
     name: 'Coll Me! Pro',
     shortName: 'Pro',
     badgeColor: 'bg-blue-200 text-blue-900 border border-blue-300',

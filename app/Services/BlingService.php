@@ -180,7 +180,6 @@ abstract class BlingService
         $orders = [];
         $pagina = 1;
         $limite = 100;
-        $maxPages = 50; // Prevent infinite loops
         $requestCount = 0;
 
         do {
@@ -230,9 +229,7 @@ abstract class BlingService
                 $pagina++;
 
                 // Rate limiting: 3 requests per second
-                if ($pagina <= $maxPages) {
-                    $this->applyRateLimit();
-                }
+                $this->applyRateLimit();
 
             } catch (Exception $e) {
                 Log::error("Exception while fetching orders", [
@@ -251,7 +248,7 @@ abstract class BlingService
                 break;
             }
 
-        } while ($pagina <= $maxPages);
+        } while (true); // Continue until we hit one of the break conditions above
 
         Log::info("Total orders fetched for account {$this->getAccountType()}: " . count($orders) . " (requests made: {$requestCount})");
 

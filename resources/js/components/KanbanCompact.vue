@@ -674,7 +674,7 @@ const getMovementHistory = (order: Order, statusType: string): string => {
   return '';
 }
 
-// Get orders by source (Collme Pro, Collme Beauty or Atacadista) - just show what backend provides
+// Get orders by source (Pro, Beauty or Atacadista) - just show what backend provides
 const getOrdersBySource = (source: string): Order[] => {
   // Get orders from pedidos_emitidos column (backend already filtered)
   const pedidosEmitidos = kanbanData.value.pedidos_emitidos || []
@@ -682,9 +682,9 @@ const getOrdersBySource = (source: string): Order[] => {
   return pedidosEmitidos.filter(order => {
     // Must match the source
     if (source === 'Collme Pro') {
-      return order.source === 'Collme Pro'
+      return order.source === 'Pro'
     } else if (source === 'Collme Beauty') {
-      return order.source === 'Collme Beauty'
+      return order.source === 'Beauty'
     } else if (source === 'Atacadista') {
       return order.source === 'Atacadista'
     }

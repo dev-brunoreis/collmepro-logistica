@@ -162,9 +162,9 @@ class OrderController extends Controller
             });
         }
 
-        // Allow custom pagination size, default to 100
-        $perPage = $request->get('per_page', 100);
-        $perPage = min($perPage, 500); // Max 500 per page to prevent performance issues
+        // Allow custom pagination size, default to 25
+        $perPage = $request->get('per_page', 25);
+        $perPage = min($perPage, 100); // Max 100 per page to prevent performance issues
         
         $orders = $query->orderBy('data', 'desc')->paginate($perPage)->withQueryString();
 
