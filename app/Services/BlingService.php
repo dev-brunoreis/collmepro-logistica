@@ -579,9 +579,9 @@ abstract class BlingService
             }
 
             // Broadcast events only if there are meaningful changes or it's a new order
-            // SPECIAL CASE: Always broadcast if order has invoice (to ensure Kanban displays correctly)
+            // SPECIAL CASE: Broadcast if order has invoice AND it's a new order (first sync)
             $hasInvoice = !empty($newInvoiceNumber);
-            $shouldBroadcast = !empty($changedFields) || $created || $hasInvoice;
+            $shouldBroadcast = !empty($changedFields) || $created || ($hasInvoice && $created);
             
             if ($systemUser && $shouldBroadcast) {
                 if ($created) {
@@ -599,10 +599,10 @@ abstract class BlingService
                     $finalChangeTypes = $changeTypes;
                     $finalChangedFields = $changedFields;
                     
-                    if (empty($changedFields) && $hasInvoice) {
+                    if (empty($changedFields) && $hasInvoice && $created) {
                         $finalChangedFields = ['invoice_number'];
                         $finalChangeTypes = ['invoice_added'];
-                        Log::info('BlingService: Forcing invoice broadcast for existing order', [
+                        Log::info('BlingService: Forcing invoice broadcast for new order with existing invoice', [
                             'bling_id' => $blingId,
                             'numero' => $blingOrder['numero'],
                             'invoice_number' => $newInvoiceNumber
@@ -617,7 +617,7 @@ abstract class BlingService
                         'change_types' => $finalChangeTypes,
                         'has_invoice' => !empty($newInvoiceNumber),
                         'has_tracking' => !empty($newTrackingCode),
-                        'forced_invoice_broadcast' => empty($changedFields) && $hasInvoice
+                        'forced_invoice_broadcast' => empty($changedFields) && $hasInvoice && $created
                     ]);
                 }
             }
