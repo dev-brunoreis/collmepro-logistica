@@ -62,7 +62,8 @@ class DashboardController extends Controller
             },
             'invoice',
             'orderData'
-        ]);
+        ])
+        ->notCancelled(); // Filter out cancelled orders
 
         // Apply date filter unless loading all
         if (!$loadAll && $daysBack > 0) {

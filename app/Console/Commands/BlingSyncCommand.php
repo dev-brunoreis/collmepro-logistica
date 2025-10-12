@@ -17,7 +17,8 @@ class BlingSyncCommand extends Command
                             {--account= : Account to sync (pro|atacadista|all)}
                             {--force : Force update existing orders}
                             {--queue : Run in background queue}
-                            {--test : Test API connection only}';
+                            {--test : Test API connection only}
+                            {--full : Full sync (disable incremental sync)}';
 
     /**
      * The console command description.
@@ -40,6 +41,7 @@ class BlingSyncCommand extends Command
         $account = $this->option('account') ?? 'all';
         $forceUpdate = $this->option('force');
         $useQueue = $this->option('queue');
+        $fullSync = $this->option('full');
         
         if (!in_array($account, ['pro', 'atacadista', 'all'])) {
             $this->error('❌ Invalid account. Use: pro, atacadista, or all');
@@ -49,16 +51,23 @@ class BlingSyncCommand extends Command
         if ($forceUpdate) {
             $this->warn('⚠️  Force update enabled - existing orders will be updated');
         }
+        
+        if ($fullSync) {
+            $this->warn('⚠️  Full sync enabled - all orders will be fetched');
+        } else {
+            $this->info('🔄 Incremental sync enabled - fetching orders from last 30 days');
+            $this->info('   Orders older than 30 days will be automatically skipped');
+        }
 
         try {
             $results = [];
             
             if ($account === 'all' || $account === 'pro') {
-                $results['pro'] = $this->syncAccount('pro', $forceUpdate, $useQueue);
+                $results['pro'] = $this->syncAccount('pro', $forceUpdate, $useQueue, !$fullSync);
             }
             
             if ($account === 'all' || $account === 'atacadista') {
-                $results['atacadista'] = $this->syncAccount('atacadista', $forceUpdate, $useQueue);
+                $results['atacadista'] = $this->syncAccount('atacadista', $forceUpdate, $useQueue, !$fullSync);
             }
 
             $this->displayResults($results);
@@ -78,25 +87,22 @@ class BlingSyncCommand extends Command
     /**
      * Sync a specific account
      */
-    private function syncAccount(string $accountType, bool $forceUpdate, bool $useQueue): array
+    private function syncAccount(string $accountType, bool $forceUpdate, bool $useQueue, bool $incrementalSync = true): array
     {
         $this->info("🔄 Starting synchronization for {$accountType} account...");
         
         try {
-            $service = $accountType === 'pro' 
-                ? app(CollmeProBlingService::class)
-                : app(CollmeAtacadistaBlingService::class);
-
             if ($useQueue) {
-                // For now, we'll run synchronously even with queue option
-                // You can implement proper queue dispatch later
-                $result = $service->syncOrders();
-                $this->info("✅ {$accountType} synchronization completed");
-                return $result;
+                // Dispatch to queue
+                BlingSyncJob::dispatch($forceUpdate, $accountType, $incrementalSync);
+                $this->info("✅ {$accountType} synchronization queued");
+                return ['queued' => true];
             } else {
-                $result = $service->syncOrders();
+                // Run synchronously
+                $job = new BlingSyncJob($forceUpdate, $accountType, $incrementalSync);
+                $job->handle();
                 $this->info("✅ {$accountType} synchronization completed");
-                return $result;
+                return ['completed' => true];
             }
 
         } catch (\Exception $e) {
@@ -114,7 +120,15 @@ class BlingSyncCommand extends Command
         $this->info('📊 Synchronization Summary:');
         
         foreach ($results as $account => $result) {
-            $this->line("  {$account}: {$result['processed']}/{$result['total_orders']} orders processed");
+            if (isset($result['queued'])) {
+                $this->line("  {$account}: Queued for background processing");
+            } elseif (isset($result['completed'])) {
+                $this->line("  {$account}: Completed successfully");
+            } elseif (isset($result['processed']) && isset($result['total_orders'])) {
+                $this->line("  {$account}: {$result['processed']}/{$result['total_orders']} orders processed");
+            } else {
+                $this->line("  {$account}: Status unknown");
+            }
         }
         
         $this->newLine();

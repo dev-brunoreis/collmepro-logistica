@@ -48,6 +48,7 @@ class OrderSummary extends Model
         'volume',
         'weight',
         'raw_order_data',
+        'bling_data_hash',
     ];
 
     protected $casts = [
@@ -121,11 +122,29 @@ class OrderSummary extends Model
     }
 
     /**
+     * Scope to filter out cancelled orders.
+     * Cancelled orders have situacao_id = 12 in Bling.
+     */
+    public function scopeNotCancelled($query)
+    {
+        return $query->where('situacao_id', '!=', 12);
+    }
+
+    /**
      * Check if order has tracking.
      */
     public function hasTracking(): bool
     {
         return !empty($this->tracking_code);
+    }
+
+    /**
+     * Check if order is cancelled.
+     * Cancelled orders have situacao_id = 12 in Bling.
+     */
+    public function isCancelled(): bool
+    {
+        return $this->situacao_id === 12;
     }
 
     /**

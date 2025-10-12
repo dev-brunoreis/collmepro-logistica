@@ -28,17 +28,21 @@ class BlingSyncJob implements ShouldQueue
 
     private bool $forceUpdate;
     private ?string $accountType;
+    private array $criticalChangesDetected = [];
+    private bool $incrementalSync;
 
     /**
      * Create a new job instance.
      * 
      * @param bool $forceUpdate Force update existing orders
      * @param string|null $accountType Account type to sync ('pro', 'atacadista', or null for all)
+     * @param bool $incrementalSync Use incremental sync (last 48h) instead of full sync
      */
-    public function __construct(bool $forceUpdate = false, ?string $accountType = null)
+    public function __construct(bool $forceUpdate = false, ?string $accountType = null, bool $incrementalSync = true)
     {
         $this->forceUpdate = $forceUpdate;
         $this->accountType = $accountType;
+        $this->incrementalSync = $incrementalSync;
     }
 
     /**
@@ -136,8 +140,8 @@ class BlingSyncJob implements ShouldQueue
      */
     private function syncAccount(BlingService $blingService, string $accountType): array
     {
-        // Get orders from Bling
-        $orders = $blingService->getAllOrders();
+        // Get orders from Bling with incremental sync option
+        $orders = $blingService->getAllOrders([], $this->incrementalSync);
         
         if (empty($orders)) {
             Log::info("BlingSyncJob: No orders found to sync for account: {$accountType}");
@@ -204,7 +208,7 @@ class BlingSyncJob implements ShouldQueue
     }
 
     /**
-     * Process a single Bling order
+     * Process a single Bling order with multi-level optimization
      */
     private function processOrder(BlingService $blingService, array $blingOrder): array
     {
@@ -213,49 +217,309 @@ class BlingSyncJob implements ShouldQueue
         // Check if order already exists
         $existingOrder = OrderSummary::where('bling_id', $blingId)->first();
         
-        if ($existingOrder && !$this->forceUpdate) {
-            // Check if order data is exactly the same
-            if ($this->isOrderDataIdentical($existingOrder, $blingOrder)) {
-                Log::debug('BlingSyncJob: Order data is identical, skipping', [
-                    'bling_id' => $blingId,
-                    'numero' => $blingOrder['numero']
-                ]);
-                return ['created' => false, 'updated' => false, 'skipped' => true];
+        // NEW ORDER: Fast path for new orders
+        if (!$existingOrder) {
+            Log::debug('BlingSyncJob: New order detected, will create', [
+                'bling_id' => $blingId,
+                'numero' => $blingOrder['numero']
+            ]);
+            // Continue to full processing (no optimizations for new orders)
+        } elseif (!$this->forceUpdate) {
+            // EXISTING ORDER: Multi-level optimization
+            
+            // LEVEL 1: Skip very old orders in incremental sync
+            if ($this->incrementalSync) {
+                $orderDate = Carbon::parse($blingOrder['data']);
+                if ($orderDate->lt(now()->subDays(30))) {
+                    Log::debug('BlingSyncJob: Order too old for incremental sync, skipping', [
+                        'bling_id' => $blingId,
+                        'numero' => $blingOrder['numero'],
+                        'order_date' => $orderDate->toDateString(),
+                        'cutoff_date' => now()->subDays(30)->toDateString()
+                    ]);
+                    return ['created' => false, 'updated' => false, 'skipped' => true, 'skip_reason' => 'too_old'];
+                }
             }
+            
+            // LEVEL 2: Quick cache check with lightweight hash
+            $lightweightHash = $blingService->generateLightweightHash($blingOrder);
+            $cachedHash = $blingService->getCachedOrderHash($blingId);
+            
+            if ($cachedHash === $lightweightHash) {
+                Log::debug('BlingSyncJob: Cache hit - hash identical, skipping', [
+                    'bling_id' => $blingId,
+                    'numero' => $blingOrder['numero'],
+                    'hash' => $lightweightHash
+                ]);
+                return ['created' => false, 'updated' => false, 'skipped' => true, 'skip_reason' => 'cache_hit'];
+            }
+            
+            // LEVEL 3: Database hash check (if cache missed but DB has it)
+            if ($existingOrder->bling_data_hash === $lightweightHash) {
+                Log::debug('BlingSyncJob: DB hash matches lightweight hash, updating cache and skipping', [
+                    'bling_id' => $blingId,
+                    'numero' => $blingOrder['numero'],
+                    'hash' => $lightweightHash
+                ]);
+                // Update cache for next time
+                $blingService->setCachedOrderHash($blingId, $lightweightHash);
+                return ['created' => false, 'updated' => false, 'skipped' => true, 'skip_reason' => 'db_hash_match'];
+            }
+            
+            Log::info('BlingSyncJob: Hash difference detected, need to fetch complete data', [
+                'bling_id' => $blingId,
+                'numero' => $blingOrder['numero'],
+                'cached_hash' => $cachedHash,
+                'lightweight_hash' => $lightweightHash,
+                'db_hash' => $existingOrder->bling_data_hash
+            ]);
             
             // Check if order was updated since last sync
             $blingUpdatedAt = Carbon::parse($blingOrder['dataAlteracao'] ?? $blingOrder['data']);
-            if ($existingOrder->updated_at && 
-                $blingUpdatedAt->lte($existingOrder->updated_at)) {
-                Log::debug('BlingSyncJob: Order not updated since last sync, skipping', [
+            $shouldSkip = $existingOrder->updated_at && 
+                          $blingUpdatedAt->lte($existingOrder->updated_at);
+            
+            Log::info('BlingSyncJob: Checking skip condition', [
+                'bling_id' => $blingId,
+                'numero' => $blingOrder['numero'],
+                'shouldSkip' => $shouldSkip,
+                'blingUpdatedAt' => $blingUpdatedAt->toDateTimeString(),
+                'existingUpdatedAt' => $existingOrder->updated_at->toDateTimeString()
+            ]);
+            
+            // NOVA LÓGICA: Sempre verificar mudanças críticas mesmo se não houver mudança de data
+            if ($shouldSkip) {
+                Log::info('BlingSyncJob: Checking for changes in order that should be skipped', [
                     'bling_id' => $blingId,
                     'numero' => $blingOrder['numero']
                 ]);
-                return ['created' => false, 'updated' => false, 'skipped' => true];
+                
+                // Verificar mudanças em campos críticos
+                $currentSituacaoValor = $blingOrder['situacao']['valor'] ?? 1;
+                $currentSituacaoId = $blingOrder['situacao']['id'] ?? 1;
+                $currentTotal = (float) ($blingOrder['total'] ?? 0);
+                $currentContatoNome = $blingOrder['contato']['nome'] ?? '';
+                $currentContatoDocumento = $blingOrder['contato']['numeroDocumento'] ?? '';
+                $currentData = $blingOrder['data'] ?? '';
+                $currentDataSaida = $blingOrder['dataSaida'] ?? '';
+                $currentNumeroLoja = $blingOrder['numeroLoja'] ?? '';
+                
+                // Verificar se há nota fiscal no Bling
+                $currentHasInvoice = !empty($blingOrder['notaFiscal']['id']);
+                
+                // Load invoice relationship before checking
+                $existingOrder->load('invoice');
+                $existingHasInvoice = !empty($existingOrder->invoice?->numero);
+                
+                $existingSituacaoValor = $existingOrder->situacao_valor;
+                $existingSituacaoId = $existingOrder->situacao_id;
+                $existingTotal = $existingOrder->total;
+                $existingContatoNome = $existingOrder->contato_nome ?? '';
+                $existingContatoDocumento = $existingOrder->contato_documento ?? '';
+                $existingData = $existingOrder->data?->format('Y-m-d') ?? '';
+                $existingDataSaida = $existingOrder->data_saida?->format('Y-m-d') ?? '';
+                $existingNumeroLoja = $existingOrder->numero_loja ?? '';
+                
+                $hasChanges = (
+                    $currentSituacaoValor !== $existingSituacaoValor ||
+                    $currentSituacaoId !== $existingSituacaoId ||
+                    $currentTotal !== $existingTotal ||
+                    $currentContatoNome !== $existingContatoNome ||
+                    $currentContatoDocumento !== $existingContatoDocumento ||
+                    $currentData !== $existingData ||
+                    $currentDataSaida !== $existingDataSaida ||
+                    $currentNumeroLoja !== $existingNumeroLoja ||
+                    $currentHasInvoice !== $existingHasInvoice
+                );
+                
+                if ($hasChanges) {
+                    Log::info('BlingSyncJob: Order has changes, forcing sync', [
+                        'bling_id' => $blingId,
+                        'numero' => $blingOrder['numero'],
+                        'changes' => [
+                            'situacao_valor' => [$existingSituacaoValor, $currentSituacaoValor],
+                            'situacao_id' => [$existingSituacaoId, $currentSituacaoId],
+                            'total' => [$existingTotal, $currentTotal],
+                            'contato_nome' => [$existingContatoNome, $currentContatoNome],
+                            'contato_documento' => [$existingContatoDocumento, $currentContatoDocumento],
+                            'data' => [$existingData, $currentData],
+                            'data_saida' => [$existingDataSaida, $currentDataSaida],
+                            'numero_loja' => [$existingNumeroLoja, $currentNumeroLoja],
+                            'has_invoice' => [$existingHasInvoice, $currentHasInvoice],
+                        ]
+                    ]);
+                    
+                    // Mark critical changes detected (especially invoice changes)
+                    if ($currentHasInvoice !== $existingHasInvoice) {
+                        $this->criticalChangesDetected[$blingId] = true;
+                        Log::info('BlingSyncJob: Critical invoice change detected', [
+                            'bling_id' => $blingId,
+                            'numero' => $blingOrder['numero'],
+                            'has_invoice' => [$existingHasInvoice, $currentHasInvoice]
+                        ]);
+                    }
+                    
+                    // Não skip - continua para atualizar
+                } else {
+                    Log::debug('BlingSyncJob: Order not updated since last sync, skipping', [
+                        'bling_id' => $blingId,
+                        'numero' => $blingOrder['numero']
+                    ]);
+                    return ['created' => false, 'updated' => false, 'skipped' => true];
+                }
             }
+        }
+
+        // LEVEL 4: Fetch complete order data and generate comprehensive hash
+        $completeOrderData = $blingService->getCompleteOrderData($blingId);
+        if (!$completeOrderData) {
+            throw new \Exception("Failed to fetch complete order data for ID {$blingId}");
+        }
+        
+        // Generate comprehensive hash including invoice and tracking
+        $comprehensiveHash = $blingService->generateOrderHash($completeOrderData);
+        
+        // LEVEL 5: Final hash comparison with complete data
+        if ($existingOrder && !$this->forceUpdate) {
+            // Check if we detected critical changes earlier that require processing
+            $hasCriticalChanges = false;
+            if (isset($this->criticalChangesDetected[$blingId])) {
+                $hasCriticalChanges = $this->criticalChangesDetected[$blingId];
+            }
+            
+            // SPECIAL CHECK: Always process orders with invoices to ensure Kanban displays correctly
+            // Even if hash is identical, we need to verify the frontend has correct data
+            $hasInvoice = !empty($completeOrderData['notaFiscal']['id']);
+            $needsKanbanVerification = $hasInvoice;
+            
+            if ($existingOrder->bling_data_hash === $comprehensiveHash && !$hasCriticalChanges && !$needsKanbanVerification) {
+                Log::debug('BlingSyncJob: Comprehensive hash identical, updating cache and skipping', [
+                    'bling_id' => $blingId,
+                    'numero' => $blingOrder['numero'],
+                    'hash' => $comprehensiveHash
+                ]);
+                
+                // Update cache with comprehensive hash for next time
+                $blingService->setCachedOrderHash($blingId, $comprehensiveHash);
+                
+                return ['created' => false, 'updated' => false, 'skipped' => true, 'skip_reason' => 'comprehensive_hash_match'];
+            }
+            
+            if ($hasCriticalChanges) {
+                Log::info('BlingSyncJob: Critical changes detected, forcing sync despite identical hash', [
+                    'bling_id' => $blingId,
+                    'numero' => $blingOrder['numero'],
+                    'hash' => $comprehensiveHash
+                ]);
+            }
+            
+            if ($needsKanbanVerification) {
+                Log::info('BlingSyncJob: Order has invoice, forcing sync to verify Kanban display', [
+                    'bling_id' => $blingId,
+                    'numero' => $blingOrder['numero'],
+                    'hash' => $comprehensiveHash
+                ]);
+            }
+            
+            Log::info('BlingSyncJob: Comprehensive hash changed, processing order update', [
+                'bling_id' => $blingId,
+                'numero' => $blingOrder['numero'],
+                'old_hash' => $existingOrder->bling_data_hash,
+                'new_hash' => $comprehensiveHash
+            ]);
         }
 
         DB::beginTransaction();
         
         try {
-            // Get complete order data for raw storage
-            $completeOrderData = $blingService->getCompleteOrderData($blingId);
-            if (!$completeOrderData) {
-                throw new \Exception("Failed to fetch complete order data for ID {$blingId}");
-            }
-
             $orderData = $this->mapBlingOrderToOrder($completeOrderData);
             $orderData['raw_order_data'] = $completeOrderData;
             
+            // Track changes before updating
+            $changedFields = [];
+            $changeTypes = [];
+            $oldData = [];
+            
             if ($existingOrder) {
+                // Capture old values for comparison
+                $oldData = [
+                    'situacao_valor' => $existingOrder->situacao_valor,
+                    'situacao_id' => $existingOrder->situacao_id,
+                    'total' => $existingOrder->total,
+                    'contato_nome' => $existingOrder->contato_nome,
+                    'contato_documento' => $existingOrder->contato_documento,
+                    'data' => $existingOrder->data,
+                    'data_saida' => $existingOrder->data_saida,
+                    'numero_loja' => $existingOrder->numero_loja,
+                ];
+                
                 $existingOrder->update($orderData);
                 $order = $existingOrder;
                 $created = false;
                 $updated = true;
+                
+                // Update hash after saving (using comprehensive hash already generated)
+                $order->bling_data_hash = $comprehensiveHash;
+                $order->save();
+                
+                // Update cache with new hash
+                $blingService->setCachedOrderHash($blingId, $comprehensiveHash);
+                
+                // Detect what changed
+                if ($oldData['situacao_valor'] != $order->situacao_valor) {
+                    $changedFields[] = 'situacao_valor';
+                    $changeTypes[] = 'status_changed';
+                }
+                
+                if ($oldData['situacao_id'] != $order->situacao_id) {
+                    $changedFields[] = 'situacao_id';
+                    if ($order->situacao_id === 12) {
+                        $changeTypes[] = 'cancelled';
+                    } else {
+                        $changeTypes[] = 'status_changed';
+                    }
+                }
+                
+                if ($oldData['total'] != $order->total) {
+                    $changedFields[] = 'total';
+                    $changeTypes[] = 'data_updated';
+                }
+                
+                if ($oldData['contato_nome'] != $order->contato_nome) {
+                    $changedFields[] = 'contato_nome';
+                    $changeTypes[] = 'data_updated';
+                }
+                
+                if ($oldData['contato_documento'] != $order->contato_documento) {
+                    $changedFields[] = 'contato_documento';
+                    $changeTypes[] = 'data_updated';
+                }
+                
+                if ($oldData['data'] != $order->data) {
+                    $changedFields[] = 'data';
+                    $changeTypes[] = 'data_updated';
+                }
+                
+                if ($oldData['data_saida'] != $order->data_saida) {
+                    $changedFields[] = 'data_saida';
+                    $changeTypes[] = 'data_updated';
+                }
+                
+                if ($oldData['numero_loja'] != $order->numero_loja) {
+                    $changedFields[] = 'numero_loja';
+                    $changeTypes[] = 'data_updated';
+                }
             } else {
                 $order = OrderSummary::create($orderData);
                 $created = true;
                 $updated = false;
+                
+                // Set hash for new order (using comprehensive hash already generated)
+                $order->bling_data_hash = $comprehensiveHash;
+                $order->save();
+                
+                // Cache the hash for new order
+                $blingService->setCachedOrderHash($blingId, $comprehensiveHash);
                 
                 // Record order import in history
                 app(OrderHistoryService::class)->recordOrderImported($order, 'bling', [
@@ -275,8 +539,57 @@ class BlingSyncJob implements ShouldQueue
                 ]);
             }
 
+            // Capture invoice and tracking before sync for change detection
+            $oldInvoiceNumber = $order->invoice?->numero ?? null;
+            $oldTrackingCode = $order->tracking_code;
+            
             // Sync invoices (NFE) and tracking with complete data
             $this->syncInvoicesAndTrackingWithCompleteData($blingService, $order, $completeOrderData);
+            
+            // Refresh order to get updated data
+            $order->refresh();
+            $order->load(['invoice', 'orderStatus']);
+            
+            // Detect invoice and tracking changes
+            $newInvoiceNumber = $order->invoice?->numero ?? null;
+            $newTrackingCode = $order->tracking_code;
+            
+            // Detect invoice changes (added or modified) - for BOTH new and existing orders
+            if ($oldInvoiceNumber !== $newInvoiceNumber) {
+                $changedFields[] = 'invoice_number';
+                if (!$oldInvoiceNumber && $newInvoiceNumber) {
+                    $changeTypes[] = 'invoice_added';
+                } else if ($oldInvoiceNumber && $newInvoiceNumber && $oldInvoiceNumber !== $newInvoiceNumber) {
+                    $changeTypes[] = 'invoice_updated';
+                } else if ($oldInvoiceNumber && !$newInvoiceNumber) {
+                    $changeTypes[] = 'invoice_removed';
+                }
+            }
+            
+            // SPECIAL CASE: If order has invoice but no changes detected, 
+            // it might be a case where invoice was added but broadcast was missed
+            // Force a broadcast to ensure Kanban displays correctly
+            if (empty($changedFields) && $newInvoiceNumber && $created) {
+                $changedFields[] = 'invoice_number';
+                $changeTypes[] = 'invoice_added';
+                Log::info('BlingSyncJob: Forcing invoice broadcast for new order with existing invoice', [
+                    'bling_id' => $blingId,
+                    'numero' => $blingOrder['numero'],
+                    'invoice_number' => $newInvoiceNumber
+                ]);
+            }
+            
+            // Detect tracking changes (added or modified) - for BOTH new and existing orders
+            if ($oldTrackingCode !== $newTrackingCode) {
+                $changedFields[] = 'tracking_code';
+                if (!$oldTrackingCode && $newTrackingCode) {
+                    $changeTypes[] = 'tracking_added';
+                } else if ($oldTrackingCode && $newTrackingCode && $oldTrackingCode !== $newTrackingCode) {
+                    $changeTypes[] = 'tracking_updated';
+                } else if ($oldTrackingCode && !$newTrackingCode) {
+                    $changeTypes[] = 'tracking_removed';
+                }
+            }
 
             DB::commit();
 
@@ -284,29 +597,77 @@ class BlingSyncJob implements ShouldQueue
                 'bling_id' => $blingId,
                 'order_id' => $order->id,
                 'numero' => $blingOrder['numero'],
-                'action' => $created ? 'created' : 'updated'
+                'action' => $created ? 'created' : 'updated',
+                'changed_fields' => $changedFields,
+                'change_types' => $changeTypes,
+                'invoice_state' => [
+                    'old_invoice' => $oldInvoiceNumber,
+                    'new_invoice' => $newInvoiceNumber,
+                    'has_invoice' => !empty($newInvoiceNumber)
+                ],
+                'tracking_state' => [
+                    'old_tracking' => $oldTrackingCode,
+                    'new_tracking' => $newTrackingCode,
+                    'has_tracking' => !empty($newTrackingCode)
+                ]
             ]);
 
-            // Broadcast new order event if it was just created
-            if ($created) {
-                // Get system user for automated imports (try admin first, then manager, then any user)
-                $systemUser = \App\Models\User::whereIn('role', ['admin', 'manager'])
-                    ->orderByRaw("FIELD(role, 'admin', 'manager')")
-                    ->first();
-                
-                // Fallback to any user if no admin/manager exists
-                if (!$systemUser) {
-                    $systemUser = \App\Models\User::first();
-                }
-                
-                if ($systemUser) {
-                    // Reload order with relationships before broadcasting
-                    $order->load('orderStatus');
+            // Get system user for broadcasting events
+            $systemUser = \App\Models\User::whereIn('role', ['admin', 'manager'])
+                ->orderByRaw("FIELD(role, 'admin', 'manager')")
+                ->first();
+            
+            // Fallback to any user if no admin/manager exists
+            if (!$systemUser) {
+                $systemUser = \App\Models\User::first();
+            }
+
+            // Broadcast events only if there are meaningful changes or it's a new order
+            // SPECIAL CASE: Always broadcast if order has invoice (to ensure Kanban displays correctly)
+            $hasInvoice = !empty($newInvoiceNumber);
+            $shouldBroadcast = !empty($changedFields) || $created || $hasInvoice;
+            
+            if ($systemUser && $shouldBroadcast) {
+                if ($created) {
+                    // For new orders, always broadcast OrderCreated
                     event(new \App\Events\OrderCreated($order, $systemUser));
-                    Log::debug('BlingSyncJob: OrderCreated event dispatched', ['order_id' => $order->id, 'user_id' => $systemUser->id]);
+                    Log::debug('BlingSyncJob: OrderCreated event dispatched', [
+                        'order_id' => $order->id,
+                        'user_id' => $systemUser->id,
+                        'has_invoice' => !empty($newInvoiceNumber),
+                        'has_tracking' => !empty($newTrackingCode)
+                    ]);
                 } else {
-                    Log::warning('BlingSyncJob: Cannot dispatch OrderCreated event: no users found in system', ['order_id' => $order->id]);
+                    // For existing orders, only broadcast if there are actual changes
+                    // If no changes detected but has invoice, force invoice_added change type
+                    $finalChangeTypes = $changeTypes;
+                    $finalChangedFields = $changedFields;
+                    
+                    if (empty($changedFields) && $hasInvoice) {
+                        $finalChangedFields = ['invoice_number'];
+                        $finalChangeTypes = ['invoice_added'];
+                        Log::info('BlingSyncJob: Forcing invoice broadcast for existing order', [
+                            'bling_id' => $blingId,
+                            'numero' => $blingOrder['numero'],
+                            'invoice_number' => $newInvoiceNumber
+                        ]);
+                    }
+                    
+                    event(new \App\Events\OrderUpdated($order, $systemUser, $finalChangedFields, $finalChangeTypes));
+                    Log::debug('BlingSyncJob: OrderUpdated event dispatched', [
+                        'order_id' => $order->id,
+                        'user_id' => $systemUser->id,
+                        'changed_fields' => $finalChangedFields,
+                        'change_types' => $finalChangeTypes,
+                        'has_invoice' => !empty($newInvoiceNumber),
+                        'has_tracking' => !empty($newTrackingCode),
+                        'forced_invoice_broadcast' => empty($changedFields) && $hasInvoice
+                    ]);
                 }
+            }
+            
+            if (!$systemUser) {
+                Log::warning('BlingSyncJob: Cannot dispatch order events: no users found in system', ['order_id' => $order->id]);
             }
 
             return ['created' => $created, 'updated' => $updated, 'order' => $order];
@@ -420,6 +781,10 @@ class BlingSyncJob implements ShouldQueue
         $order->update([
             'external_updated_at' => now(),
         ]);
+
+        // Force reload the invoice relationship to ensure it's available for change detection
+        $order->unsetRelation('invoice');
+        $order->load('invoice');
 
         // Record invoice sync in history
         app(OrderHistoryService::class)->recordInvoiceSynced($order, [
@@ -620,6 +985,7 @@ class BlingSyncJob implements ShouldQueue
             'contato_nome' => $existingOrder->contato_nome,
             'contato_documento' => $existingOrder->contato_documento,
             'situacao_valor' => $existingOrder->situacao_valor,
+            'situacao_id' => $existingOrder->situacao_id,
         ];
         
         $newData = [
@@ -628,6 +994,7 @@ class BlingSyncJob implements ShouldQueue
             'contato_nome' => $contact['nome'] ?? 'N/A',
             'contato_documento' => $contact['numeroDocumento'] ?? null,
             'situacao_valor' => $blingOrder['situacao']['valor'] ?? 1,
+            'situacao_id' => $blingOrder['situacao']['id'] ?? 1,
         ];
         
         return $existingData === $newData;

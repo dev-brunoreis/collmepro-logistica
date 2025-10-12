@@ -509,7 +509,7 @@ const kanbanData = ref<KanbanData>({
 })
 
 // Broadcasting setup
-const { isConnected, lastUpdate, lastNewOrder } = useOrderBroadcasting()
+const { isConnected, lastUpdate, lastNewOrder, lastOrderUpdate } = useOrderBroadcasting()
 
 // Watch for real-time updates and update kanban data
 watch(lastUpdate, (update) => {
@@ -668,6 +668,138 @@ watch(lastNewOrder, (newOrderEvent) => {
       console.log(`New order ${order.id} (${order.numero}) added to column: ${targetColumn}`)
     } else {
       console.warn(`Target column ${targetColumn} not found for new order ${order.id}`)
+    }
+  }
+})
+
+// Watch for order updates from broadcasting
+watch(lastOrderUpdate, (updateEvent) => {
+  if (updateEvent && updateEvent.order) {
+    console.log('Kanban Compact received order update:', updateEvent)
+
+    const updatedOrder = updateEvent.order
+    const changeTypes = updateEvent.change_types || []
+
+    // Find the order in all columns
+    let foundOrder: any = null
+    let foundColumnKey: string | null = null
+
+    Object.keys(kanbanData.value).forEach(columnKey => {
+      const column = kanbanData.value[columnKey as keyof KanbanData]
+      if (!column) return
+      
+      const orderIndex = column.findIndex(order => order.id === updatedOrder.id)
+      if (orderIndex !== -1) {
+        foundOrder = column[orderIndex]
+        foundColumnKey = columnKey
+      }
+    })
+
+    if (!foundOrder) {
+      console.log('Order not found in Kanban, ignoring update:', updatedOrder.id)
+      return
+    }
+
+    // 1. Handle cancellation - remove from Kanban
+    if (changeTypes.includes('cancelled') && updatedOrder.situacao_id === 12) {
+      console.log(`Order ${updatedOrder.numero} was cancelled, removing from Kanban`)
+      if (foundColumnKey) {
+        const column = kanbanData.value[foundColumnKey as keyof KanbanData]
+        if (column) {
+        const orderIndex = column.findIndex(order => order.id === updatedOrder.id)
+        if (orderIndex !== -1) {
+          column.splice(orderIndex, 1)
+            console.log(`Order ${updatedOrder.id} removed from column: ${foundColumnKey}`)
+          }
+        }
+      }
+      // TODO: Show toast notification when toast system is implemented
+      return
+    }
+
+    // 2. Update order data in place
+    if (foundOrder) {
+      // Update basic fields
+      if (updateEvent.changed_fields.includes('total')) {
+        foundOrder.total = updatedOrder.total
+      }
+      if (updateEvent.changed_fields.includes('contato_nome')) {
+        foundOrder.contato_nome = updatedOrder.contato_nome
+      }
+      
+      // Update invoice if added (primary check)
+      if (changeTypes.includes('invoice_added') && updatedOrder.invoice_number) {
+        foundOrder.invoice_number = updatedOrder.invoice_number
+        console.log(`Invoice added to order ${updatedOrder.numero}: ${updatedOrder.invoice_number}`)
+      }
+      // Fallback: Update invoice if present in update data (even without invoice_added change type)
+      else if (updatedOrder.invoice_number && !foundOrder.invoice_number) {
+        foundOrder.invoice_number = updatedOrder.invoice_number
+        console.log(`Invoice updated via fallback for order ${updatedOrder.numero}: ${updatedOrder.invoice_number}`)
+      }
+      
+      // Update tracking if added (primary check)
+      if (changeTypes.includes('tracking_added') && updatedOrder.tracking_code) {
+        foundOrder.tracking_code = updatedOrder.tracking_code
+        foundOrder.tracking_url = updatedOrder.tracking_url
+        console.log(`Tracking added to order ${updatedOrder.numero}: ${updatedOrder.tracking_code}`)
+      }
+      // Fallback: Update tracking if present in update data (even without tracking_added change type)
+      else if (updatedOrder.tracking_code && !foundOrder.tracking_code) {
+        foundOrder.tracking_code = updatedOrder.tracking_code
+        foundOrder.tracking_url = updatedOrder.tracking_url
+        console.log(`Tracking updated via fallback for order ${updatedOrder.numero}: ${updatedOrder.tracking_code}`)
+      }
+      
+      // Update order status
+      if (updatedOrder.order_status) {
+        foundOrder.order_status = updatedOrder.order_status
+      }
+    }
+
+    // 3. Recalculate column if invoice or tracking was added (or updated via fallback)
+    const invoiceWasUpdated = changeTypes.includes('invoice_added') || 
+      (updatedOrder.invoice_number && !foundOrder?.invoice_number)
+    const trackingWasUpdated = changeTypes.includes('tracking_added') || 
+      (updatedOrder.tracking_code && !foundOrder?.tracking_code)
+    
+    if (invoiceWasUpdated || trackingWasUpdated) {
+      // Determine new column
+      let targetColumn = 'pedidos_emitidos'
+      const hasInvoice = !!updatedOrder.invoice_number
+      const hasTracking = !!updatedOrder.tracking_code
+      const orderStatus = updatedOrder.order_status || { picking: false, packing: false, picked_up: false }
+      
+      if (orderStatus.picked_up) {
+        targetColumn = 'coleta_realizada'
+      } else if (hasInvoice && orderStatus.picking && orderStatus.packing && hasTracking) {
+        targetColumn = 'coleta_aguardando'
+      } else if (hasInvoice && orderStatus.picking && orderStatus.packing && !hasTracking) {
+        targetColumn = 'etiqueta'
+      } else if (hasInvoice && orderStatus.picking && !orderStatus.packing) {
+        targetColumn = 'embalagem'
+      } else if (hasInvoice && !orderStatus.picking) {
+        targetColumn = 'checkout'
+      } else if (!hasInvoice) {
+        targetColumn = 'faturamento'
+      }
+
+      // Move if needed
+      if (foundColumnKey && foundColumnKey !== targetColumn) {
+        const oldColumn = kanbanData.value[foundColumnKey as keyof KanbanData]
+        const newColumn = kanbanData.value[targetColumn as keyof KanbanData]
+        
+        if (oldColumn && newColumn) {
+          const orderIndex = oldColumn.findIndex(order => order.id === updatedOrder.id)
+          if (orderIndex !== -1) {
+            const [orderToMove] = oldColumn.splice(orderIndex, 1)
+            // Update the order with latest data before moving
+            Object.assign(orderToMove, foundOrder)
+            newColumn.push(orderToMove)
+            console.log(`Order ${updatedOrder.numero} moved from ${foundColumnKey} to ${targetColumn}`)
+          }
+        }
+      }
     }
   }
 })

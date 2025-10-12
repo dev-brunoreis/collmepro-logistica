@@ -63,7 +63,8 @@ class KanbanController extends Controller
             },
             'invoice',
             'orderData'
-        ]);
+        ])
+        ->notCancelled(); // Filter out cancelled orders
 
         // Apply date filter unless loading all
         if (!$loadAll && $daysBack > 0) {
@@ -103,6 +104,14 @@ class KanbanController extends Controller
 
         // Find the order
         $order = OrderSummary::with(['orderStatus', 'invoice'])->findOrFail($orderSummary);
+
+        // Validate that order is not cancelled
+        if ($order->situacao_id === 12) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Não é possível alterar status de pedido cancelado.',
+            ], 422);
+        }
 
         // Get or create order status
         $orderStatus = $order->orderStatus;
