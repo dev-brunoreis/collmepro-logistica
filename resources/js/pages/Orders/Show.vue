@@ -482,16 +482,15 @@ const formatTrackingDataForAPI = (tracking: TrackingData) => {
                                         Ver DANFE
                                     </a>
                                     <a
-                                        :href="`https://www.bling.com.br/vendas.php#edit/${props.order.invoice_raw_data?.bling_id || props.order.invoice?.bling_id}`"
+                                        :href="`https://www.bling.com.br/vendas.php#edit/${props.order?.bling_id}`"
                                         target="_blank"
                                         class="inline-flex items-center gap-1 rounded-md border border-sidebar-border/70 px-3 py-1 text-xs font-medium text-foreground hover:bg-sidebar-border/70 dark:border-sidebar-border"
                                     >
                                         <ExternalLink class="h-3 w-3" />
                                         Ver pedido no Bling
                                     </a>
-                                    {{ props.order }}
                                     <a
-                                        :href="`https://www.bling.com.br/notas.fiscais.php#edit/${props.order.invoice_raw_data?.id || props.order.invoice?.id}`"
+                                        :href="`https://www.bling.com.br/notas.fiscais.php#edit/${props.order?.raw_invoice_data?.id}`"
                                         target="_blank"
                                         class="inline-flex items-center gap-1 rounded-md border border-sidebar-border/70 px-3 py-1 text-xs font-medium text-foreground hover:bg-sidebar-border/70 dark:border-sidebar-border"
                                     >

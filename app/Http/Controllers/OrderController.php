@@ -395,6 +395,7 @@ class OrderController extends Controller
                 'invoice_chave_acesso' => $order->invoice ? $order->invoice->chave_acesso : null,
                 'raw_data' => $order->orderData ? $order->orderData->raw_data : null,
                 'invoice_raw_data' => $order->invoice ? $order->invoice->raw_data : null,
+                'raw_invoice_data' => $order->invoice ? $order->invoice->raw_data : null, // Alias for Vue component
                 'tracking_data' => $trackingData,
                 'summary_data' => $order->toArray(),
                 'order_history' => $orderHistory,
