@@ -436,6 +436,26 @@ abstract class BlingService
                     $changedFields[] = 'situacao_id';
                     if ($order->situacao_id === 12) {
                         $changeTypes[] = 'cancelled';
+                        
+                        // Reset all order statuses for cancelled orders
+                        if ($order->orderStatus) {
+                            $order->orderStatus->update([
+                                'picking' => false,
+                                'picking_marked_by' => null,
+                                'picking_marked_at' => null,
+                                'packing' => false,
+                                'packing_marked_by' => null,
+                                'packing_marked_at' => null,
+                                'picked_up' => false,
+                                'picked_up_marked_by' => null,
+                                'picked_up_marked_at' => null,
+                            ]);
+                            
+                            Log::info('Reset order statuses for cancelled order', [
+                                'bling_id' => $blingId,
+                                'numero' => $order->numero
+                            ]);
+                        }
                     } else {
                         $changeTypes[] = 'status_changed';
                     }

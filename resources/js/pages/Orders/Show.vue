@@ -308,6 +308,11 @@ const formatTrackingDataForAPI = (tracking: TrackingData) => {
                         Voltar aos Pedidos
                     </Link>
                     <h1 class="text-2xl font-bold">Pedido {{ props.order.numero }}</h1>
+                    <div v-if="props.order.situacao_id === 12" class="flex items-center">
+                        <span class="inline-flex items-center rounded-full px-3 py-1 text-sm font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">
+                            CANCELADO
+                        </span>
+                    </div>
                 </div>
             </div>
 
@@ -436,31 +441,31 @@ const formatTrackingDataForAPI = (tracking: TrackingData) => {
                     </div>
 
                     <!-- Invoice Information -->
-                    <div v-if="props.order.raw_invoice_data || props.order.nota_fiscal_id || props.order.invoice_numero" class="rounded-lg border border-sidebar-border/70 p-6 dark:border-sidebar-border">
+                    <div v-if="props.order.invoice_raw_data || props.order.nota_fiscal_id || props.order.invoice_numero || props.order.invoice" class="rounded-lg border border-sidebar-border/70 p-6 dark:border-sidebar-border">
                         <h2 class="text-lg font-semibold mb-4">Nota Fiscal Eletrônica (NFE)</h2>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div v-if="props.order.raw_invoice_data?.numero">
+                            <div v-if="props.order.invoice_raw_data?.numero || props.order.invoice?.numero">
                                 <label class="text-sm font-medium text-muted-foreground">Número da NFE</label>
-                                <div class="mt-1 text-sm font-medium">{{ props.order.raw_invoice_data.numero }}</div>
+                                <div class="mt-1 text-sm font-medium">{{ props.order.invoice_raw_data?.numero || props.order.invoice?.numero }}</div>
                             </div>
-                            <div v-if="props.order.raw_invoice_data?.chaveAcesso">
+                            <div v-if="props.order.invoice_raw_data?.chaveAcesso || props.order.invoice?.chave_acesso">
                                 <label class="text-sm font-medium text-muted-foreground">Chave de Acesso</label>
-                                <div class="mt-1 text-xs font-mono break-all">{{ props.order.raw_invoice_data.chaveAcesso }}</div>
+                                <div class="mt-1 text-xs font-mono break-all">{{ props.order.invoice_raw_data?.chaveAcesso || props.order.invoice?.chave_acesso }}</div>
                             </div>
-                            <div v-if="props.order.raw_invoice_data?.total">
+                            <div v-if="props.order.invoice_raw_data?.valorNota || props.order.invoice_raw_data?.total || props.order.invoice?.valor_nota">
                                 <label class="text-sm font-medium text-muted-foreground">Valor da NFE</label>
-                                <div class="mt-1 text-sm font-medium">R$ {{ props.order.raw_invoice_data.total }}</div>
+                                <div class="mt-1 text-sm font-medium">R$ {{ props.order.invoice_raw_data?.valorNota || props.order.invoice_raw_data?.total || props.order.invoice?.valor_nota }}</div>
                             </div>
-                            <div v-if="props.order.raw_invoice_data?.dataEmissao">
+                            <div v-if="props.order.invoice_raw_data?.dataEmissao || props.order.invoice?.data_emissao">
                                 <label class="text-sm font-medium text-muted-foreground">Data de Emissão</label>
-                                <div class="mt-1 text-sm">{{ formatDate(props.order.raw_invoice_data.dataEmissao) }}</div>
+                                <div class="mt-1 text-sm">{{ formatDate(props.order.invoice_raw_data?.dataEmissao || props.order.invoice?.data_emissao) }}</div>
                             </div>
-                            <div v-if="props.order.raw_invoice_data?.linkDanfe || props.order.raw_invoice_data?.linkPDF" class="md:col-span-2">
+                            <div v-if="props.order.invoice_raw_data?.linkDanfe || props.order.invoice_raw_data?.linkPDF || props.order.invoice?.link_danfe || props.order.invoice?.link_pdf" class="md:col-span-2">
                                 <label class="text-sm font-medium text-muted-foreground">Links</label>
                                 <div class="mt-1 flex gap-2">
                                     <a
-                                        v-if="props.order.raw_invoice_data?.linkPDF"
-                                        :href="props.order.raw_invoice_data.linkPDF"
+                                        v-if="props.order.invoice_raw_data?.linkPDF || props.order.invoice?.link_pdf"
+                                        :href="props.order.invoice_raw_data?.linkPDF || props.order.invoice?.link_pdf"
                                         target="_blank"
                                         class="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
                                     >
@@ -468,13 +473,30 @@ const formatTrackingDataForAPI = (tracking: TrackingData) => {
                                         Baixar PDF
                                     </a>
                                     <a
-                                        v-if="props.order.raw_invoice_data?.linkDanfe"
-                                        :href="props.order.raw_invoice_data.linkDanfe"
+                                        v-if="props.order.invoice_raw_data?.linkDanfe || props.order.invoice?.link_danfe"
+                                        :href="props.order.invoice_raw_data?.linkDanfe || props.order.invoice?.link_danfe"
                                         target="_blank"
                                         class="inline-flex items-center gap-1 rounded-md border border-sidebar-border/70 px-3 py-1 text-xs font-medium text-foreground hover:bg-sidebar-border/70 dark:border-sidebar-border"
                                     >
                                         <ExternalLink class="h-3 w-3" />
                                         Ver DANFE
+                                    </a>
+                                    <a
+                                        :href="`https://www.bling.com.br/vendas.php#edit/${props.order.invoice_raw_data?.bling_id || props.order.invoice?.bling_id}`"
+                                        target="_blank"
+                                        class="inline-flex items-center gap-1 rounded-md border border-sidebar-border/70 px-3 py-1 text-xs font-medium text-foreground hover:bg-sidebar-border/70 dark:border-sidebar-border"
+                                    >
+                                        <ExternalLink class="h-3 w-3" />
+                                        Ver pedido no Bling
+                                    </a>
+                                    {{ props.order }}
+                                    <a
+                                        :href="`https://www.bling.com.br/notas.fiscais.php#edit/${props.order.invoice_raw_data?.id || props.order.invoice?.id}`"
+                                        target="_blank"
+                                        class="inline-flex items-center gap-1 rounded-md border border-sidebar-border/70 px-3 py-1 text-xs font-medium text-foreground hover:bg-sidebar-border/70 dark:border-sidebar-border"
+                                    >
+                                        <ExternalLink class="h-3 w-3" />
+                                        Ver NFE no Bling
                                     </a>
                                 </div>
                             </div>

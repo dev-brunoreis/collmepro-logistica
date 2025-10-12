@@ -281,6 +281,9 @@ const clearFilters = () => {
 };
 
 const isStatusButtonDisabled = (order: Order, action: string): boolean => {
+    // Disable all buttons for cancelled orders
+    if (order.situacao_id === 12) return true;
+    
     const status = order.order_status;
     const hasInvoice = !!(order.invoice_id || order.invoice?.numero);
     const hasTracking = !!(order.tracking_code || (order.tracking && order.tracking.length > 0));
@@ -311,6 +314,11 @@ const isStatusButtonDisabled = (order: Order, action: string): boolean => {
 };
 
 const getStatusButtonTooltip = (order: Order, action: string): string => {
+    // Show cancellation message for cancelled orders
+    if (order.situacao_id === 12) {
+        return 'Pedido cancelado - não é possível modificar status';
+    }
+    
     const status = order.order_status;
     const hasInvoice = !!(order.invoice_id || order.invoice?.numero);
     const hasTracking = !!(order.tracking_code || (order.tracking && order.tracking.length > 0));
@@ -838,7 +846,12 @@ const getCurrentPerPage = () => {
                                     {{ order.logistics_provider }}
                                 </td>
                                 <td class="px-4 py-3 text-center">
-                                    <div class="flex items-center justify-center gap-2">
+                                    <div v-if="order.situacao_id === 12" class="flex items-center justify-center gap-2">
+                                        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">
+                                            CANCELADO
+                                        </span>
+                                    </div>
+                                    <div v-else class="flex items-center justify-center gap-2">
                                         <span v-if="order.tracking && order.tracking[0]?.descricao" class="text-sm">{{ order.tracking[0].descricao }}</span>
                                         <span v-else class="text-sm text-muted-foreground">-</span>
                                     </div>

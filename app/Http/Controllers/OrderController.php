@@ -416,6 +416,11 @@ class OrderController extends Controller
         $status = $request->input('status');
         $user = Auth::user();
 
+        // Prevent status updates for cancelled orders
+        if ($order->isCancelled()) {
+            return back()->with('error', 'Não é possível modificar o status de pedidos cancelados.');
+        }
+
         // Get or create order status
         $orderStatus = $order->orderStatus ?? $order->orderStatus()->create([
             'picking' => false,
