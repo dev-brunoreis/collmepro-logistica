@@ -6,8 +6,9 @@ import { Head, router } from '@inertiajs/vue3';
 import PlaceholderPattern from '../components/PlaceholderPattern.vue';
 import KanbanCompact from '../components/KanbanCompact.vue';
 import MetricCard from '../components/MetricCard.vue';
-import { ref, onMounted } from 'vue';
-import { Package, CheckCircle } from 'lucide-vue-next';
+import { ref, onMounted, computed } from 'vue';
+import { Package, CheckCircle, Sun, Moon, Monitor } from 'lucide-vue-next';
+import { useAppearance } from '@/composables/useAppearance';
 import axios from 'axios';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -29,6 +30,38 @@ const selectedPeriod = ref(15); // Default: 15 days
 const metrics = ref(props.metrics);
 const kanbanData = ref(props.kanbanData);
 const loading = ref(false);
+
+// Theme functionality
+const { appearance, updateAppearance } = useAppearance();
+
+const themeIcon = computed(() => {
+    switch (appearance.value) {
+        case 'light': return Sun;
+        case 'dark': return Moon;
+        case 'system': return Monitor;
+        default: return Monitor;
+    }
+});
+
+const themeLabel = computed(() => {
+    switch (appearance.value) {
+        case 'light': return 'Claro';
+        case 'dark': return 'Escuro';
+        case 'system': return 'Sistema';
+        default: return 'Sistema';
+    }
+});
+
+const themeButtonTitle = computed(() => {
+    return `Tema atual: ${themeLabel.value}. Clique para alternar.`;
+});
+
+const cycleTheme = () => {
+    const themes: Array<'light' | 'dark' | 'system'> = ['light', 'dark', 'system'];
+    const currentIndex = themes.indexOf(appearance.value);
+    const nextIndex = (currentIndex + 1) % themes.length;
+    updateAppearance(themes[nextIndex]);
+};
 
 const openKanbanFullscreen = () => {
     router.visit('/dashboard/painel');
@@ -77,23 +110,36 @@ onMounted(() => {
         <div
             class="flex h-full flex-1 flex-col gap-4 overflow-hidden rounded-xl p-4"
         >
-            <!-- Period Filter -->
+            <!-- Period Filter and Theme Toggle -->
             <div class="flex items-center gap-4">
-                <label for="period-select" class="text-sm font-medium text-white">
-                    Período:
-                </label>
-                <select 
-                    id="period-select"
-                    v-model="selectedPeriod" 
-                    @change="fetchDashboardData"
-                    :disabled="loading"
-                    class="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
+                <div class="flex items-center gap-2">
+                    <label for="period-select" class="text-sm font-medium text-foreground">
+                        Período:
+                    </label>
+                    <select 
+                        id="period-select"
+                        v-model="selectedPeriod" 
+                        @change="fetchDashboardData"
+                        :disabled="loading"
+                        class="px-3 py-2 bg-card border border-border rounded-lg text-foreground focus:ring-2 focus:ring-ring focus:border-transparent disabled:opacity-50"
+                    >
+                        <option value="15">Últimos 15 dias</option>
+                        <option value="30">Últimos 30 dias</option>
+                        <option value="60">Últimos 60 dias</option>
+                    </select>
+                </div>
+                
+                <!-- Theme Toggle Button -->
+                <button
+                    @click="cycleTheme"
+                    class="flex items-center gap-2 px-3 py-2 bg-card border border-border rounded-lg text-foreground hover:bg-muted transition-colors"
+                    :title="themeButtonTitle"
                 >
-                    <option value="15">Últimos 15 dias</option>
-                    <option value="30">Últimos 30 dias</option>
-                    <option value="60">Últimos 60 dias</option>
-                </select>
-                <div v-if="loading" class="text-sm text-gray-400">
+                    <component :is="themeIcon" class="w-4 h-4" />
+                    <span class="hidden sm:inline text-sm">{{ themeLabel }}</span>
+                </button>
+                
+                <div v-if="loading" class="text-sm text-muted-foreground">
                     Carregando...
                 </div>
             </div>
@@ -114,14 +160,14 @@ onMounted(() => {
             
             <!-- Kanban Section -->
             <div
-                class="relative flex-1 rounded-xl border border-sidebar-border/70 dark:border-sidebar-border p-4 bg-gradient-to-br from-gray-900 to-gray-800"
+                class="relative flex-1 rounded-xl border border-border p-4 bg-card"
             >
                 <!-- Loading Overlay -->
-                <div v-if="loading" class="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 rounded-xl">
+                <div v-if="loading" class="absolute inset-0 bg-background/90 backdrop-blur-sm flex items-center justify-center z-50 rounded-xl">
                     <div class="text-center">
-                        <div class="w-16 h-16 border-4 border-white border-opacity-20 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
-                        <h3 class="text-xl font-bold text-white mb-2">Carregando dados...</h3>
-                        <p class="text-sm text-white opacity-80">
+                        <div class="w-16 h-16 border-4 border-muted border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
+                        <h3 class="text-xl font-bold text-foreground mb-2">Carregando dados...</h3>
+                        <p class="text-sm text-muted-foreground">
                             Período: {{ selectedPeriod }} dias
                         </p>
                     </div>

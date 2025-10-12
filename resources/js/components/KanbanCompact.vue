@@ -1,11 +1,11 @@
 <template>
   <div class="kanban-compact" :class="{ 'kanban-fullscreen': isFullscreen }">
     <!-- Loading Indicator -->
-    <div v-if="loading" class="loading-overlay-compact">
-      <div class="loading-content-compact">
-        <div class="spinner-compact"></div>
-        <h3 class="text-xl font-bold text-white mb-2">Carregando pedidos...</h3>
-        <p class="text-sm text-white/80">
+    <div v-if="loading" class="absolute inset-0 bg-background/90 backdrop-blur-sm flex justify-center items-center z-50 rounded-xl">
+      <div class="text-center">
+        <div class="w-16 h-16 border-4 border-muted border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
+        <h3 class="text-xl font-bold text-foreground mb-2">Carregando pedidos...</h3>
+        <p class="text-sm text-muted-foreground">
           {{ loadingProgress }} / {{ totalOrders }} orders
         </p>
       </div>
@@ -13,7 +13,7 @@
 
     <!-- Header with fullscreen button -->
     <div class="flex items-center justify-between mb-4">
-      <h2 class="text-xl font-bold text-white">Kanban Board</h2>
+      <h2 class="text-xl font-bold text-foreground">Kanban Board</h2>
       <button @click="toggleFullscreen"
         class="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200"
         :title="isFullscreen ? 'Exit fullscreen' : 'Open fullscreen'">
@@ -23,21 +23,21 @@
 
     </div>
     <!-- Pedidos Emitidos Layout -->
-    <div class="bg-gray-800 rounded-lg shadow-lg">
+    <div class="bg-card rounded-lg shadow-lg border border-border">
       <!-- Flex Layout - Responsive -->
       <div class="flex gap-0 w-full" style="max-height: 600px;">
         <!-- Pedidos Emitidos Column (spans 3 columns) -->
-        <div class="border-r border-gray-600 flex-1" style="max-width: 30%; min-width: 200px;">
-          <div class="bg-gray-700 px-4 py-3 text-center border-b border-gray-600">
-            <h3 class="text-white font-semibold">Pedidos Emitidos</h3>
+        <div class="border-r border-border flex-1" style="max-width: 30%; min-width: 200px;">
+          <div class="bg-muted px-4 py-3 text-center border-b border-border">
+            <h3 class="text-foreground font-semibold">Pedidos Emitidos</h3>
           </div>
           <div class="grid grid-cols-3 h-full">
             <!-- Collme Pro Sub-column -->
-            <div class="border-r border-gray-600">
-              <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
-                <h4 class="text-white text-xs font-medium">Collme Pro</h4>
+            <div class="border-r border-border">
+              <div class="bg-muted px-2 py-2 text-center border-b border-border">
+                <h4 class="text-foreground text-xs font-medium">Collme Pro</h4>
               </div>
-              <div class="p-2 bg-gray-800 overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
+              <div class="p-2 bg-card overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
                 <div class="space-y-1">
                   <div v-for="order in getOrdersBySource('Collme Pro')" :key="order.id"
                     class="bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 border border-blue-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white"
@@ -61,7 +61,7 @@
                     </div>
                   </div>
                   <div v-if="getOrdersBySource('Collme Pro').length === 0"
-                    class="text-center text-gray-400 py-2 text-xs italic">
+                    class="text-center text-muted-foreground py-2 text-xs italic">
                     Nenhum pedido
                   </div>
                 </div>
@@ -69,11 +69,11 @@
             </div>
 
             <!-- Collme Beauty Sub-column -->
-            <div class="border-r border-gray-600">
-              <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
-                <h4 class="text-white text-xs font-medium">Collme Beauty</h4>
+            <div class="border-r border-border">
+              <div class="bg-muted px-2 py-2 text-center border-b border-border">
+                <h4 class="text-foreground text-xs font-medium">Collme Beauty</h4>
               </div>
-              <div class="p-2 bg-gray-800 overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
+              <div class="p-2 bg-card overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
                 <div class="space-y-1">
                   <div v-for="order in getOrdersBySource('Collme Beauty')" :key="order.id"
                     class="bg-gradient-to-br from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 border border-yellow-400 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-gray-900"
@@ -97,7 +97,7 @@
                     </div>
                   </div>
                   <div v-if="getOrdersBySource('Collme Beauty').length === 0"
-                    class="text-center text-gray-400 py-2 text-xs italic">
+                    class="text-center text-muted-foreground py-2 text-xs italic">
                     Nenhum pedido
                   </div>
                 </div>
@@ -106,10 +106,10 @@
 
             <!-- Atacadista Sub-column -->
             <div>
-              <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
-                <h4 class="text-white text-xs font-medium">Atacadista</h4>
+              <div class="bg-muted px-2 py-2 text-center border-b border-border">
+                <h4 class="text-foreground text-xs font-medium">Atacadista</h4>
               </div>
-              <div class="p-2 bg-gray-800 overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
+              <div class="p-2 bg-card overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
                 <div class="space-y-1">
                   <div v-for="order in getOrdersBySource('Atacadista')" :key="order.id"
                     class="bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 border border-blue-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white"
@@ -133,7 +133,7 @@
                     </div>
                   </div>
                   <div v-if="getOrdersBySource('Atacadista').length === 0"
-                    class="text-center text-gray-400 py-2 text-xs italic">
+                    class="text-center text-muted-foreground py-2 text-xs italic">
                     Nenhum pedido
                   </div>
                 </div>
@@ -143,11 +143,11 @@
         </div>
 
         <!-- Faturamento/Emissão de NF Column -->
-        <div class="border-r border-gray-600 flex-1" style="max-width: 12.5%; min-width: 120px;">
-          <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
-            <h3 class="text-white text-xs font-semibold leading-tight">Faturamento/Emissão de NF</h3>
+        <div class="border-r border-border flex-1" style="max-width: 12.5%; min-width: 120px;">
+          <div class="bg-muted px-2 py-2 text-center border-b border-border">
+            <h3 class="text-foreground text-xs font-semibold leading-tight">Faturamento/Emissão de NF</h3>
           </div>
-          <div class="p-2 bg-gray-800 overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
+          <div class="p-2 bg-card overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
             <div class="space-y-1">
               <div v-for="order in kanbanData.faturamento || []" :key="order.id"
                 class="bg-gradient-to-br from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 border border-emerald-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white">
@@ -170,7 +170,7 @@
                 </div>
               </div>
               <div v-if="(kanbanData.faturamento || []).length === 0"
-                class="text-center text-gray-400 py-2 text-xs italic">
+                class="text-center text-muted-foreground py-2 text-xs italic">
                 Nenhum pedido
               </div>
             </div>
@@ -178,11 +178,11 @@
         </div>
 
         <!-- Checkout (Picking) Column -->
-        <div class="border-r border-gray-600 flex-1" style="max-width: 12.5%; min-width: 120px;">
-          <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
-            <h3 class="text-white text-xs font-semibold">Checkout (Picking)</h3>
+        <div class="border-r border-border flex-1" style="max-width: 12.5%; min-width: 120px;">
+          <div class="bg-muted px-2 py-2 text-center border-b border-border">
+            <h3 class="text-foreground text-xs font-semibold">Checkout (Picking)</h3>
           </div>
-          <div class="p-2 bg-gray-800 overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
+          <div class="p-2 bg-card overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
             <div class="space-y-1">
               <div v-for="order in kanbanData.checkout || []" :key="order.id"
                 class="bg-gradient-to-br from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 border border-amber-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white">
@@ -210,7 +210,7 @@
                 </div>
               </div>
               <div v-if="(kanbanData.checkout || []).length === 0"
-                class="text-center text-gray-400 py-2 text-xs italic">
+                class="text-center text-muted-foreground py-2 text-xs italic">
                 Nenhum pedido
               </div>
             </div>
@@ -218,11 +218,11 @@
         </div>
 
         <!-- Embalagem (Packing) Column -->
-        <div class="border-r border-gray-600 flex-1" style="max-width: 12.5%; min-width: 120px;">
-          <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
-            <h3 class="text-white text-xs font-semibold">Embalagem (Packing)</h3>
+        <div class="border-r border-border flex-1" style="max-width: 12.5%; min-width: 120px;">
+          <div class="bg-muted px-2 py-2 text-center border-b border-border">
+            <h3 class="text-foreground text-xs font-semibold">Embalagem (Packing)</h3>
           </div>
-          <div class="p-2 bg-gray-800 overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
+          <div class="p-2 bg-card overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
             <div class="space-y-1">
               <div v-for="order in kanbanData.embalagem || []" :key="order.id"
                 class="bg-gradient-to-br from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border border-purple-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white">
@@ -250,7 +250,7 @@
                 </div>
               </div>
               <div v-if="(kanbanData.embalagem || []).length === 0"
-                class="text-center text-gray-400 py-2 text-xs italic">
+                class="text-center text-muted-foreground py-2 text-xs italic">
                 Nenhum pedido
               </div>
             </div>
@@ -258,11 +258,11 @@
         </div>
 
         <!-- Etiqueta (Cód. Rastreio) Column -->
-        <div class="border-r border-gray-600 flex-1" style="max-width: 12.5%; min-width: 120px;">
-          <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
-            <h3 class="text-white text-xs font-semibold">Etiqueta (Cód. Rastreio)</h3>
+        <div class="border-r border-border flex-1" style="max-width: 12.5%; min-width: 120px;">
+          <div class="bg-muted px-2 py-2 text-center border-b border-border">
+            <h3 class="text-foreground text-xs font-semibold">Etiqueta (Cód. Rastreio)</h3>
           </div>
-          <div class="p-2 bg-gray-800 overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
+          <div class="p-2 bg-card overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
             <div class="space-y-1">
               <div v-for="order in kanbanData.etiqueta || []" :key="order.id"
                 class="bg-gradient-to-br from-cyan-600 to-cyan-700 hover:from-cyan-700 hover:to-cyan-800 border border-cyan-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white">
@@ -297,7 +297,7 @@
                 </div>
               </div>
               <div v-if="(kanbanData.etiqueta || []).length === 0"
-                class="text-center text-gray-400 py-2 text-xs italic">
+                class="text-center text-muted-foreground py-2 text-xs italic">
                 Nenhum pedido
               </div>
             </div>
@@ -306,16 +306,16 @@
 
         <!-- Coleta Column -->
         <div class="flex-1" style="max-width: 25%; min-width: 200px;">
-          <div class="bg-gray-700 px-4 py-3 text-center border-b border-gray-600">
-            <h3 class="text-white font-semibold">Coleta</h3>
+          <div class="bg-muted px-4 py-3 text-center border-b border-border">
+            <h3 class="text-foreground font-semibold">Coleta</h3>
           </div>
           <div class="grid grid-cols-2 h-full">
             <!-- Aguardando Sub-column -->
-            <div class="border-r border-gray-600">
-              <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
-                <h4 class="text-white text-xs font-medium">Aguardando</h4>
+            <div class="border-r border-border">
+              <div class="bg-muted px-2 py-2 text-center border-b border-border">
+                <h4 class="text-foreground text-xs font-medium">Aguardando</h4>
               </div>
-              <div class="p-2 bg-gray-800 overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
+              <div class="p-2 bg-card overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
                 <div class="space-y-1">
                   <div v-for="order in kanbanData.coleta_aguardando || []" :key="order.id"
                     class="bg-gradient-to-br from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 border border-red-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white"
@@ -352,7 +352,7 @@
                     </div>
                   </div>
                   <div v-if="(kanbanData.coleta_aguardando || []).length === 0"
-                    class="text-center text-gray-400 py-2 text-xs italic">
+                    class="text-center text-muted-foreground py-2 text-xs italic">
                     Nenhum pedido
                   </div>
                 </div>
@@ -361,10 +361,10 @@
 
             <!-- Realizada Sub-column -->
             <div>
-              <div class="bg-gray-700 px-2 py-2 text-center border-b border-gray-600">
-                <h4 class="text-white text-xs font-medium">Realizada</h4>
+              <div class="bg-muted px-2 py-2 text-center border-b border-border">
+                <h4 class="text-foreground text-xs font-medium">Realizada</h4>
               </div>
-              <div class="p-2 bg-gray-800 overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
+              <div class="p-2 bg-card overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
                 <div class="space-y-1">
                   <div v-for="order in kanbanData.coleta_realizada || []" :key="order.id"
                     class="bg-gradient-to-br from-lime-600 to-lime-700 hover:from-lime-700 hover:to-lime-800 border border-lime-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white"
@@ -411,7 +411,7 @@
                     </div>
                   </div>
                   <div v-if="(kanbanData.coleta_realizada || []).length === 0"
-                    class="text-center text-gray-400 py-2 text-xs italic">
+                    class="text-center text-muted-foreground py-2 text-xs italic">
                     Nenhum pedido
                   </div>
                 </div>
@@ -1551,36 +1551,7 @@ onUnmounted(() => {
   }
 }
 
-/* Loading overlay for compact kanban */
-.loading-overlay-compact {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.85);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  border-radius: 0.75rem;
-}
-
-.loading-content-compact {
-  text-align: center;
-  padding: 1.5rem;
-}
-
 /* Spinner animation for compact */
-.spinner-compact {
-  width: 60px;
-  height: 60px;
-  margin: 0 auto 1rem;
-  border: 6px solid rgba(255, 255, 255, 0.2);
-  border-top: 6px solid #ffffff;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
 
 @keyframes spin {
   0% { transform: rotate(0deg); }

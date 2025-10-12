@@ -185,11 +185,11 @@ abstract class BlingService
         // Pedidos mais antigos raramente têm alterações
         // API Bling v3 usa parâmetros: dataAlteracaoInicial e dataAlteracaoFinal
         if ($incrementalSync && !isset($filters['dataAlteracaoInicial'])) {
-            $since = now()->subDays(1)->format('Y-m-d H:i:s');
+            $since = now()->subDays(30)->format('Y-m-d H:i:s');
             $filters['dataAlteracaoInicial'] = $since;
             Log::info("Incremental sync enabled for account: {$this->getAccountType()}", [
                 'since' => $since,
-                'days_back' => 1,
+                'days_back' => 30,
                 'parameter' => 'dataAlteracaoInicial'
             ]);
         }
