@@ -216,13 +216,13 @@ const formatDate = (dateString: string) => {
 const getSystemBadgeClass = (system: string) => {
     switch (system) {
         case 'collmepro':
-            return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+            return 'bg-blue-600 text-white border border-blue-700';
         case 'collmepro_atacadista':
-            return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300';
+            return 'bg-green-600 text-white border border-green-700';
         case 'collme_beauty':
-            return 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-300';
+            return 'bg-yellow-400 text-gray-900 border border-yellow-500';
         default:
-            return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
+            return 'bg-gray-100 text-gray-800 border border-gray-200';
     }
 };
 

@@ -17,7 +17,7 @@ export const systemMapping: Record<string, SystemInfo> = {
   'Beauty': {
     name: 'Coll Me! Beauty',
     shortName: 'Beauty',
-    badgeColor: 'bg-yellow-200 text-yellow-900 border border-yellow-300',
+    badgeColor: 'bg-yellow-400 text-gray-900 border border-yellow-500',
     indicatorColor: 'bg-yellow-500',
     gradientClasses: {
       from: 'from-yellow-400',
@@ -28,8 +28,8 @@ export const systemMapping: Record<string, SystemInfo> = {
   'Pro': {
     name: 'Coll Me! Pro',
     shortName: 'Pro',
-    badgeColor: 'bg-blue-200 text-blue-900 border border-blue-300',
-    indicatorColor: 'bg-blue-500',
+    badgeColor: 'bg-blue-600 text-white border border-blue-700',
+    indicatorColor: 'bg-blue-600',
     gradientClasses: {
       from: 'from-blue-600',
       to: 'to-blue-700',
@@ -39,12 +39,12 @@ export const systemMapping: Record<string, SystemInfo> = {
   'Atacadista': {
     name: 'Coll Me! Atacadista',
     shortName: 'Atacadista',
-    badgeColor: 'bg-blue-200 text-blue-900 border border-blue-300',
-    indicatorColor: 'bg-blue-500',
+    badgeColor: 'bg-green-600 text-white border border-green-700',
+    indicatorColor: 'bg-green-600',
     gradientClasses: {
-      from: 'from-blue-600',
-      to: 'to-blue-700',
-      border: 'border-blue-500'
+      from: 'from-green-600',
+      to: 'to-green-700',
+      border: 'border-green-500'
     }
   },
   'TikTok': {

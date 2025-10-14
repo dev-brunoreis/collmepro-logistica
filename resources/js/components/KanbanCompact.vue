@@ -140,7 +140,7 @@
 
         <!-- Faturamento/Emissão de NF Column -->
         <div class="border-r border-border flex-1 flex flex-col" style="max-width: 12.5%; min-width: 120px;">
-          <div class="bg-muted px-2 py-2 text-center border-b border-border">
+          <div class="bg-muted px-2 py-2 text-center border-b border-border flex items-center justify-center" style="height: 82px;">
             <h3 class="text-foreground text-xs font-semibold leading-tight">Faturamento/Emissão de NF</h3>
           </div>
           <div class="p-2 bg-card overflow-y-auto flex-1">
@@ -174,7 +174,7 @@
 
         <!-- Checkout (Picking) Column -->
         <div class="border-r border-border flex-1 flex flex-col" style="max-width: 12.5%; min-width: 120px;">
-          <div class="bg-muted px-2 py-2 text-center border-b border-border">
+          <div class="bg-muted px-2 py-2 text-center border-b border-border flex items-center justify-center" style="height: 82px;">
             <h3 class="text-foreground text-xs font-semibold">Checkout (Picking)</h3>
           </div>
           <div class="p-2 bg-card overflow-y-auto flex-1">
@@ -213,7 +213,7 @@
 
         <!-- Embalagem (Packing) Column -->
         <div class="border-r border-border flex-1 flex flex-col" style="max-width: 12.5%; min-width: 120px;">
-          <div class="bg-muted px-2 py-2 text-center border-b border-border">
+          <div class="bg-muted px-2 py-2 text-center border-b border-border flex items-center justify-center" style="height: 82px;">
             <h3 class="text-foreground text-xs font-semibold">Embalagem (Packing)</h3>
           </div>
           <div class="p-2 bg-card overflow-y-auto flex-1">
@@ -252,7 +252,7 @@
 
         <!-- Etiqueta (Cód. Rastreio) Column -->
         <div class="border-r border-border flex-1 flex flex-col" style="max-width: 12.5%; min-width: 120px;">
-          <div class="bg-muted px-2 py-2 text-center border-b border-border">
+          <div class="bg-muted px-2 py-2 text-center border-b border-border flex items-center justify-center" style="height: 82px;">
             <h3 class="text-foreground text-xs font-semibold">Etiqueta (Cód. Rastreio)</h3>
           </div>
           <div class="p-2 bg-card overflow-y-auto flex-1">

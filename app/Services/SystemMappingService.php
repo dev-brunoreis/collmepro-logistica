@@ -11,7 +11,7 @@ class SystemMappingService
         205404185 => [
             'name' => 'Beauty',
             'short_name' => 'Coll Me! Beauty',
-            'color' => 'bg-yellow-100 text-yellow-800 border border-yellow-200',
+            'color' => 'bg-yellow-400 text-gray-900 border border-yellow-500',
             'indicator_color' => 'bg-yellow-500',
             'gradient_from' => 'from-yellow-400',
             'gradient_to' => 'to-yellow-500',
@@ -20,8 +20,8 @@ class SystemMappingService
         205274224 => [
             'name' => 'Pro',
             'short_name' => 'Coll Me! Pro',
-            'color' => 'bg-blue-100 text-blue-800 border border-blue-200',
-            'indicator_color' => 'bg-blue-500',
+            'color' => 'bg-blue-600 text-white border border-blue-700',
+            'indicator_color' => 'bg-blue-600',
             'gradient_from' => 'from-blue-600',
             'gradient_to' => 'to-blue-700',
             'border_color' => 'border-blue-500',
@@ -38,11 +38,11 @@ class SystemMappingService
         205432408 => [
             'name' => 'Atacadista', // Atacadista is also Pro system
             'short_name' => 'Coll Me! Atacadista',
-            'color' => 'bg-blue-100 text-blue-800 border border-blue-200',
-            'indicator_color' => 'bg-blue-500',
-            'gradient_from' => 'from-blue-600',
-            'gradient_to' => 'to-blue-700',
-            'border_color' => 'border-blue-500',
+            'color' => 'bg-green-600 text-white border border-green-700',
+            'indicator_color' => 'bg-green-600',
+            'gradient_from' => 'from-green-600',
+            'gradient_to' => 'to-green-700',
+            'border_color' => 'border-green-500',
             'is_atacadista' => true,
         ]
     ];

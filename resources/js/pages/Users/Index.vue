@@ -226,12 +226,12 @@ const clearFilters = () => {
                                 :key="user.id"
                                 class="border-b border-sidebar-border/70 dark:border-sidebar-border last:border-b-0 hover:bg-sidebar-border/20"
                             >
-                                <td class="px-4 py-3">
+                                <td class="px-4 py-3 text-center">
                                     <div class="font-medium">{{ user.name }}</div>
                                 </td>
                                 <td class="px-4 py-3 text-sm text-muted-foreground">{{ user.email }}</td>
                                 <td class="px-4 py-3 text-sm text-muted-foreground">{{ user.username }}</td>
-                                <td class="px-4 py-3">
+                                <td class="px-4 py-3 text-center">
                                     <span
                                         class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
                                         :class="{
@@ -247,7 +247,7 @@ const clearFilters = () => {
                                 <td class="px-4 py-3 text-sm text-muted-foreground">
                                     {{ new Date(user.created_at).toLocaleDateString('pt-BR') }}
                                 </td>
-                                <td class="px-4 py-3">
+                                <td class="px-4 py-3 text-center">
                                     <div class="flex items-center gap-2">
                                         <Link
                                             :href="`/dashboard/users/${user.id}/edit`"

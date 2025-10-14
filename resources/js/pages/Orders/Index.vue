@@ -451,13 +451,13 @@ const getSystemBadgeClass = (order: Order) => {
     // Fallback to old logic for backward compatibility
     switch (order.source) {
         case 'collmepro':
-            return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+            return 'bg-blue-600 text-white border border-blue-700';
         case 'collmepro_atacadista':
-            return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300';
+            return 'bg-green-600 text-white border border-green-700';
         case 'collme_beauty':
-            return 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-300';
+            return 'bg-yellow-400 text-gray-900 border border-yellow-500';
         default:
-            return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
+            return 'bg-gray-100 text-gray-800 border border-gray-200';
     }
 };
 
@@ -934,7 +934,7 @@ const getCurrentPerPage = () => {
                                         class="inline-flex items-center gap-1 rounded-md px-4 py-3 text-sm text-muted-foreground hover:bg-sidebar-border/70"
                                         :title="`Ver pedido ${order.numero}`"
                                     >
-                                        <Eye class="h-3 w-3" />
+                                        <Eye class="h-5 w-6" />
                                         Ver
                                     </Link>
                                 </td>
