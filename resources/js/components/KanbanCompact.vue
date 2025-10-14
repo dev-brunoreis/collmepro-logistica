@@ -325,7 +325,6 @@
                       <div class="flex flex-col gap-0.5 text-xs">
                         <div class="font-semibold truncate">{{ order.contato_nome }}</div>
                         <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
-                        <div class="opacity-90">{{ order.items_quantity }} item(s)</div>
                         <a
                             v-if="order.tracking_code" 
                             :href="order.tracking_url" 
@@ -336,7 +335,7 @@
                             <span class="text-sm">{{ order.tracking_code }}</span>
                             <ExternalLink class="h-3 w-3" />
                         </a>
-                        <div v-if="order.invoice_number" class="text-center bg-green-200 text-green-900 px-1 py-0.5 rounded text-xs font-bold">
+                        <div v-if="order.invoice_number" class="">
                           NF: {{ order.invoice_number }}
                         </div>
                         <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">{{ order.items_quantity }} item(s)</div>
@@ -373,7 +372,6 @@
                       <div class="flex flex-col gap-0.5 text-xs">
                         <div class="font-semibold truncate">{{ order.contato_nome }}</div>
                         <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
-                        <div class="opacity-90">{{ order.items_quantity }} item(s)</div>
                         <div v-if="order.invoice_number" class="">
                           NF: {{ order.invoice_number }}
                         </div>
@@ -960,7 +958,7 @@ const handleEscapeKey = (event: KeyboardEvent) => {
 }
 
 // Fetch orders asynchronously
-const fetchOrdersAsync = async (daysBack: number = 15, loadAll: boolean = false) => {
+const fetchOrdersAsync = async (daysBack: number = 7, loadAll: boolean = false) => {
   try {
     console.log('KanbanCompact: Starting to fetch orders...')
     loading.value = true

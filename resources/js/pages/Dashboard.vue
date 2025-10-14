@@ -26,7 +26,7 @@ const props = defineProps<{
 }>();
 
 const showKanbanFullscreen = ref(false);
-const selectedPeriod = ref(15); // Default: 15 days
+const selectedPeriod = ref(7); // Default: 7 days
 const metrics = ref(props.metrics);
 const kanbanData = ref(props.kanbanData);
 const loading = ref(false);
@@ -123,6 +123,7 @@ onMounted(() => {
                         :disabled="loading"
                         class="px-3 py-2 bg-card border border-border rounded-lg text-foreground focus:ring-2 focus:ring-ring focus:border-transparent disabled:opacity-50"
                     >
+                        <option value="7">Últimos 7 dias</option>
                         <option value="15">Últimos 15 dias</option>
                         <option value="30">Últimos 30 dias</option>
                         <option value="60">Últimos 60 dias</option>
