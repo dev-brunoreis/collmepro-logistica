@@ -303,16 +303,20 @@ const loadingProgress = ref(0)
 const totalOrders = ref(0)
 const loadingOlderOrders = ref(false)
 
-// Initialize with empty data for async loading
+// Initialize with props data
 const kanbanData = ref<KanbanData>({
-  pedidos_emitidos: [],
-  faturamento: [],
-  checkout: [],
-  embalagem: [],
-  etiqueta: [],
-  coleta_aguardando: [],
-  coleta_realizada: [],
+  pedidos_emitidos: props.kanbanData?.pedidos_emitidos || [],
+  faturamento: props.kanbanData?.faturamento || [],
+  checkout: props.kanbanData?.checkout || [],
+  embalagem: props.kanbanData?.embalagem || [],
+  etiqueta: props.kanbanData?.etiqueta || [],
+  coleta_aguardando: props.kanbanData?.coleta_aguardando || [],
+  coleta_realizada: props.kanbanData?.coleta_realizada || [],
 })
+
+// Debug: Log initial data (temporary)
+console.log('Initial props.kanbanData:', props.kanbanData)
+console.log('Initial kanbanData.value:', kanbanData.value)
 
 const stats = ref<Stats>({
   total: 0,
@@ -328,7 +332,7 @@ const stats = ref<Stats>({
 })
 
 // Broadcasting setup
-const { isConnected, lastUpdate } = useOrderBroadcasting()
+const { isConnected, lastUpdate, lastNewOrder } = useOrderBroadcasting()
 
 // Watch for real-time updates and update kanban data
 watch(lastUpdate, (update) => {
@@ -385,8 +389,8 @@ watch(lastUpdate, (update) => {
         // 2. Coleta Aguardando: invoice + picking + packing + tracking_code + !picked_up
         // 3. Etiqueta: invoice + picking + packing + !tracking_code
         // 4. Embalagem: invoice + picking + !packing
-        // 5. Checkout: invoice + !picking
-        // 6. Faturamento: !invoice
+        // 5. Pedidos Emitidos: !invoice
+        // 6. Faturamento: invoice + !picking
         // 7. Pedidos Emitidos: default
         
         let newColumn = 'pedidos_emitidos'
@@ -405,10 +409,10 @@ watch(lastUpdate, (update) => {
         } else if (hasInvoice && order.order_status.picking && !order.order_status.packing) {
           // 4. Embalagem
           newColumn = 'embalagem'
-        } else if (hasInvoice && !order.order_status.picking) {
-          // 5. Checkout
-          newColumn = 'checkout'
         } else if (!hasInvoice) {
+          // 5. Pedidos Emitidos
+          newColumn = 'pedidos_emitidos'
+        } else if (hasInvoice && !order.order_status.picking) {
           // 6. Faturamento
           newColumn = 'faturamento'
         }
@@ -431,6 +435,89 @@ watch(lastUpdate, (update) => {
     stats.value.coleta_realizada = kanbanData.value.coleta_realizada.length
     
     console.log('Kanban updated with new data')
+  }
+})
+
+// Watch for new orders from broadcasting
+watch(lastNewOrder, (newOrderEvent) => {
+  if (newOrderEvent && newOrderEvent.order) {
+    console.log('Kanban received new order:', newOrderEvent)
+
+    const order = newOrderEvent.order
+
+    // Check if order already exists to avoid duplicates
+    const orderExists = Object.keys(kanbanData.value).some(columnKey => {
+      const column = kanbanData.value[columnKey as keyof KanbanData]
+      return column && column.some(existingOrder => existingOrder.id === order.id)
+    })
+
+    if (orderExists) {
+      console.log('Order already exists in Kanban, skipping:', order.id)
+      return
+    }
+
+    // Determine the appropriate column based on order status and data
+    // Priority order (same as backend logic):
+    // 1. Coleta Realizada: picked_up=true
+    // 2. Coleta Aguardando: invoice + picking + packing + tracking_code + !picked_up
+    // 3. Etiqueta: invoice + picking + packing + !tracking_code
+    // 4. Embalagem: invoice + picking + !packing
+    // 5. Pedidos Emitidos: !invoice
+    // 6. Faturamento: invoice + !picking
+    // 7. Pedidos Emitidos: default
+    
+    let targetColumn = 'pedidos_emitidos'
+    const hasInvoice = !!order.invoice_number
+    const hasTracking = !!order.tracking_code
+    const orderStatus = order.order_status || { picking: false, packing: false, picked_up: false }
+    
+    if (orderStatus.picked_up) {
+      // 1. Coleta Realizada
+      targetColumn = 'coleta_realizada'
+    } else if (hasInvoice && orderStatus.picking && orderStatus.packing && hasTracking) {
+      // 2. Coleta Aguardando
+      targetColumn = 'coleta_aguardando'
+    } else if (hasInvoice && orderStatus.picking && orderStatus.packing && !hasTracking) {
+      // 3. Etiqueta
+      targetColumn = 'etiqueta'
+    } else if (hasInvoice && orderStatus.picking && !orderStatus.packing) {
+      // 4. Embalagem
+      targetColumn = 'embalagem'
+    } else if (!hasInvoice) {
+      // 5. Pedidos Emitidos
+      targetColumn = 'pedidos_emitidos'
+    } else if (hasInvoice && !orderStatus.picking) {
+      // 6. Faturamento
+      targetColumn = 'faturamento'
+    }
+
+    // Add the new order to the appropriate column
+    const column = kanbanData.value[targetColumn as keyof KanbanData]
+    if (column) {
+      column.push(order)
+      console.log(`New order ${order.id} (${order.numero}) added to column: ${targetColumn}`)
+      console.log('Order details:', {
+        id: order.id,
+        numero: order.numero,
+        source: order.source,
+        hasInvoice: !!order.invoice_number,
+        invoiceNumber: order.invoice_number
+      })
+      console.log('Updated column length:', column.length)
+      console.log('All orders in pedidos_emitidos:', kanbanData.value.pedidos_emitidos?.map(o => ({ id: o.id, numero: o.numero, source: o.source })))
+    } else {
+      console.warn(`Target column ${targetColumn} not found for new order ${order.id}`)
+    }
+
+    // Update stats
+    stats.value.total = Object.values(kanbanData.value).reduce((sum, column) => sum + (column?.length || 0), 0)
+    stats.value.pedidos_emitidos = kanbanData.value.pedidos_emitidos?.length || 0
+    stats.value.faturamento = kanbanData.value.faturamento?.length || 0
+    stats.value.checkout = kanbanData.value.checkout?.length || 0
+    stats.value.embalagem = kanbanData.value.embalagem?.length || 0
+    stats.value.etiqueta = kanbanData.value.etiqueta?.length || 0
+    stats.value.coleta_aguardando = kanbanData.value.coleta_aguardando?.length || 0
+    stats.value.coleta_realizada = kanbanData.value.coleta_realizada?.length || 0
   }
 })
 
@@ -518,67 +605,70 @@ const getMovementHistory = (order: Order, statusType: string): string => {
 
 // TODO: Implement async order fetching when backend route is ready
 // Route /dashboard/painel/orders needs to be implemented in KanbanController
-// const fetchOrdersAsync = async (daysBack: number = 30, loadAll: boolean = false) => {
-//   try {
-//     if (loadAll) {
-//       loadingOlderOrders.value = true
-//     } else {
-//       loading.value = true
-//     }
-//     
-//     const response = await axios.get('/dashboard/painel/orders', {
-//       params: {
-//         days_back: daysBack,
-//         load_all: loadAll
-//       }
-//     })
-//     
-//     const data = response.data
-//     
-//     // Update kanban data with received orders
-//     kanbanData.value = {
-//       pedidos_emitidos: data.kanbanData.pedidos_emitidos || [],
-//       faturamento: data.kanbanData.faturamento || [],
-//       checkout: data.kanbanData.checkout || [],
-//       embalagem: data.kanbanData.embalagem || [],
-//       etiqueta: data.kanbanData.etiqueta || [],
-//       coleta_aguardando: data.kanbanData.coleta_aguardando || [],
-//       coleta_realizada: data.kanbanData.coleta_realizada || [],
-//     }
-//     
-//     // Update stats
-//     stats.value = {
-//       total: data.stats.total || 0,
-//       total_all: data.stats.total_all || 0,
-//       loaded: data.stats.loaded || 0,
-//       pedidos_emitidos: data.stats.pedidos_emitidos || 0,
-//       faturamento: data.stats.faturamento || 0,
-//       checkout: data.stats.checkout || 0,
-//       embalagem: data.stats.embalagem || 0,
-//       etiqueta: data.stats.etiqueta || 0,
-//       coleta_aguardando: data.stats.coleta_aguardando || 0,
-//       coleta_realizada: data.stats.coleta_realizada || 0,
-//     }
-//     
-//     // Update progress
-//     loadingProgress.value = data.stats.loaded || 0
-//     totalOrders.value = data.stats.total_all || 0
-//     
-//     console.log('Kanban data loaded:', {
-//       loaded: data.stats.loaded,
-//       total: data.stats.total_all,
-//       columns: Object.keys(kanbanData.value).map(key => ({
-//         name: key,
-//         count: kanbanData.value[key as keyof KanbanData]?.length || 0
-//       }))
-//     })
-//   } catch (error) {
-//     console.error('Error fetching kanban orders:', error)
-//   } finally {
-//     loading.value = false
-//     loadingOlderOrders.value = false
-//   }
-// }
+const fetchOrdersAsync = async (daysBack: number = 30, loadAll: boolean = false) => {
+  try {
+    if (loadAll) {
+      loadingOlderOrders.value = true
+    } else {
+      loading.value = true
+    }
+    
+    const response = await axios.get('/dashboard/painel/orders', {
+      params: {
+        days_back: daysBack,
+        load_all: loadAll
+      }
+    })
+    
+    const data = response.data
+    
+    // Update kanban data with received orders
+    kanbanData.value = {
+      pedidos_emitidos: data.kanbanData.pedidos_emitidos || [],
+      faturamento: data.kanbanData.faturamento || [],
+      checkout: data.kanbanData.checkout || [],
+      embalagem: data.kanbanData.embalagem || [],
+      etiqueta: data.kanbanData.etiqueta || [],
+      coleta_aguardando: data.kanbanData.coleta_aguardando || [],
+      coleta_realizada: data.kanbanData.coleta_realizada || [],
+    }
+    
+    // Update stats
+    stats.value = {
+      total: data.stats.total || 0,
+      total_all: data.stats.total_all || 0,
+      loaded: data.stats.loaded || 0,
+      pedidos_emitidos: data.stats.pedidos_emitidos || 0,
+      faturamento: data.stats.faturamento || 0,
+      checkout: data.stats.checkout || 0,
+      embalagem: data.stats.embalagem || 0,
+      etiqueta: data.stats.etiqueta || 0,
+      coleta_aguardando: data.stats.coleta_aguardando || 0,
+      coleta_realizada: data.stats.coleta_realizada || 0,
+    }
+    
+    // Update progress
+    loadingProgress.value = data.stats.loaded || 0
+    totalOrders.value = data.stats.total_all || 0
+    
+    console.log('Kanban data loaded:', {
+      loaded: data.stats.loaded,
+      total: data.stats.total_all,
+      columns: Object.keys(kanbanData.value).map(key => ({
+        name: key,
+        count: kanbanData.value[key as keyof KanbanData]?.length || 0
+      }))
+    })
+    
+    console.log('Pedidos emitidos after fetch:', kanbanData.value.pedidos_emitidos?.length || 0)
+    console.log('Pedidos emitidos data after fetch:', kanbanData.value.pedidos_emitidos)
+  } catch (error) {
+    console.error('Error fetching kanban orders:', error)
+  } finally {
+    loading.value = false
+    loadingOlderOrders.value = false
+  }
+}
 
 // Load older orders (all orders)
 // const loadOlderOrders = async () => {
@@ -587,8 +677,7 @@ const getMovementHistory = (order: Order, statusType: string): string => {
 
 onMounted(() => {
   // Fetch orders on component mount
-  // TODO: Uncomment when fetchOrdersAsync is implemented
-  // fetchOrdersAsync()
+  fetchOrdersAsync(7, false) // Load last 7 days
 })
 </script>
 

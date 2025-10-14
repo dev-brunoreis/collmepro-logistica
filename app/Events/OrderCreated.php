@@ -46,6 +46,9 @@ class OrderCreated implements ShouldBroadcastNow
         // Load relationships if not already loaded
         $this->order->loadMissing(['orderStatus']);
 
+        // Load invoice relationship if not already loaded
+        $this->order->loadMissing(['invoice']);
+
         return [
             'order' => [
                 'id' => $this->order->id,
@@ -55,10 +58,9 @@ class OrderCreated implements ShouldBroadcastNow
                 'total' => $this->order->total,
                 'data' => $this->order->data,
                 'source' => $this->order->source,
-                'invoice_number' => $this->order->invoice_number,
-                'items_quantity' => $this->order->items_quantity,
+                'invoice_number' => $this->order->invoice?->numero ?? null,
+                'items_quantity' => $this->order->total_produtos ?? 0,
                 'tracking_code' => $this->order->tracking_code,
-                'tracking_url' => $this->order->tracking_url,
                 'order_status' => $this->order->orderStatus ? [
                     'picking' => $this->order->orderStatus->picking,
                     'packing' => $this->order->orderStatus->packing,

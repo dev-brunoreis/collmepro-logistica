@@ -77,8 +77,8 @@ class FindOrdersWithInvoicesInWrongColumn extends Command
         $this->line("2. Coleta Aguardando: invoice + picking + packing + tracking + !picked_up");
         $this->line("3. Etiqueta: invoice + picking + packing + !tracking");
         $this->line("4. Embalagem: invoice + picking + !packing");
-        $this->line("5. Checkout: invoice + !picking");
-        $this->line("6. Faturamento: !invoice");
+        $this->line("5. Pedidos Emitidos: !invoice");
+        $this->line("6. Faturamento: invoice + !picking");
         $this->line("7. Pedidos Emitidos: default");
     }
     
@@ -123,13 +123,13 @@ class FindOrdersWithInvoicesInWrongColumn extends Command
             return 'embalagem';
         }
 
-        // 5. Checkout: invoice + !picking
-        if ($hasInvoice && (!$orderStatus || !$orderStatus->picking)) {
-            return 'checkout';
+        // 5. Pedidos Emitidos: !invoice
+        if (!$hasInvoice) {
+            return 'pedidos_emitidos';
         }
 
-        // 6. Faturamento: !invoice
-        if (!$hasInvoice) {
+        // 6. Faturamento: invoice + !picking
+        if ($hasInvoice && (!$orderStatus || !$orderStatus->picking)) {
             return 'faturamento';
         }
 

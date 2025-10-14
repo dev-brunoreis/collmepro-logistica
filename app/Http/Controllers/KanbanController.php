@@ -348,8 +348,8 @@ class KanbanController extends Controller
      * 2. Coleta Aguardando: invoice + picking + packing + tracking_code + !picked_up
      * 3. Etiqueta: invoice + picking + packing + !tracking_code
      * 4. Embalagem: invoice + picking + !packing
-     * 5. Checkout: invoice + !picking
-     * 6. Faturamento: !invoice
+     * 5. Pedidos Emitidos: !invoice
+     * 6. Faturamento: invoice + !picking
      * 7. Pedidos Emitidos: default
      */
     private function getOrderKanbanStatus(OrderSummary $order): string
@@ -390,13 +390,13 @@ class KanbanController extends Controller
             return 'embalagem';
         }
 
-        // 5. Checkout: invoice + !picking
-        if ($hasInvoice && (!$orderStatus || !$orderStatus->picking)) {
-            return 'checkout';
+        // 5. Pedidos Emitidos: !invoice
+        if (!$hasInvoice) {
+            return 'pedidos_emitidos';
         }
 
-        // 6. Faturamento: !invoice
-        if (!$hasInvoice) {
+        // 6. Faturamento: invoice + !picking
+        if ($hasInvoice && (!$orderStatus || !$orderStatus->picking)) {
             return 'faturamento';
         }
 

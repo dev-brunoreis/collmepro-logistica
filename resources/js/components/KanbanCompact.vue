@@ -555,8 +555,8 @@ watch(lastUpdate, (update) => {
         // 2. Coleta Aguardando: invoice + picking + packing + tracking_code + !picked_up
         // 3. Etiqueta: invoice + picking + packing + !tracking_code
         // 4. Embalagem: invoice + picking + !packing
-        // 5. Checkout: invoice + !picking
-        // 6. Faturamento: !invoice
+        // 5. Pedidos Emitidos: !invoice
+        // 6. Faturamento: invoice + !picking
         // 7. Pedidos Emitidos: default
         
         let newColumn = 'pedidos_emitidos'
@@ -575,10 +575,10 @@ watch(lastUpdate, (update) => {
         } else if (hasInvoice && order.order_status.picking && !order.order_status.packing) {
           // 4. Embalagem
           newColumn = 'embalagem'
-        } else if (hasInvoice && !order.order_status.picking) {
-          // 5. Checkout
-          newColumn = 'checkout'
         } else if (!hasInvoice) {
+          // 5. Pedidos Emitidos
+          newColumn = 'pedidos_emitidos'
+        } else if (hasInvoice && !order.order_status.picking) {
           // 6. Faturamento
           newColumn = 'faturamento'
         }
@@ -621,8 +621,8 @@ watch(lastNewOrder, (newOrderEvent) => {
     // 2. Coleta Aguardando: invoice + picking + packing + tracking_code + !picked_up
     // 3. Etiqueta: invoice + picking + packing + !tracking_code
     // 4. Embalagem: invoice + picking + !packing
-    // 5. Checkout: invoice + !picking
-    // 6. Faturamento: !invoice
+    // 5. Pedidos Emitidos: !invoice
+    // 6. Faturamento: invoice + !picking
     // 7. Pedidos Emitidos: default
     
     let targetColumn = 'pedidos_emitidos'
@@ -642,10 +642,10 @@ watch(lastNewOrder, (newOrderEvent) => {
     } else if (hasInvoice && orderStatus.picking && !orderStatus.packing) {
       // 4. Embalagem
       targetColumn = 'embalagem'
-    } else if (hasInvoice && !orderStatus.picking) {
-      // 5. Checkout
-      targetColumn = 'checkout'
     } else if (!hasInvoice) {
+      // 5. Pedidos Emitidos
+      targetColumn = 'pedidos_emitidos'
+    } else if (hasInvoice && !orderStatus.picking) {
       // 6. Faturamento
       targetColumn = 'faturamento'
     }
