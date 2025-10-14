@@ -44,7 +44,7 @@
                     >
                     <div class="flex flex-col gap-0.5">
                       <div class="flex justify-between items-center">
-                        <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center hover:bg-sidebar-border/70" :title="`Abrir pedido no Bling`">
+                        <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Abrir pedido no Bling`">
                             <span class="text-sm">{{ order.numero }}</span>
                             <ExternalLink class="h-3 w-3" />
                         </a>
@@ -55,8 +55,7 @@
                         <div class="font-semibold truncate">{{ order.contato_nome }}</div>
                         <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
                         <div class="opacity-90">{{ order.items_quantity }} item(s)</div>
-                        <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">R$ {{
-                          formatCurrency(order.total) }}</div>
+                        <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">{{ order.items_quantity }} item(s)</div>
                       </div>
                     </div>
                   </div>
@@ -80,7 +79,7 @@
                     >
                     <div class="flex flex-col gap-0.5">
                       <div class="flex justify-between items-center">
-                        <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center hover:bg-sidebar-border/70" :title="`Abrir pedido no Bling`">
+                        <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Abrir pedido no Bling`">
                             <span class="text-sm">{{ order.numero }}</span>
                             <ExternalLink class="h-3 w-3" />
                         </a>
@@ -91,8 +90,7 @@
                         <div class="font-semibold truncate">{{ order.contato_nome }}</div>
                         <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
                         <div class="opacity-90">{{ order.items_quantity }} item(s)</div>
-                        <div class="font-semibold border-t border-black border-opacity-20 pt-0.5 mt-0.5">R$ {{
-                          formatCurrency(order.total) }}</div>
+                        <div class="font-semibold border-t border-black border-opacity-20 pt-0.5 mt-0.5">{{ order.items_quantity }} item(s)</div>
                       </div>
                     </div>
                   </div>
@@ -116,7 +114,7 @@
                     >
                     <div class="flex flex-col gap-0.5">
                       <div class="flex justify-between items-center">
-                        <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center hover:bg-sidebar-border/70" :title="`Abrir pedido no Bling`">
+                        <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Abrir pedido no Bling`">
                             <span class="text-sm">{{ order.numero }}</span>
                             <ExternalLink class="h-3 w-3" />
                         </a>
@@ -127,8 +125,7 @@
                         <div class="font-semibold truncate">{{ order.contato_nome }}</div>
                         <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
                         <div class="opacity-90">{{ order.items_quantity }} item(s)</div>
-                        <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">R$ {{
-                          formatCurrency(order.total) }}</div>
+                        <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">{{ order.items_quantity }} item(s)</div>
                       </div>
                     </div>
                   </div>
@@ -153,7 +150,7 @@
                 class="bg-gradient-to-br from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 border border-emerald-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white">
                 <div class="flex flex-col gap-0.5">
                   <div class="flex justify-between items-center">
-                    <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center hover:bg-sidebar-border/70" :title="`Abrir pedido no Bling`">
+                    <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Abrir pedido no Bling`">
                             <span class="text-sm">{{ order.numero }}</span>
                             <ExternalLink class="h-3 w-3" />
                         </a>
@@ -164,8 +161,7 @@
                     <div class="font-semibold truncate">{{ order.contato_nome }}</div>
                     <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
                     <div class="opacity-90" v-if="order.invoice_number">NF: {{ order.invoice_number }}</div>
-                    <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">R$ {{
-                      formatCurrency(order.total) }}</div>
+                    <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">{{ order.items_quantity }} item(s)</div>
                   </div>
                 </div>
               </div>
@@ -188,7 +184,7 @@
                 class="bg-gradient-to-br from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 border border-amber-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white">
                 <div class="flex flex-col gap-0.5">
                   <div class="flex justify-between items-center">
-                    <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center hover:bg-sidebar-border/70" :title="`Abrir pedido no Bling`">
+                    <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Abrir pedido no Bling`">
                             <span class="text-sm">{{ order.numero }}</span>
                             <ExternalLink class="h-3 w-3" />
                         </a>
@@ -198,14 +194,13 @@
                   <div class="flex flex-col gap-0.5 text-xs">
                     <div class="font-semibold truncate">{{ order.contato_nome }}</div>
                     <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
-                    <div v-if="order.invoice_number" class="bg-green-200 text-green-900 px-1 py-0.5 rounded text-xs font-bold text-center">
+                    <div v-if="order.invoice_number" class="">
                           NF: {{ order.invoice_number }}
                     </div>
                     <div class="opacity-90" v-if="order.order_status?.picking_marked_by">
                       Separado por: {{ order.order_status.picking_marked_by }}
                     </div>
-                    <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">R$ {{
-                      formatCurrency(order.total) }}</div>
+                    <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">{{ order.items_quantity }} item(s)</div>
                   </div>
                 </div>
               </div>
@@ -228,7 +223,7 @@
                 class="bg-gradient-to-br from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border border-purple-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white">
                 <div class="flex flex-col gap-0.5">
                   <div class="flex justify-between items-center">
-                    <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center hover:bg-sidebar-border/70" :title="`Abrir pedido no Bling`">
+                    <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Abrir pedido no Bling`">
                             <span class="text-sm">{{ order.numero }}</span>
                             <ExternalLink class="h-3 w-3" />
                         </a>
@@ -238,14 +233,13 @@
                   <div class="flex flex-col gap-0.5 text-xs">
                     <div class="font-semibold truncate">{{ order.contato_nome }}</div>
                     <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
-                    <div v-if="order.invoice_number" class="bg-green-200 text-green-900 px-1 py-0.5 rounded text-xs font-bold text-center">
+                    <div v-if="order.invoice_number" class="">
                           NF: {{ order.invoice_number }}
                     </div>
                     <div class="opacity-90" v-if="order.order_status?.packing_marked_by">
                       Embalado por: {{ order.order_status.packing_marked_by }}
                     </div>
-                    <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">R$ {{
-                      formatCurrency(order.total) }}</div>
+                    <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">{{ order.items_quantity }} item(s)</div>
                   </div>
                 </div>
               </div>
@@ -268,7 +262,7 @@
                 class="bg-gradient-to-br from-cyan-600 to-cyan-700 hover:from-cyan-700 hover:to-cyan-800 border border-cyan-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white">
                 <div class="flex flex-col gap-0.5">
                   <div class="flex justify-between items-center">
-                    <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center hover:bg-sidebar-border/70" :title="`Abrir pedido no Bling`">
+                    <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Abrir pedido no Bling`">
                             <span class="text-sm">{{ order.numero }}</span>
                             <ExternalLink class="h-3 w-3" />
                         </a>
@@ -278,21 +272,20 @@
                   <div class="flex flex-col gap-0.5 text-xs">
                     <div class="font-semibold truncate">{{ order.contato_nome }}</div>
                     <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
-                    <div v-if="order.invoice_number" class="bg-green-200 text-green-900 px-1 py-0.5 rounded text-xs font-bold text-center">
+                    <div v-if="order.invoice_number" class="">
                           NF: {{ order.invoice_number }}
                     </div>
                     <a
                             v-if="order.tracking_code" 
                             :href="order.tracking_url" 
                             target="_blank" 
-                            class="justify-center inline-flex items-center gap-1 font-medium rounded-md px-1 py-0.5 text-xs hover:bg-sidebar-border/70"
+                            class="justify-center inline-flex items-center gap-1 font-medium rounded-md px-1 py-0.5 text-xs"
                             title="Abrir rastreamento"
                         >
                             <span class="text-sm">{{ order.tracking_code }}</span>
                             <ExternalLink class="h-3 w-3" />
                         </a>
-                    <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">R$ {{
-                      formatCurrency(order.total) }}</div>
+                    <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">{{ order.items_quantity }} item(s)</div>
                   </div>
                 </div>
               </div>
@@ -322,7 +315,7 @@
                     >
                     <div class="flex flex-col gap-0.5">
                       <div class="flex justify-between items-center">
-                        <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center hover:bg-sidebar-border/70" :title="`Abrir pedido no Bling`">
+                        <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Abrir pedido no Bling`">
                             <span class="text-sm">{{ order.numero }}</span>
                             <ExternalLink class="h-3 w-3" />
                         </a>
@@ -337,7 +330,7 @@
                             v-if="order.tracking_code" 
                             :href="order.tracking_url" 
                             target="_blank" 
-                            class="justify-center inline-flex items-center gap-1 font-medium rounded-md px-1 py-0.5 text-xs hover:bg-sidebar-border/70"
+                            class="justify-center inline-flex items-center gap-1 font-medium rounded-md px-1 py-0.5 text-xs"
                             title="Abrir rastreamento"
                         >
                             <span class="text-sm">{{ order.tracking_code }}</span>
@@ -346,8 +339,7 @@
                         <div v-if="order.invoice_number" class="text-center bg-green-200 text-green-900 px-1 py-0.5 rounded text-xs font-bold">
                           NF: {{ order.invoice_number }}
                         </div>
-                        <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">R$ {{
-                          formatCurrency(order.total) }}</div>
+                        <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">{{ order.items_quantity }} item(s)</div>
                       </div>
                     </div>
                   </div>
@@ -371,7 +363,7 @@
                     >
                     <div class="flex flex-col gap-0.5">
                       <div class="flex justify-between items-center">
-                        <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center hover:bg-sidebar-border/70" :title="`Abrir pedido no Bling`">
+                        <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-black-900 px-1 py-0.5" :title="`Abrir pedido no Bling`">
                             <span class="text-sm">{{ order.numero }}</span>
                             <ExternalLink class="h-3 w-3" />
                         </a>
@@ -382,14 +374,14 @@
                         <div class="font-semibold truncate">{{ order.contato_nome }}</div>
                         <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
                         <div class="opacity-90">{{ order.items_quantity }} item(s)</div>
-                        <div v-if="order.invoice_number" class="bg-green-200 text-green-900 px-1 py-0.5 rounded text-xs font-bold text-center">
+                        <div v-if="order.invoice_number" class="">
                           NF: {{ order.invoice_number }}
                         </div>
                         <a
                             v-if="order.tracking_code" 
                             :href="order.tracking_url" 
                             target="_blank" 
-                            class="justify-center inline-flex items-center gap-1 font-medium rounded-md px-1 py-0.5 text-xs hover:bg-sidebar-border/70"
+                            class="justify-center inline-flex items-center gap-1 font-medium rounded-md px-1 py-0.5 text-xs"
                             title="Abrir rastreamento"
                         >
                             <span class="text-sm">{{ order.tracking_code }}</span>
@@ -402,11 +394,10 @@
                         >
                             <span class="text-sm">{{ order.tracking_code }}</span>
                         </span>
-                        <div v-if="order.invoice_number" class="bg-green-200 text-green-900 px-1 py-0.5 rounded text-xs font-bold text-center">
+                        <div v-if="order.invoice_number" class="">
                           NF: {{ order.invoice_number }}
                         </div>
-                        <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">R$ {{
-                          formatCurrency(order.total) }}</div>
+                        <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">{{ order.items_quantity }} item(s)</div>
                       </div>
                     </div>
                   </div>
