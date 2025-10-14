@@ -462,40 +462,40 @@ const formatTrackingDataForAPI = (tracking: TrackingData) => {
                             </div>
                             <div v-if="props.order.invoice_raw_data?.linkDanfe || props.order.invoice_raw_data?.linkPDF || props.order.invoice?.link_danfe || props.order.invoice?.link_pdf" class="md:col-span-2">
                                 <label class="text-sm font-medium text-muted-foreground">Links</label>
-                                <div class="mt-1 flex gap-2">
+                                <div class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2">
                                     <a
                                         v-if="props.order.invoice_raw_data?.linkPDF || props.order.invoice?.link_pdf"
                                         :href="props.order.invoice_raw_data?.linkPDF || props.order.invoice?.link_pdf"
                                         target="_blank"
-                                        class="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                                        class="flex flex-col items-center justify-center gap-1 rounded-lg bg-primary px-3 py-3 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
                                     >
-                                        <ExternalLink class="h-3 w-3" />
-                                        Baixar PDF
+                                        <ExternalLink class="h-4 w-4" />
+                                        <span class="text-center leading-tight">Baixar<br>PDF</span>
                                     </a>
                                     <a
                                         v-if="props.order.invoice_raw_data?.linkDanfe || props.order.invoice?.link_danfe"
                                         :href="props.order.invoice_raw_data?.linkDanfe || props.order.invoice?.link_danfe"
                                         target="_blank"
-                                        class="inline-flex items-center gap-1 rounded-md border border-sidebar-border/70 px-3 py-1 text-xs font-medium text-foreground hover:bg-sidebar-border/70 dark:border-sidebar-border"
+                                        class="flex flex-col items-center justify-center gap-1 rounded-lg border border-sidebar-border/70 px-3 py-3 text-xs font-medium text-foreground hover:bg-sidebar-border/70 dark:border-sidebar-border transition-colors"
                                     >
-                                        <ExternalLink class="h-3 w-3" />
-                                        Ver DANFE
+                                        <ExternalLink class="h-4 w-4" />
+                                        <span class="text-center leading-tight">Ver<br>DANFE</span>
                                     </a>
                                     <a
                                         :href="`https://www.bling.com.br/vendas.php#edit/${props.order?.bling_id}`"
                                         target="_blank"
-                                        class="inline-flex items-center gap-1 rounded-md border border-sidebar-border/70 px-3 py-1 text-xs font-medium text-foreground hover:bg-sidebar-border/70 dark:border-sidebar-border"
+                                        class="flex flex-col items-center justify-center gap-1 rounded-lg border border-sidebar-border/70 px-3 py-3 text-xs font-medium text-foreground hover:bg-sidebar-border/70 dark:border-sidebar-border transition-colors"
                                     >
-                                        <ExternalLink class="h-3 w-3" />
-                                        Ver pedido no Bling
+                                        <ExternalLink class="h-4 w-4" />
+                                        <span class="text-center leading-tight">Ver pedido<br>no Bling</span>
                                     </a>
                                     <a
                                         :href="`https://www.bling.com.br/notas.fiscais.php#edit/${props.order?.raw_invoice_data?.id}`"
                                         target="_blank"
-                                        class="inline-flex items-center gap-1 rounded-md border border-sidebar-border/70 px-3 py-1 text-xs font-medium text-foreground hover:bg-sidebar-border/70 dark:border-sidebar-border"
+                                        class="flex flex-col items-center justify-center gap-1 rounded-lg border border-sidebar-border/70 px-3 py-3 text-xs font-medium text-foreground hover:bg-sidebar-border/70 dark:border-sidebar-border transition-colors"
                                     >
-                                        <ExternalLink class="h-3 w-3" />
-                                        Ver NFE no Bling
+                                        <ExternalLink class="h-4 w-4" />
+                                        <span class="text-center leading-tight">Ver NFE<br>no Bling</span>
                                     </a>
                                 </div>
                             </div>
