@@ -25,7 +25,7 @@
     <!-- Pedidos Emitidos Layout -->
     <div class="bg-card rounded-lg shadow-lg border border-border">
       <!-- Flex Layout - Responsive -->
-      <div class="flex gap-0 w-full" style="max-height: 600px;">
+      <div class="flex gap-0 w-full kanban-layout" style="max-height: 600px;">
         <!-- Pedidos Emitidos Column (spans 3 columns) -->
         <div class="border-r border-border flex-1" style="max-width: 30%; min-width: 200px;">
           <div class="bg-muted px-4 py-3 text-center border-b border-border">
@@ -1076,6 +1076,7 @@ onUnmounted(() => {
   flex-direction: column;
   transition: all 0.3s ease;
   position: relative;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
 }
 
 /* Kanban column responsive adjustments */
@@ -1498,6 +1499,71 @@ onUnmounted(() => {
 .order-number {
   font-size: 0.9rem;
   font-weight: 700;
+}
+
+/* Tablet Responsive - Improved Layout */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .kanban-compact {
+    overflow-y: auto;
+    max-height: calc(100vh - 80px);
+  }
+
+  .kanban-layout {
+    overflow-x: auto;
+    overflow-y: visible;
+  }
+
+  .kanban-layout > div {
+    min-width: 150px !important;
+  }
+}
+
+/* Mobile Responsive - Vertical Scrollable Layout */
+@media (max-width: 768px) {
+  .kanban-compact {
+    overflow-y: auto;
+    max-height: calc(100vh - 100px);
+  }
+
+  .kanban-layout {
+    flex-direction: column !important;
+    max-height: none !important;
+    overflow-y: visible;
+  }
+
+  .kanban-layout > div {
+    max-width: 100% !important;
+    min-width: 100% !important;
+    border-right: none !important;
+    border-bottom: 1px solid;
+  }
+
+  .kanban-layout > div:last-child {
+    border-bottom: none;
+  }
+
+  .kanban-layout .grid {
+    grid-template-columns: repeat(3, 1fr);
+    width: 100%;
+  }
+
+  .kanban-layout .grid.grid-cols-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .kanban-column-scroll {
+    max-height: 300px !important;
+  }
+
+  /* Hide fullscreen button text on mobile */
+  .kanban-compact button span {
+    display: none;
+  }
+
+  /* Better card sizing on mobile */
+  .kanban-layout .bg-gradient-to-br {
+    font-size: 0.85rem;
+  }
 }
 
 /* Responsive adjustments */

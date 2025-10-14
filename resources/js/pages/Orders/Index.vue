@@ -794,7 +794,7 @@ const getCurrentPerPage = () => {
                                 <td class="px-4 py-3 text-center">
                                     <div v-if="order.invoice?.numero" class="flex flex-col items-center gap-1">
                                         <!-- Número da NFE -->
-                                         <a :href="`https://www.bling.com.br/notas.fiscais.php#edit/${order.invoice?.id}`" target="_blank" class="text-primary gap-1 font-small rounded-md  flex items-center hover:bg-sidebar-border/70 " :title="`Abrir nota fiscal no Bling`">
+                                         <a :href="`https://www.bling.com.br/notas.fiscais.php#edit/${order.invoice?.bling_id}`" target="_blank" class="text-primary gap-1 font-small rounded-md  flex items-center hover:bg-sidebar-border/70 " :title="`Abrir nota fiscal no Bling`">
                                             {{ order.invoice.numero }}
                                             <ExternalLink class="h-3 w-3" />
                                         </a>
