@@ -13,7 +13,6 @@
 
     <!-- Header with fullscreen button -->
     <div class="flex items-center justify-between mb-4">
-      <h2 class="text-xl font-bold text-foreground">Kanban Board</h2>
       <button @click="toggleFullscreen"
         class="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200"
         :title="isFullscreen ? 'Exit fullscreen' : 'Open fullscreen'">
@@ -25,19 +24,19 @@
     <!-- Pedidos Emitidos Layout -->
     <div class="bg-card rounded-lg shadow-lg border border-border">
       <!-- Flex Layout - Responsive -->
-      <div class="flex gap-0 w-full kanban-layout" style="max-height: 600px;">
+      <div class="flex gap-0 w-full kanban-layout" style="height: 600px; align-items: stretch;">
         <!-- Pedidos Emitidos Column (spans 3 columns) -->
-        <div class="border-r border-border flex-1" style="max-width: 30%; min-width: 200px;">
+        <div class="border-r border-border flex-1 flex flex-col" style="max-width: 30%; min-width: 200px;">
           <div class="bg-muted px-4 py-3 text-center border-b border-border">
             <h3 class="text-foreground font-semibold">Pedidos Emitidos</h3>
           </div>
-          <div class="grid grid-cols-3 h-full">
+          <div class="grid grid-cols-3 flex-1">
             <!-- Collme Pro Sub-column -->
-            <div class="border-r border-border">
+            <div class="border-r border-border flex flex-col">
               <div class="bg-muted px-2 py-2 text-center border-b border-border">
                 <h4 class="text-foreground text-xs font-medium">Collme Pro</h4>
               </div>
-              <div class="p-2 bg-card overflow-y-auto" style="max-height: 500px;">
+              <div class="p-2 bg-card overflow-y-auto flex-1">
                 <div class="space-y-1">
                   <div v-for="order in getOrdersBySource('Collme Pro')" :key="order.id"
                     :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]"
@@ -68,11 +67,11 @@
             </div>
 
             <!-- Collme Beauty Sub-column -->
-            <div class="border-r border-border">
+            <div class="border-r border-border flex flex-col">
               <div class="bg-muted px-2 py-2 text-center border-b border-border">
                 <h4 class="text-foreground text-xs font-medium">Collme Beauty</h4>
               </div>
-              <div class="p-2 bg-card overflow-y-auto" style="max-height: 500px;">
+              <div class="p-2 bg-card overflow-y-auto flex-1">
                 <div class="space-y-1">
                   <div v-for="order in getOrdersBySource('Collme Beauty')" :key="order.id"
                     :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]"
@@ -103,11 +102,11 @@
             </div>
 
             <!-- Atacadista Sub-column -->
-            <div>
+            <div class="flex flex-col">
               <div class="bg-muted px-2 py-2 text-center border-b border-border">
                 <h4 class="text-foreground text-xs font-medium">Atacadista</h4>
               </div>
-              <div class="p-2 bg-card overflow-y-auto" style="max-height: 500px;">
+              <div class="p-2 bg-card overflow-y-auto flex-1">
                 <div class="space-y-1">
                   <div v-for="order in getOrdersBySource('Atacadista')" :key="order.id"
                     :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]"
@@ -140,11 +139,11 @@
         </div>
 
         <!-- Faturamento/Emissão de NF Column -->
-        <div class="border-r border-border flex-1" style="max-width: 12.5%; min-width: 120px;">
+        <div class="border-r border-border flex-1 flex flex-col" style="max-width: 12.5%; min-width: 120px;">
           <div class="bg-muted px-2 py-2 text-center border-b border-border">
             <h3 class="text-foreground text-xs font-semibold leading-tight">Faturamento/Emissão de NF</h3>
           </div>
-          <div class="p-2 bg-card overflow-y-auto" style="max-height: 500px;">
+          <div class="p-2 bg-card overflow-y-auto flex-1">
             <div class="space-y-1">
               <div v-for="order in kanbanData.faturamento || []" :key="order.id"
                 :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]">
@@ -174,11 +173,11 @@
         </div>
 
         <!-- Checkout (Picking) Column -->
-        <div class="border-r border-border flex-1" style="max-width: 12.5%; min-width: 120px;">
+        <div class="border-r border-border flex-1 flex flex-col" style="max-width: 12.5%; min-width: 120px;">
           <div class="bg-muted px-2 py-2 text-center border-b border-border">
             <h3 class="text-foreground text-xs font-semibold">Checkout (Picking)</h3>
           </div>
-          <div class="p-2 bg-card overflow-y-auto" style="max-height: 500px;">
+          <div class="p-2 bg-card overflow-y-auto flex-1">
             <div class="space-y-1">
               <div v-for="order in kanbanData.checkout || []" :key="order.id"
                 :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]">
@@ -213,11 +212,11 @@
         </div>
 
         <!-- Embalagem (Packing) Column -->
-        <div class="border-r border-border flex-1" style="max-width: 12.5%; min-width: 120px;">
+        <div class="border-r border-border flex-1 flex flex-col" style="max-width: 12.5%; min-width: 120px;">
           <div class="bg-muted px-2 py-2 text-center border-b border-border">
             <h3 class="text-foreground text-xs font-semibold">Embalagem (Packing)</h3>
           </div>
-          <div class="p-2 bg-card overflow-y-auto" style="max-height: 500px;">
+          <div class="p-2 bg-card overflow-y-auto flex-1">
             <div class="space-y-1">
               <div v-for="order in kanbanData.embalagem || []" :key="order.id"
                 :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]">
@@ -252,11 +251,11 @@
         </div>
 
         <!-- Etiqueta (Cód. Rastreio) Column -->
-        <div class="border-r border-border flex-1" style="max-width: 12.5%; min-width: 120px;">
+        <div class="border-r border-border flex-1 flex flex-col" style="max-width: 12.5%; min-width: 120px;">
           <div class="bg-muted px-2 py-2 text-center border-b border-border">
             <h3 class="text-foreground text-xs font-semibold">Etiqueta (Cód. Rastreio)</h3>
           </div>
-          <div class="p-2 bg-card overflow-y-auto" style="max-height: 500px;">
+          <div class="p-2 bg-card overflow-y-auto flex-1">
             <div class="space-y-1">
               <div v-for="order in kanbanData.etiqueta || []" :key="order.id"
                 :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]">
@@ -298,17 +297,17 @@
         </div>
 
         <!-- Coleta Column -->
-        <div class="flex-1" style="max-width: 25%; min-width: 200px;">
+        <div class="flex-1 flex flex-col" style="max-width: 25%; min-width: 200px;">
           <div class="bg-muted px-4 py-3 text-center border-b border-border">
             <h3 class="text-foreground font-semibold">Coleta</h3>
           </div>
-          <div class="grid grid-cols-2 h-full">
+          <div class="grid grid-cols-2 flex-1">
             <!-- Aguardando Sub-column -->
-            <div class="border-r border-border">
+            <div class="border-r border-border flex flex-col">
               <div class="bg-muted px-2 py-2 text-center border-b border-border">
                 <h4 class="text-foreground text-xs font-medium">Aguardando</h4>
               </div>
-              <div class="p-2 bg-card overflow-y-auto" style="max-height: 500px;">
+              <div class="p-2 bg-card overflow-y-auto flex-1">
                 <div class="space-y-1">
                   <div v-for="order in kanbanData.coleta_aguardando || []" :key="order.id"
                     :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]"
@@ -351,11 +350,11 @@
             </div>
 
             <!-- Realizada Sub-column -->
-            <div>
+            <div class="flex flex-col">
               <div class="bg-muted px-2 py-2 text-center border-b border-border">
                 <h4 class="text-foreground text-xs font-medium">Realizada</h4>
               </div>
-              <div class="p-2 bg-card overflow-y-auto" style="max-height: 500px;">
+              <div class="p-2 bg-card overflow-y-auto flex-1">
                 <div class="space-y-1">
                   <div v-for="order in kanbanData.coleta_realizada || []" :key="order.id"
                     :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]"
@@ -1089,6 +1088,30 @@ onUnmounted(() => {
 /* Kanban column responsive adjustments */
 .kanban-compact .flex > div {
   transition: all 0.3s ease;
+}
+
+/* Ensure all columns have equal height and proper alignment */
+.kanban-layout {
+  display: flex;
+  align-items: stretch;
+}
+
+.kanban-layout > div {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Ensure sub-columns also have equal height */
+.kanban-layout .grid {
+  display: grid;
+  height: 100%;
+}
+
+.kanban-layout .grid > div {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 /* Ensure all columns fit on screen */
