@@ -671,39 +671,27 @@ const getCurrentPerPage = () => {
             </div>
 
             <!-- Pagination Top -->
-            <div v-if="props.orders.links?.length > 3" class="flex items-center justify-between mb-4">
-                <div class="flex items-center gap-4">
+            <div v-if="props.orders.links?.length > 3" class="mb-4">
+                <div class="hidden md:flex items-center justify-between mb-2">
                     <div class="text-sm text-muted-foreground">
                         Mostrando {{ props.orders.from || 0 }} a {{ props.orders.to || 0 }} de {{ props.orders.total || 0 }} resultados
                     </div>
-                    <!-- <div class="flex items-center gap-2">
-                        <label class="text-sm text-muted-foreground">Por página:</label>
-                        <select 
-                            @change="updatePerPage"
-                            :value="getCurrentPerPage()"
-                            class="rounded-md border border-sidebar-border/70 bg-background px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                        >
-                            <option value="25">25</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                            <option value="200">200</option>
-                            <option value="500">500</option>
-                        </select>
-                    </div> -->
                 </div>
-                <div class="flex items-center gap-2">
-                    <Link
-                        v-for="link in props.orders.links || []"
-                        :key="link.label"
-                        :href="link.url || '#'"
-                        v-html="link.label"
-                        class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium"
-                        :class="{
-                            'bg-primary text-primary-foreground': link.active,
-                            'text-muted-foreground hover:bg-sidebar-border/70': !link.active && link.url,
-                            'text-muted-foreground/50 cursor-not-allowed': !link.url,
-                        }"
-                    />
+                <div class="flex items-center justify-center overflow-x-auto">
+                    <div class="flex items-center gap-1 md:gap-2 w-full">
+                        <Link
+                            v-for="link in props.orders.links || []"
+                            :key="link.label"
+                            :href="link.url || '#'"
+                            v-html="link.label"
+                            class="inline-flex items-center justify-center rounded-md px-2 py-2 md:px-3 text-sm font-medium whitespace-nowrap"
+                            :class="{
+                                'bg-primary text-primary-foreground': link.active,
+                                'text-muted-foreground hover:bg-sidebar-border/70': !link.active && link.url,
+                                'text-muted-foreground/50 cursor-not-allowed': !link.url,
+                            }"
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -945,39 +933,27 @@ const getCurrentPerPage = () => {
             </div>
 
             <!-- Pagination -->
-            <div v-if="props.orders.links?.length > 3" class="flex items-center justify-between">
-                <div class="flex items-center gap-4">
+            <div v-if="props.orders.links?.length > 3">
+                <div class="hidden md:flex items-center justify-center mb-2">
                     <div class="text-sm text-muted-foreground">
                         Mostrando {{ props.orders.from || 0 }} a {{ props.orders.to || 0 }} de {{ props.orders.total || 0 }} resultados
                     </div>
-                    <!-- <div class="flex items-center gap-2">
-                        <label class="text-sm text-muted-foreground">Por página:</label>
-                        <select 
-                            @change="updatePerPage"
-                            :value="getCurrentPerPage()"
-                            class="rounded-md border border-sidebar-border/70 bg-background px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                        >
-                            <option value="25">25</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                            <option value="200">200</option>
-                            <option value="500">500</option>
-                        </select>
-                    </div> -->
                 </div>
-                <div class="flex items-center gap-2">
-                    <Link
-                        v-for="link in props.orders.links || []"
-                        :key="link.label"
-                        :href="link.url || '#'"
-                        v-html="link.label"
-                        class="inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium"
-                        :class="{
-                            'bg-primary text-primary-foreground': link.active,
-                            'text-muted-foreground hover:bg-sidebar-border/70': !link.active && link.url,
-                            'text-muted-foreground/50 cursor-not-allowed': !link.url,
-                        }"
-                    />
+                <div class="flex items-center justify-center overflow-x-auto">
+                    <div class="flex items-center gap-1 md:gap-2 w-full">
+                        <Link
+                            v-for="link in props.orders.links || []"
+                            :key="link.label"
+                            :href="link.url || '#'"
+                            v-html="link.label"
+                            class="inline-flex items-center justify-center rounded-md px-2 py-2 md:px-3 text-sm font-medium whitespace-nowrap"
+                            :class="{
+                                'bg-primary text-primary-foreground': link.active,
+                                'text-muted-foreground hover:bg-sidebar-border/70': !link.active && link.url,
+                                'text-muted-foreground/50 cursor-not-allowed': !link.url,
+                            }"
+                        />
+                    </div>
                 </div>
             </div>
         </div>
