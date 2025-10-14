@@ -37,10 +37,10 @@
               <div class="bg-muted px-2 py-2 text-center border-b border-border">
                 <h4 class="text-foreground text-xs font-medium">Collme Pro</h4>
               </div>
-              <div class="p-2 bg-card overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
+              <div class="p-2 bg-card overflow-y-auto" style="max-height: 500px;">
                 <div class="space-y-1">
                   <div v-for="order in getOrdersBySource('Collme Pro')" :key="order.id"
-                    class="bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 border border-blue-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white"
+                    :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]"
                     >
                     <div class="flex flex-col gap-0.5">
                       <div class="flex justify-between items-center">
@@ -55,7 +55,7 @@
                         <div class="font-semibold truncate">{{ order.contato_nome }}</div>
                         <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
                         <div class="opacity-90">{{ order.items_quantity }} item(s)</div>
-                        <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">{{ order.items_quantity }} item(s)</div>
+                        <div :class="['font-semibold border-t border-opacity-20 pt-0.5 mt-0.5', getBorderColorClass(order)]">{{ order.items_quantity }} item(s)</div>
                       </div>
                     </div>
                   </div>
@@ -72,10 +72,10 @@
               <div class="bg-muted px-2 py-2 text-center border-b border-border">
                 <h4 class="text-foreground text-xs font-medium">Collme Beauty</h4>
               </div>
-              <div class="p-2 bg-card overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
+              <div class="p-2 bg-card overflow-y-auto" style="max-height: 500px;">
                 <div class="space-y-1">
                   <div v-for="order in getOrdersBySource('Collme Beauty')" :key="order.id"
-                    class="bg-gradient-to-br from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 border border-yellow-400 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-gray-900"
+                    :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]"
                     >
                     <div class="flex flex-col gap-0.5">
                       <div class="flex justify-between items-center">
@@ -90,7 +90,7 @@
                         <div class="font-semibold truncate">{{ order.contato_nome }}</div>
                         <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
                         <div class="opacity-90">{{ order.items_quantity }} item(s)</div>
-                        <div class="font-semibold border-t border-black border-opacity-20 pt-0.5 mt-0.5">{{ order.items_quantity }} item(s)</div>
+                        <div :class="['font-semibold border-t border-opacity-20 pt-0.5 mt-0.5', getBorderColorClass(order)]">{{ order.items_quantity }} item(s)</div>
                       </div>
                     </div>
                   </div>
@@ -107,10 +107,10 @@
               <div class="bg-muted px-2 py-2 text-center border-b border-border">
                 <h4 class="text-foreground text-xs font-medium">Atacadista</h4>
               </div>
-              <div class="p-2 bg-card overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
+              <div class="p-2 bg-card overflow-y-auto" style="max-height: 500px;">
                 <div class="space-y-1">
                   <div v-for="order in getOrdersBySource('Atacadista')" :key="order.id"
-                    class="bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 border border-blue-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white"
+                    :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]"
                     >
                     <div class="flex flex-col gap-0.5">
                       <div class="flex justify-between items-center">
@@ -125,7 +125,7 @@
                         <div class="font-semibold truncate">{{ order.contato_nome }}</div>
                         <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
                         <div class="opacity-90">{{ order.items_quantity }} item(s)</div>
-                        <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">{{ order.items_quantity }} item(s)</div>
+                        <div :class="['font-semibold border-t border-opacity-20 pt-0.5 mt-0.5', getBorderColorClass(order)]">{{ order.items_quantity }} item(s)</div>
                       </div>
                     </div>
                   </div>
@@ -144,10 +144,10 @@
           <div class="bg-muted px-2 py-2 text-center border-b border-border">
             <h3 class="text-foreground text-xs font-semibold leading-tight">Faturamento/Emissão de NF</h3>
           </div>
-          <div class="p-2 bg-card overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
+          <div class="p-2 bg-card overflow-y-auto" style="max-height: 500px;">
             <div class="space-y-1">
               <div v-for="order in kanbanData.faturamento || []" :key="order.id"
-                class="bg-gradient-to-br from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 border border-emerald-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white">
+                :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]">
                 <div class="flex flex-col gap-0.5">
                   <div class="flex justify-between items-center">
                     <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Abrir pedido no Bling`">
@@ -161,7 +161,7 @@
                     <div class="font-semibold truncate">{{ order.contato_nome }}</div>
                     <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
                     <div class="opacity-90" v-if="order.invoice_number">NF: {{ order.invoice_number }}</div>
-                    <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">{{ order.items_quantity }} item(s)</div>
+                    <div :class="['font-semibold border-t border-opacity-20 pt-0.5 mt-0.5', getBorderColorClass(order)]">{{ order.items_quantity }} item(s)</div>
                   </div>
                 </div>
               </div>
@@ -178,10 +178,10 @@
           <div class="bg-muted px-2 py-2 text-center border-b border-border">
             <h3 class="text-foreground text-xs font-semibold">Checkout (Picking)</h3>
           </div>
-          <div class="p-2 bg-card overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
+          <div class="p-2 bg-card overflow-y-auto" style="max-height: 500px;">
             <div class="space-y-1">
               <div v-for="order in kanbanData.checkout || []" :key="order.id"
-                class="bg-gradient-to-br from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 border border-amber-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white">
+                :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]">
                 <div class="flex flex-col gap-0.5">
                   <div class="flex justify-between items-center">
                     <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Abrir pedido no Bling`">
@@ -200,7 +200,7 @@
                     <div class="opacity-90" v-if="order.order_status?.picking_marked_by">
                       Separado por: {{ order.order_status.picking_marked_by }}
                     </div>
-                    <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">{{ order.items_quantity }} item(s)</div>
+                    <div :class="['font-semibold border-t border-opacity-20 pt-0.5 mt-0.5', getBorderColorClass(order)]">{{ order.items_quantity }} item(s)</div>
                   </div>
                 </div>
               </div>
@@ -217,10 +217,10 @@
           <div class="bg-muted px-2 py-2 text-center border-b border-border">
             <h3 class="text-foreground text-xs font-semibold">Embalagem (Packing)</h3>
           </div>
-          <div class="p-2 bg-card overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
+          <div class="p-2 bg-card overflow-y-auto" style="max-height: 500px;">
             <div class="space-y-1">
               <div v-for="order in kanbanData.embalagem || []" :key="order.id"
-                class="bg-gradient-to-br from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border border-purple-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white">
+                :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]">
                 <div class="flex flex-col gap-0.5">
                   <div class="flex justify-between items-center">
                     <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Abrir pedido no Bling`">
@@ -239,7 +239,7 @@
                     <div class="opacity-90" v-if="order.order_status?.packing_marked_by">
                       Embalado por: {{ order.order_status.packing_marked_by }}
                     </div>
-                    <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">{{ order.items_quantity }} item(s)</div>
+                    <div :class="['font-semibold border-t border-opacity-20 pt-0.5 mt-0.5', getBorderColorClass(order)]">{{ order.items_quantity }} item(s)</div>
                   </div>
                 </div>
               </div>
@@ -256,10 +256,10 @@
           <div class="bg-muted px-2 py-2 text-center border-b border-border">
             <h3 class="text-foreground text-xs font-semibold">Etiqueta (Cód. Rastreio)</h3>
           </div>
-          <div class="p-2 bg-card overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
+          <div class="p-2 bg-card overflow-y-auto" style="max-height: 500px;">
             <div class="space-y-1">
               <div v-for="order in kanbanData.etiqueta || []" :key="order.id"
-                class="bg-gradient-to-br from-cyan-600 to-cyan-700 hover:from-cyan-700 hover:to-cyan-800 border border-cyan-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white">
+                :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]">
                 <div class="flex flex-col gap-0.5">
                   <div class="flex justify-between items-center">
                     <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Abrir pedido no Bling`">
@@ -285,7 +285,7 @@
                             <span class="text-sm">{{ order.tracking_code }}</span>
                             <ExternalLink class="h-3 w-3" />
                         </a>
-                    <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">{{ order.items_quantity }} item(s)</div>
+                    <div :class="['font-semibold border-t border-opacity-20 pt-0.5 mt-0.5', getBorderColorClass(order)]">{{ order.items_quantity }} item(s)</div>
                   </div>
                 </div>
               </div>
@@ -308,10 +308,10 @@
               <div class="bg-muted px-2 py-2 text-center border-b border-border">
                 <h4 class="text-foreground text-xs font-medium">Aguardando</h4>
               </div>
-              <div class="p-2 bg-card overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
+              <div class="p-2 bg-card overflow-y-auto" style="max-height: 500px;">
                 <div class="space-y-1">
                   <div v-for="order in kanbanData.coleta_aguardando || []" :key="order.id"
-                    class="bg-gradient-to-br from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 border border-red-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white"
+                    :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]"
                     >
                     <div class="flex flex-col gap-0.5">
                       <div class="flex justify-between items-center">
@@ -338,7 +338,7 @@
                         <div v-if="order.invoice_number" class="">
                           NF: {{ order.invoice_number }}
                         </div>
-                        <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">{{ order.items_quantity }} item(s)</div>
+                        <div :class="['font-semibold border-t border-opacity-20 pt-0.5 mt-0.5', getBorderColorClass(order)]">{{ order.items_quantity }} item(s)</div>
                       </div>
                     </div>
                   </div>
@@ -355,10 +355,10 @@
               <div class="bg-muted px-2 py-2 text-center border-b border-border">
                 <h4 class="text-foreground text-xs font-medium">Realizada</h4>
               </div>
-              <div class="p-2 bg-card overflow-y-auto kanban-column-scroll" style="max-height: 500px;">
+              <div class="p-2 bg-card overflow-y-auto" style="max-height: 500px;">
                 <div class="space-y-1">
                   <div v-for="order in kanbanData.coleta_realizada || []" :key="order.id"
-                    class="bg-gradient-to-br from-lime-600 to-lime-700 hover:from-lime-700 hover:to-lime-800 border border-lime-500 rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg text-white"
+                    :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]"
                     >
                     <div class="flex flex-col gap-0.5">
                       <div class="flex justify-between items-center">
@@ -395,7 +395,7 @@
                         <div v-if="order.invoice_number" class="">
                           NF: {{ order.invoice_number }}
                         </div>
-                        <div class="font-semibold border-t border-white border-opacity-20 pt-0.5 mt-0.5">{{ order.items_quantity }} item(s)</div>
+                        <div :class="['font-semibold border-t border-opacity-20 pt-0.5 mt-0.5', getBorderColorClass(order)]">{{ order.items_quantity }} item(s)</div>
                       </div>
                     </div>
                   </div>
@@ -918,6 +918,24 @@ const getOrdersBySource = (source: string): Order[] => {
 // Get order source abbreviation
 const getOrderSource = (order: Order): string => {
   return getSystemShortName(order.source)
+}
+
+// Get dynamic card color classes based on order source
+const getCardColorClasses = (order: Order): string => {
+  if (order.source === 'Pro') {
+    return 'bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 border-blue-500 text-white'
+  } else if (order.source === 'Beauty') {
+    return 'bg-gradient-to-br from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 border-yellow-400 text-gray-900'
+  } else if (order.source === 'Atacadista') {
+    return 'bg-gradient-to-br from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 border-green-500 text-white'
+  }
+  return 'bg-gradient-to-br from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 border-gray-500 text-white'
+}
+
+// Get border color based on order source (for internal card borders)
+const getBorderColorClass = (order: Order): string => {
+  // Light background (Beauty) uses dark borders, dark backgrounds use light borders
+  return order.source === 'Beauty' ? 'border-black' : 'border-white'
 }
 
 // Get order card class based on source
