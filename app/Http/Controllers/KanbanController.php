@@ -361,7 +361,9 @@ class KanbanController extends Controller
         if ($order->tracking_code && $order->tracking_code !== '') {
             $hasTracking = true;
         } elseif ($order->invoice && $order->invoice->tracking()->count() > 0) {
-            $hasTracking = true;
+            // Check if any tracking record has a valid codigo_rastreamento
+            $hasTracking = $order->invoice->tracking()->whereNotNull('codigo_rastreamento')
+                ->where('codigo_rastreamento', '!=', '')->exists();
         }
 
         // Check for invoice number

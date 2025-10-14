@@ -37,13 +37,13 @@
                 <h4 class="text-foreground text-xs font-medium">Collme Pro</h4>
               </div>
               <div class="p-2 bg-card overflow-y-auto flex-1">
-                <div class="space-y-1">
+                <div class="space-y-3">
                   <div v-for="order in getOrdersBySource('Collme Pro')" :key="order.id"
                     :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]"
                     >
                     <div class="flex flex-col gap-0.5">
                       <div class="flex justify-between items-center">
-                        <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Abrir pedido no Bling`">
+                        <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Visualizar pedido no sistema de Logística `">
                             <span class="text-sm">{{ order.numero }}</span>
                             <ExternalLink class="h-3 w-3" />
                         </a>
@@ -72,13 +72,13 @@
                 <h4 class="text-foreground text-xs font-medium">Collme Beauty</h4>
               </div>
               <div class="p-2 bg-card overflow-y-auto flex-1">
-                <div class="space-y-1">
+                <div class="space-y-3">
                   <div v-for="order in getOrdersBySource('Collme Beauty')" :key="order.id"
                     :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]"
                     >
                     <div class="flex flex-col gap-0.5">
                       <div class="flex justify-between items-center">
-                        <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Abrir pedido no Bling`">
+                        <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Visualizar pedido no sistema de Logística `">
                             <span class="text-sm">{{ order.numero }}</span>
                             <ExternalLink class="h-3 w-3" />
                         </a>
@@ -107,13 +107,13 @@
                 <h4 class="text-foreground text-xs font-medium">Atacadista</h4>
               </div>
               <div class="p-2 bg-card overflow-y-auto flex-1">
-                <div class="space-y-1">
+                <div class="space-y-3">
                   <div v-for="order in getOrdersBySource('Atacadista')" :key="order.id"
                     :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]"
                     >
                     <div class="flex flex-col gap-0.5">
                       <div class="flex justify-between items-center">
-                        <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Abrir pedido no Bling`">
+                        <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Visualizar pedido no sistema de Logística `">
                             <span class="text-sm">{{ order.numero }}</span>
                             <ExternalLink class="h-3 w-3" />
                         </a>
@@ -144,12 +144,12 @@
             <h3 class="text-foreground text-xs font-semibold leading-tight">Faturamento/Emissão de NF</h3>
           </div>
           <div class="p-2 bg-card overflow-y-auto flex-1">
-            <div class="space-y-1">
+            <div class="space-y-3">
               <div v-for="order in kanbanData.faturamento || []" :key="order.id"
                 :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]">
                 <div class="flex flex-col gap-0.5">
                   <div class="flex justify-between items-center">
-                    <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Abrir pedido no Bling`">
+                    <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Visualizar pedido no sistema de Logística `">
                             <span class="text-sm">{{ order.numero }}</span>
                             <ExternalLink class="h-3 w-3" />
                         </a>
@@ -178,12 +178,12 @@
             <h3 class="text-foreground text-xs font-semibold">Checkout (Picking)</h3>
           </div>
           <div class="p-2 bg-card overflow-y-auto flex-1">
-            <div class="space-y-1">
+            <div class="space-y-3">
               <div v-for="order in kanbanData.checkout || []" :key="order.id"
                 :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]">
                 <div class="flex flex-col gap-0.5">
                   <div class="flex justify-between items-center">
-                    <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Abrir pedido no Bling`">
+                    <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Visualizar pedido no sistema de Logística `">
                             <span class="text-sm">{{ order.numero }}</span>
                             <ExternalLink class="h-3 w-3" />
                         </a>
@@ -217,12 +217,12 @@
             <h3 class="text-foreground text-xs font-semibold">Embalagem (Packing)</h3>
           </div>
           <div class="p-2 bg-card overflow-y-auto flex-1">
-            <div class="space-y-1">
+            <div class="space-y-3">
               <div v-for="order in kanbanData.embalagem || []" :key="order.id"
                 :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]">
                 <div class="flex flex-col gap-0.5">
                   <div class="flex justify-between items-center">
-                    <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Abrir pedido no Bling`">
+                    <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Visualizar pedido no sistema de Logística `">
                             <span class="text-sm">{{ order.numero }}</span>
                             <ExternalLink class="h-3 w-3" />
                         </a>
@@ -256,12 +256,12 @@
             <h3 class="text-foreground text-xs font-semibold">Etiqueta (Cód. Rastreio)</h3>
           </div>
           <div class="p-2 bg-card overflow-y-auto flex-1">
-            <div class="space-y-1">
+            <div class="space-y-3">
               <div v-for="order in kanbanData.etiqueta || []" :key="order.id"
                 :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]">
                 <div class="flex flex-col gap-0.5">
                   <div class="flex justify-between items-center">
-                    <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Abrir pedido no Bling`">
+                    <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Visualizar pedido no sistema de Logística `">
                             <span class="text-sm">{{ order.numero }}</span>
                             <ExternalLink class="h-3 w-3" />
                         </a>
@@ -278,7 +278,7 @@
                             v-if="order.tracking_code" 
                             :href="order.tracking_url" 
                             target="_blank" 
-                            class="justify-center inline-flex items-center gap-1 font-medium rounded-md px-1 py-0.5 text-xs"
+                            class="inline-flex items-center gap-1 font-medium rounded-md text-xs"
                             title="Abrir rastreamento"
                         >
                             <span class="text-sm">{{ order.tracking_code }}</span>
@@ -308,13 +308,13 @@
                 <h4 class="text-foreground text-xs font-medium">Aguardando</h4>
               </div>
               <div class="p-2 bg-card overflow-y-auto flex-1">
-                <div class="space-y-1">
+                <div class="space-y-3">
                   <div v-for="order in kanbanData.coleta_aguardando || []" :key="order.id"
                     :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]"
                     >
                     <div class="flex flex-col gap-0.5">
                       <div class="flex justify-between items-center">
-                        <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Abrir pedido no Bling`">
+                        <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Visualizar pedido no sistema de Logística `">
                             <span class="text-sm">{{ order.numero }}</span>
                             <ExternalLink class="h-3 w-3" />
                         </a>
@@ -328,7 +328,7 @@
                             v-if="order.tracking_code" 
                             :href="order.tracking_url" 
                             target="_blank" 
-                            class="justify-center inline-flex items-center gap-1 font-medium rounded-md px-1 py-0.5 text-xs"
+                            class="inline-flex items-center gap-1 font-medium rounded-md text-xs"
                             title="Abrir rastreamento"
                         >
                             <span class="text-sm">{{ order.tracking_code }}</span>
@@ -355,13 +355,13 @@
                 <h4 class="text-foreground text-xs font-medium">Realizada</h4>
               </div>
               <div class="p-2 bg-card overflow-y-auto flex-1">
-                <div class="space-y-1">
+                <div class="space-y-3">
                   <div v-for="order in kanbanData.coleta_realizada || []" :key="order.id"
                     :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]"
                     >
                     <div class="flex flex-col gap-0.5">
                       <div class="flex justify-between items-center">
-                        <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-black-900 px-1 py-0.5" :title="`Abrir pedido no Bling`">
+                        <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-black-900 px-1 py-0.5" :title="`Visualizar pedido no sistema de Logística `">
                             <span class="text-sm">{{ order.numero }}</span>
                             <ExternalLink class="h-3 w-3" />
                         </a>
@@ -378,7 +378,7 @@
                             v-if="order.tracking_code" 
                             :href="order.tracking_url" 
                             target="_blank" 
-                            class="justify-center inline-flex items-center gap-1 font-medium rounded-md px-1 py-0.5 text-xs"
+                            class="inline-flex items-center gap-1 font-medium rounded-md text-xs"
                             title="Abrir rastreamento"
                         >
                             <span class="text-sm">{{ order.tracking_code }}</span>
@@ -391,9 +391,6 @@
                         >
                             <span class="text-sm">{{ order.tracking_code }}</span>
                         </span>
-                        <div v-if="order.invoice_number" class="">
-                          NF: {{ order.invoice_number }}
-                        </div>
                         <div :class="['font-semibold border-t border-opacity-20 pt-0.5 mt-0.5', getBorderColorClass(order)]">{{ order.items_quantity }} item(s)</div>
                       </div>
                     </div>
