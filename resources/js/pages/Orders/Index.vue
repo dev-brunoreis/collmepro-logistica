@@ -2,7 +2,7 @@
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { ref, onMounted, onUnmounted, watch, reactive } from 'vue';
-import { Search, Filter, Eye, CheckCircle, XCircle, Package, Truck, ExternalLink, RefreshCw, AlertTriangle, ZoomIn, Download, Loader2 } from 'lucide-vue-next';
+import { Search, Filter, Eye, CheckCircle, XCircle, Package, Truck, ExternalLink, RefreshCw, AlertTriangle, ZoomIn, Download, Loader2, ChevronDown, ChevronUp } from 'lucide-vue-next';
 import axios from '@/lib/axios';
 import { useOrderBroadcasting } from '@/composables/useBroadcasting';
 import { BreadcrumbItem } from '@/types';
@@ -93,9 +93,15 @@ interface Props {
         tracking_status?: string;
         logistics_provider?: string;
         seller?: string;
-        picking_status?: string;
-        packing_status?: string;
-        picked_up_status?: string;
+        situacao?: string;
+        date_from?: string;
+        date_to?: string;
+        has_picking?: string;
+        has_packing?: string;
+        has_picked_up?: string;
+        has_invoice?: string;
+        value_min?: string;
+        value_max?: string;
     };
     systems: {
         [key: string]: string;
@@ -110,6 +116,12 @@ interface Props {
         [key: string]: string;
     };
     logistics_providers: {
+        [key: string]: string;
+    };
+    sellers: {
+        [key: string]: string;
+    };
+    situacoes: {
         [key: string]: string;
     };
 }
@@ -220,6 +232,35 @@ const searchValue = ref(props.filters?.search || '');
 // Loading state for search
 const isSearching = ref(false);
 
+// Advanced filters visibility
+const showAdvancedFilters = ref(false);
+
+// Count active advanced filters
+const activeAdvancedFiltersCount = ref(0);
+
+// Update count of active advanced filters
+const updateActiveFiltersCount = () => {
+    const advancedFilterKeys = ['situacao', 'date_from', 'date_to', 'tracking_status', 'logistics_provider', 'seller', 'has_picking', 'has_packing', 'has_picked_up', 'has_invoice', 'value_min', 'value_max'];
+    activeAdvancedFiltersCount.value = advancedFilterKeys.filter(key => {
+        const value = props.filters?.[key as keyof typeof props.filters];
+        return value !== undefined && value !== '' && value !== null;
+    }).length;
+    
+    // Auto-expand if there are active advanced filters
+    if (activeAdvancedFiltersCount.value > 0) {
+        showAdvancedFilters.value = true;
+    }
+};
+
+// Call on mount and watch filters
+onMounted(() => {
+    updateActiveFiltersCount();
+});
+
+watch(() => props.filters, () => {
+    updateActiveFiltersCount();
+}, { deep: true });
+
 const search = () => {
     if (isSearching.value || !searchValue.value.trim()) return;
     
@@ -278,6 +319,19 @@ const clearFilters = () => {
             }, 50);
         },
     });
+};
+
+// Date formatting function for display only
+const formatDateForDisplay = (dateString: string | undefined): string => {
+    if (!dateString) return '';
+    
+    try {
+        // Convert YYYY-MM-DD to DD/MM/YYYY for display
+        const [year, month, day] = dateString.split('-');
+        return `${day}/${month}/${year}`;
+    } catch {
+        return '';
+    }
 };
 
 const isStatusButtonDisabled = (order: Order, action: string): boolean => {
@@ -623,54 +677,260 @@ const getCurrentPerPage = () => {
                             </select>
                         </div>
 
-                        <button
-                            v-if="Object.values(props.filters || {}).some(filter => filter !== undefined && filter !== '')"
-                            @click="clearFilters"
-                            class="inline-flex items-center justify-center gap-2 rounded-lg border border-sidebar-border/70 px-3 py-2 text-sm font-medium text-foreground hover:bg-sidebar-border/70 dark:border-sidebar-border whitespace-nowrap"
-                        >
-                            <Filter class="h-4 w-4" />
-                            <span class="hidden sm:inline">Limpar Filtros</span>
-                            <span class="sm:hidden">Limpar</span>
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <button
+                                @click="showAdvancedFilters = !showAdvancedFilters"
+                                class="inline-flex items-center justify-center gap-2 rounded-lg border border-sidebar-border/70 px-3 py-2 text-sm font-medium text-foreground hover:bg-sidebar-border/70 dark:border-sidebar-border whitespace-nowrap relative"
+                            >
+                                <Filter class="h-4 w-4" />
+                                <span class="hidden sm:inline">Filtros Avançados</span>
+                                <span class="sm:hidden">Filtros</span>
+                                <span v-if="activeAdvancedFiltersCount > 0" class="ml-1 inline-flex items-center justify-center h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs font-semibold">
+                                    {{ activeAdvancedFiltersCount }}
+                                </span>
+                                <ChevronDown v-if="!showAdvancedFilters" class="h-4 w-4" />
+                                <ChevronUp v-else class="h-4 w-4" />
+                            </button>
+
+                            <button
+                                v-if="Object.values(props.filters || {}).some(filter => filter !== undefined && filter !== '')"
+                                @click="clearFilters"
+                                class="inline-flex items-center justify-center gap-2 rounded-lg border border-sidebar-border/70 px-3 py-2 text-sm font-medium text-foreground hover:bg-sidebar-border/70 dark:border-sidebar-border whitespace-nowrap"
+                            >
+                                <XCircle class="h-4 w-4" />
+                                <span class="hidden sm:inline">Limpar Filtros</span>
+                                <span class="sm:hidden">Limpar</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Advanced filters -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-muted-foreground mb-2">Status Rastreamento</label>
-                        <select
-                            :value="props.filters?.tracking_status || ''"
-                            @change="updateFilter('tracking_status', ($event.target as HTMLSelectElement).value)"
-                            class="w-full rounded-lg border border-sidebar-border/70 bg-background px-4 py-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-sidebar-border"
-                        >
-                            <option value="">Selecione um status</option>
-                            <option v-for="(label, value) in props.tracking_statuses || {}" :key="value" :value="value">
-                                {{ label }}
-                            </option>
-                        </select>
+                <!-- Advanced filters expandable section -->
+                <div v-show="showAdvancedFilters" class="space-y-4 border-t border-sidebar-border/70 pt-4 dark:border-sidebar-border">
+                    <!-- Row 1: Situação, Status Rastreamento, Transportadora, Vendedor -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-muted-foreground mb-2">Situação</label>
+                            <select
+                                :value="props.filters?.situacao || ''"
+                                @change="updateFilter('situacao', ($event.target as HTMLSelectElement).value)"
+                                class="w-full rounded-lg border border-sidebar-border/70 bg-background px-4 py-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-sidebar-border"
+                            >
+                                <option value="">Todas as situações</option>
+                                <option v-for="(label, value) in props.situacoes || {}" :key="value" :value="value">
+                                    {{ label }}
+                                </option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-muted-foreground mb-2">Status Rastreamento</label>
+                            <select
+                                :value="props.filters?.tracking_status || ''"
+                                @change="updateFilter('tracking_status', ($event.target as HTMLSelectElement).value)"
+                                class="w-full rounded-lg border border-sidebar-border/70 bg-background px-4 py-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-sidebar-border"
+                            >
+                                <option value="">Todos os status</option>
+                                <option v-for="(label, value) in props.tracking_statuses || {}" :key="value" :value="value">
+                                    {{ label }}
+                                </option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-muted-foreground mb-2">Transportadora</label>
+                            <select
+                                :value="props.filters?.logistics_provider || ''"
+                                @change="updateFilter('logistics_provider', ($event.target as HTMLSelectElement).value)"
+                                class="w-full rounded-lg border border-sidebar-border/70 bg-background px-4 py-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-sidebar-border"
+                            >
+                                <option value="">Todas as transportadoras</option>
+                                <option v-for="(label, value) in props.logistics_providers || {}" :key="value" :value="value">
+                                    {{ label }}
+                                </option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-muted-foreground mb-2">Vendedor</label>
+                            <select
+                                :value="props.filters?.seller || ''"
+                                @change="updateFilter('seller', ($event.target as HTMLSelectElement).value)"
+                                class="w-full rounded-lg border border-sidebar-border/70 bg-background px-4 py-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-sidebar-border"
+                            >
+                                <option value="">Todos os vendedores</option>
+                                <option v-for="(label, value) in props.sellers || {}" :key="value" :value="value">
+                                    {{ label }}
+                                </option>
+                            </select>
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-muted-foreground mb-2">Transportadora</label>
-                        <select
-                            :value="props.filters?.logistics_provider || ''"
-                            @change="updateFilter('logistics_provider', ($event.target as HTMLSelectElement).value)"
-                            class="w-full rounded-lg border border-sidebar-border/70 bg-background px-4 py-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-sidebar-border"
-                        >
-                            <option value="">Selecione uma transportadora</option>
-                            <option v-for="(label, value) in props.logistics_providers || {}" :key="value" :value="value">
-                                {{ label }}
-                            </option>
-                        </select>
-                    </div>
-                </div>
 
-                <!-- Active filters display -->
-                <div v-if="Object.values(props.filters || {}).some(filter => filter !== undefined && filter !== '')" class="text-sm text-muted-foreground">
-                    <span v-if="props.filters?.search">Busca: "{{ props.filters.search }}"</span>
-                    <span v-if="props.filters?.system"> • Sistema: {{ props.systems?.[props.filters.system] }}</span>
-                    <span v-if="props.filters?.tracking_status"> • Status: {{ props.tracking_statuses?.[props.filters.tracking_status] }}</span>
-                    <span v-if="props.filters?.logistics_provider"> • Transportadora: {{ props.logistics_providers?.[props.filters.logistics_provider] }}</span>
+                    <!-- Row 2: Date Range -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-muted-foreground mb-2">Data Inicial</label>
+                            <input
+                                type="date"
+                                :value="props.filters?.date_from || ''"
+                                @change="updateFilter('date_from', ($event.target as HTMLInputElement).value)"
+                                class="w-full rounded-lg border border-sidebar-border/70 bg-background px-4 py-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-sidebar-border"
+                            />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-muted-foreground mb-2">Data Final</label>
+                            <input
+                                type="date"
+                                :value="props.filters?.date_to || ''"
+                                @change="updateFilter('date_to', ($event.target as HTMLInputElement).value)"
+                                class="w-full rounded-lg border border-sidebar-border/70 bg-background px-4 py-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-sidebar-border"
+                            />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-muted-foreground mb-2">Valor Mínimo (R$)</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                :value="props.filters?.value_min || ''"
+                                @change="updateFilter('value_min', ($event.target as HTMLInputElement).value)"
+                                placeholder="0.00"
+                                class="w-full rounded-lg border border-sidebar-border/70 bg-background px-4 py-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-sidebar-border"
+                            />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-muted-foreground mb-2">Valor Máximo (R$)</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                :value="props.filters?.value_max || ''"
+                                @change="updateFilter('value_max', ($event.target as HTMLInputElement).value)"
+                                placeholder="0.00"
+                                class="w-full rounded-lg border border-sidebar-border/70 bg-background px-4 py-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-sidebar-border"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Row 3: Operational Status Checkboxes and NFE Filter -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-muted-foreground mb-2">Status Operacional</label>
+                            <div class="flex flex-col gap-2">
+                                <label class="inline-flex items-center cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        :checked="props.filters?.has_picking === '1'"
+                                        @change="updateFilter('has_picking', ($event.target as HTMLInputElement).checked ? '1' : '')"
+                                        class="h-4 w-4 rounded border-sidebar-border/70 text-primary focus:ring-primary focus:ring-offset-0"
+                                    />
+                                    <span class="ml-2 text-sm">Separado</span>
+                                </label>
+                                <label class="inline-flex items-center cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        :checked="props.filters?.has_packing === '1'"
+                                        @change="updateFilter('has_packing', ($event.target as HTMLInputElement).checked ? '1' : '')"
+                                        class="h-4 w-4 rounded border-sidebar-border/70 text-primary focus:ring-primary focus:ring-offset-0"
+                                    />
+                                    <span class="ml-2 text-sm">Embalado</span>
+                                </label>
+                                <label class="inline-flex items-center cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        :checked="props.filters?.has_picked_up === '1'"
+                                        @change="updateFilter('has_picked_up', ($event.target as HTMLInputElement).checked ? '1' : '')"
+                                        class="h-4 w-4 rounded border-sidebar-border/70 text-primary focus:ring-primary focus:ring-offset-0"
+                                    />
+                                    <span class="ml-2 text-sm">Coletado</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-muted-foreground mb-2">NFE</label>
+                            <div class="flex flex-col gap-2">
+                                <label class="inline-flex items-center cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="has_invoice"
+                                        :checked="!props.filters?.has_invoice"
+                                        @change="updateFilter('has_invoice', '')"
+                                        class="h-4 w-4 border-sidebar-border/70 text-primary focus:ring-primary focus:ring-offset-0"
+                                    />
+                                    <span class="ml-2 text-sm">Todos</span>
+                                </label>
+                                <label class="inline-flex items-center cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="has_invoice"
+                                        :checked="props.filters?.has_invoice === 'with_invoice'"
+                                        @change="updateFilter('has_invoice', 'with_invoice')"
+                                        class="h-4 w-4 border-sidebar-border/70 text-primary focus:ring-primary focus:ring-offset-0"
+                                    />
+                                    <span class="ml-2 text-sm">Com NFE</span>
+                                </label>
+                                <label class="inline-flex items-center cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="has_invoice"
+                                        :checked="props.filters?.has_invoice === 'without_invoice'"
+                                        @change="updateFilter('has_invoice', 'without_invoice')"
+                                        class="h-4 w-4 border-sidebar-border/70 text-primary focus:ring-primary focus:ring-offset-0"
+                                    />
+                                    <span class="ml-2 text-sm">Sem NFE</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Active filters display -->
+                    <div v-if="activeAdvancedFiltersCount > 0" class="text-sm text-muted-foreground pt-2 border-t border-sidebar-border/70 dark:border-sidebar-border">
+                        <div class="font-medium mb-1">Filtros ativos:</div>
+                        <div class="flex flex-wrap gap-2">
+                            <span v-if="props.filters?.search" class="inline-flex items-center gap-1 px-2 py-1 rounded bg-primary/10 text-primary">
+                                Busca: "{{ props.filters.search }}"
+                            </span>
+                            <span v-if="props.filters?.system" class="inline-flex items-center gap-1 px-2 py-1 rounded bg-primary/10 text-primary">
+                                Sistema: {{ props.systems?.[props.filters.system] }}
+                            </span>
+                            <span v-if="props.filters?.situacao" class="inline-flex items-center gap-1 px-2 py-1 rounded bg-primary/10 text-primary">
+                                Situação: {{ props.situacoes?.[props.filters.situacao] }}
+                            </span>
+                            <span v-if="props.filters?.tracking_status" class="inline-flex items-center gap-1 px-2 py-1 rounded bg-primary/10 text-primary">
+                                Status: {{ props.tracking_statuses?.[props.filters.tracking_status] }}
+                            </span>
+                            <span v-if="props.filters?.logistics_provider" class="inline-flex items-center gap-1 px-2 py-1 rounded bg-primary/10 text-primary">
+                                Transportadora: {{ props.logistics_providers?.[props.filters.logistics_provider] }}
+                            </span>
+                            <span v-if="props.filters?.seller" class="inline-flex items-center gap-1 px-2 py-1 rounded bg-primary/10 text-primary">
+                                Vendedor: {{ props.sellers?.[props.filters.seller] }}
+                            </span>
+                            <span v-if="props.filters?.date_from" class="inline-flex items-center gap-1 px-2 py-1 rounded bg-primary/10 text-primary">
+                                De: {{ formatDateForDisplay(props.filters.date_from) }}
+                            </span>
+                            <span v-if="props.filters?.date_to" class="inline-flex items-center gap-1 px-2 py-1 rounded bg-primary/10 text-primary">
+                                Até: {{ formatDateForDisplay(props.filters.date_to) }}
+                            </span>
+                            <span v-if="props.filters?.has_picking === '1'" class="inline-flex items-center gap-1 px-2 py-1 rounded bg-primary/10 text-primary">
+                                Separado
+                            </span>
+                            <span v-if="props.filters?.has_packing === '1'" class="inline-flex items-center gap-1 px-2 py-1 rounded bg-primary/10 text-primary">
+                                Embalado
+                            </span>
+                            <span v-if="props.filters?.has_picked_up === '1'" class="inline-flex items-center gap-1 px-2 py-1 rounded bg-primary/10 text-primary">
+                                Coletado
+                            </span>
+                            <span v-if="props.filters?.has_invoice === 'with_invoice'" class="inline-flex items-center gap-1 px-2 py-1 rounded bg-primary/10 text-primary">
+                                Com NFE
+                            </span>
+                            <span v-if="props.filters?.has_invoice === 'without_invoice'" class="inline-flex items-center gap-1 px-2 py-1 rounded bg-primary/10 text-primary">
+                                Sem NFE
+                            </span>
+                            <span v-if="props.filters?.value_min" class="inline-flex items-center gap-1 px-2 py-1 rounded bg-primary/10 text-primary">
+                                Min: R$ {{ parseFloat(props.filters.value_min).toFixed(2) }}
+                            </span>
+                            <span v-if="props.filters?.value_max" class="inline-flex items-center gap-1 px-2 py-1 rounded bg-primary/10 text-primary">
+                                Max: R$ {{ parseFloat(props.filters.value_max).toFixed(2) }}
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </div>
 

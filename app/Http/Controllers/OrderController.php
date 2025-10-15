@@ -86,7 +86,13 @@ class OrderController extends Controller
 
         // Situacao filter
         if ($request->filled('situacao')) {
-            $query->where('situacao_valor', $request->get('situacao'));
+            $situacao = $request->get('situacao');
+            // Special case: situacao_id = 12 means cancelled
+            if ($situacao == 12) {
+                $query->where('situacao_id', 12);
+            } else {
+                $query->where('situacao_valor', $situacao);
+            }
         }
 
         // Date range filter
@@ -156,10 +162,57 @@ class OrderController extends Controller
 
         // Seller filter
         if ($request->filled('seller')) {
-            $seller = $request->get('seller');
-            $query->whereHas('seller', function ($q) use ($seller) {
-                $q->where('name', 'like', "%{$seller}%");
+            $sellerId = $request->get('seller');
+            $query->whereHas('seller', function ($q) use ($sellerId) {
+                $q->where('sellers.id', $sellerId);
             });
+        }
+
+        // Operational Status Filters
+        if ($request->filled('has_picking')) {
+            $hasPicking = $request->get('has_picking') === '1';
+            $query->whereHas('orderStatus', function ($q) use ($hasPicking) {
+                $q->where('picking', $hasPicking);
+            });
+        }
+
+        if ($request->filled('has_packing')) {
+            $hasPacking = $request->get('has_packing') === '1';
+            $query->whereHas('orderStatus', function ($q) use ($hasPacking) {
+                $q->where('packing', $hasPacking);
+            });
+        }
+
+        if ($request->filled('has_picked_up')) {
+            $hasPickedUp = $request->get('has_picked_up') === '1';
+            $query->whereHas('orderStatus', function ($q) use ($hasPickedUp) {
+                $q->where('picked_up', $hasPickedUp);
+            });
+        }
+
+        // Has Invoice Filter
+        if ($request->filled('has_invoice')) {
+            $hasInvoice = $request->get('has_invoice');
+            if ($hasInvoice === 'with_invoice') {
+                $query->has('invoice');
+            } elseif ($hasInvoice === 'without_invoice') {
+                $query->doesntHave('invoice');
+            }
+        }
+
+        // Value Range Filters
+        if ($request->filled('value_min')) {
+            $valueMin = $request->get('value_min');
+            if (is_numeric($valueMin) && $valueMin >= 0) {
+                $query->where('total', '>=', $valueMin);
+            }
+        }
+
+        if ($request->filled('value_max')) {
+            $valueMax = $request->get('value_max');
+            if (is_numeric($valueMax) && $valueMax >= 0) {
+                $query->where('total', '<=', $valueMax);
+            }
         }
 
         // Allow custom pagination size, default to 25
@@ -277,18 +330,22 @@ class OrderController extends Controller
                 ];
             }),
             'filters' => $request->only([
-                'search', 'system', 'tracking_status', 'logistics_provider', 'seller', 'source', 'situacao', 'date_from', 'date_to', 'contato', 'data_processed'
+                'search', 'system', 'tracking_status', 'logistics_provider', 'seller', 'source', 'situacao', 
+                'date_from', 'date_to', 'contato', 'data_processed', 'has_picking', 'has_packing', 
+                'has_picked_up', 'has_invoice', 'value_min', 'value_max'
             ]),
             'situacoes' => [
-                1 => 'Em Aberto',
-                2 => 'Em Andamento',
-                3 => 'Finalizado',
-                4 => 'Cancelado',
+                0 => 'Em Aberto',
+                1 => 'Em Andamento',
+                2 => 'Em Processamento',
+                11 => 'Atendido',
+                12 => 'Cancelado', // situacao_id = 12
             ],
             'systems' => $this->getSystemsForFrontend(),
             'systems_with_colors' => $this->getSystemsMap(),
             'tracking_statuses' => $this->getTrackingStatuses($query),
             'logistics_providers' => $this->getLogisticsProviders($query),
+            'sellers' => $this->getSellers(),
         ]);
     }
 
@@ -649,6 +706,24 @@ class OrderController extends Controller
             return $providers->mapWithKeys(function ($provider) {
                 return [$provider => $provider];
             })->toArray();
+        } catch (\Exception $e) {
+            // Return empty array if there's an error
+            return [];
+        }
+    }
+
+    /**
+     * Get unique sellers from orders
+     */
+    private function getSellers()
+    {
+        try {
+            // Get distinct sellers from database
+            $sellers = \App\Models\Seller::orderBy('name')
+                ->pluck('name', 'id')
+                ->toArray();
+            
+            return $sellers;
         } catch (\Exception $e) {
             // Return empty array if there's an error
             return [];
