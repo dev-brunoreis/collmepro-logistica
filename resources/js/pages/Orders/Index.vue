@@ -707,6 +707,7 @@ const getCurrentPerPage = () => {
                             <tr>
                                 <th class="px-2 sm:px-4 py-3 text-center text-sm font-medium text-muted-foreground whitespace-nowrap">Pedido</th>
                                 <th class="px-2 sm:px-4 py-3 text-center text-sm font-medium text-muted-foreground whitespace-nowrap">Sistema</th>
+                                <th class="px-2 sm:px-4 py-3 text-center text-sm font-medium text-muted-foreground whitespace-nowrap min-w-[100px]">Vendedor</th>
                                 <th class="px-2 sm:px-4 py-3 text-center text-sm font-medium text-muted-foreground whitespace-nowrap min-w-[120px]">Cliente</th>
                                 <th class="px-2 sm:px-4 py-3 text-center text-sm font-medium text-muted-foreground whitespace-nowrap">Data</th>
                                 <th class="px-2 sm:px-4 py-3 text-center text-sm font-medium text-muted-foreground whitespace-nowrap min-w-[100px]">NFE</th>
@@ -722,7 +723,7 @@ const getCurrentPerPage = () => {
                         <tbody>
                             <!-- Empty state -->
                             <tr v-if="!ordersData || ordersData.length === 0">
-                                <td colspan="12" class="px-4 py-12 text-center">
+                                <td colspan="13" class="px-4 py-12 text-center">
                                     <div class="flex flex-col items-center gap-4">
                                         <div class="w-16 h-16 rounded-full bg-muted/20 flex items-center justify-center">
                                             <Package class="w-8 h-8 text-muted-foreground" />
@@ -778,6 +779,11 @@ const getCurrentPerPage = () => {
                                     </span>
                                 </td>
                                 <td class="px-2 sm:px-4 py-3 text-center">
+                                    <div class="text-sm truncate max-w-[100px]" :title="order.seller_name || '-'">
+                                        {{ order.seller_name || '-' }}
+                                    </div>
+                                </td>
+                                <td class="px-2 sm:px-4 py-3 text-center">
                                     <div class="text-sm truncate max-w-[120px]" :title="order.contato_nome">{{ order.contato_nome }}</div>
                                 </td>
                                 <td class="px-2 sm:px-4 py-3 text-sm text-muted-foreground text-center">
@@ -827,7 +833,7 @@ const getCurrentPerPage = () => {
                                             class="inline-flex items-center gap-1 font-medium rounded-md px-1 py-0.5 text-xs hover:bg-sidebar-border/70"
                                             title="Abrir rastreamento"
                                         >
-                                            <span class="text-sm truncate max-w-[80px]">{{ order.tracking_code }}</span>
+                                            <span class="text-sm truncate">{{ order.tracking_code }}</span>
                                             <ExternalLink class="h-3 w-3 flex-shrink-0" />
                                         </a>
                                         <span v-else class="text-sm truncate max-w-[100px]">{{ order.tracking_code }}</span>

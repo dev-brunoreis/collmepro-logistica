@@ -45,7 +45,7 @@ class OrderController extends Controller
      */
     public function index(Request $request)
     {
-        $query = OrderSummary::with(['orderStatus', 'invoice.tracking']);
+        $query = OrderSummary::with(['orderStatus', 'invoice.tracking', 'seller']);
 
         // Search filter - improved to include seller name, tracking and NFE number
         if ($request->filled('search')) {
@@ -157,8 +157,8 @@ class OrderController extends Controller
         // Seller filter
         if ($request->filled('seller')) {
             $seller = $request->get('seller');
-            $query->where(function ($q) use ($seller) {
-                $q->whereJsonContains('raw_order_data->vendedor->nome', $seller);
+            $query->whereHas('seller', function ($q) use ($seller) {
+                $q->where('name', 'like', "%{$seller}%");
             });
         }
 
@@ -236,6 +236,9 @@ class OrderController extends Controller
                 // Define source based on loja_id from invoice relationship
                 $source = $this->determineSourceFromInvoiceData($order);
 
+                // Get seller name
+                $sellerName = $order->seller->first()?->name ?? (strtolower($order->source) === 'beauty' ? '-' : null);
+
                 return [
                     'id' => $order->id,
                     'bling_id' => $order->bling_id,
@@ -254,6 +257,7 @@ class OrderController extends Controller
                     'situacao_valor' => $order->situacao_valor,
                     'loja_id' => $order->loja_id,
                     'source' => $source,
+                    'seller_name' => $sellerName,
                     'data_processed' => $order->data_processed,
                     'external_updated_at' => $order->external_updated_at,
                     'created_at' => $order->created_at,
@@ -293,7 +297,7 @@ class OrderController extends Controller
      */
     public function show(OrderSummary $order)
     {
-        $order->load(['orderData', 'invoice', 'orderStatus']);
+        $order->load(['orderData', 'invoice', 'orderStatus', 'seller']);
         
         // Load tracking data if invoice exists
         $trackingData = null;
@@ -351,6 +355,17 @@ class OrderController extends Controller
         // Define source based on loja_id from raw_invoice_data
         $source = $this->determineSourceFromInvoiceData($order);
         
+        // Get seller information
+        $seller = $order->seller->first();
+        $sellerData = null;
+        if ($seller) {
+            $sellerData = [
+                'id' => $seller->id,
+                'name' => $seller->name,
+                'email' => $seller->email,
+            ];
+        }
+        
         return Inertia::render('Orders/Show', [
             'order' => [
                 'id' => $order->id,
@@ -370,6 +385,7 @@ class OrderController extends Controller
                 'situacao_valor' => $order->situacao_valor,
                 'loja_id' => $order->loja_id,
                 'source' => $source,
+                'seller' => $sellerData,
                 'data_processed' => $order->data_processed,
                 'external_updated_at' => $order->external_updated_at,
                 'created_at' => $order->created_at,

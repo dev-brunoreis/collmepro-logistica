@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class OrderSummary extends Model
 {
@@ -87,6 +88,15 @@ class OrderSummary extends Model
     public function orderStatus(): HasOne
     {
         return $this->hasOne(OrderStatus::class, 'order_summary_id', 'id');
+    }
+
+    /**
+     * Get the sellers associated with this order
+     */
+    public function seller(): BelongsToMany
+    {
+        return $this->belongsToMany(Seller::class, 'order_summary_seller')
+            ->withTimestamps();
     }
 
     /**

@@ -476,6 +476,9 @@ class BlingSyncJob implements ShouldQueue
                 ]);
             }
 
+            // Capture seller information for pro and atacadista orders
+            $this->captureSeller($order);
+
             // Capture invoice and tracking before sync for change detection
             $oldInvoiceNumber = $order->invoice?->numero ?? null;
             $oldTrackingCode = $order->tracking_code;
@@ -902,6 +905,67 @@ class BlingSyncJob implements ShouldQueue
         ];
         
         return $existingData === $newData;
+    }
+
+    /**
+     * Capture seller information for pro and atacadista orders
+     */
+    private function captureSeller(OrderSummary $order): void
+    {
+        // Only capture seller for pro and atacadista orders
+        $source = strtolower($order->source);
+        if (!in_array($source, ['pro', 'atacadista'])) {
+            return;
+        }
+
+        // Extract WooCommerce order ID from numero_loja
+        if (empty($order->numero_loja)) {
+            return;
+        }
+
+        $parts = explode('_', $order->numero_loja);
+        $woocommerceOrderId = $parts[0] ?? null;
+
+        if (!$woocommerceOrderId) {
+            return;
+        }
+
+        try {
+            // Fetch seller from WooCommerce
+            $woocommerceService = app(\App\Services\WooCommerceService::class);
+            $sellerData = $woocommerceService->getOrderSeller($woocommerceOrderId, $source);
+
+            if (!$sellerData || empty($sellerData['id'])) {
+                return;
+            }
+
+            // Find or create seller
+            $seller = \App\Models\Seller::firstOrCreate(
+                ['woocommerce_id' => $sellerData['id']],
+                [
+                    'name' => $sellerData['name'] ?? 'Unknown',
+                    'email' => $sellerData['email'],
+                ]
+            );
+
+            // Sync the relationship (will not duplicate if already exists)
+            $order->seller()->syncWithoutDetaching([$seller->id]);
+
+            $this->logBlingDebug("Seller captured: {$seller->name}", [
+                'order_id' => $order->id,
+                'seller_id' => $seller->id,
+                'woocommerce_order_id' => $woocommerceOrderId,
+            ]);
+
+        } catch (\Exception $e) {
+            // Log warning but continue processing
+            $this->logBlingWarning('Failed to capture seller', [
+                'order_id' => $order->id,
+                'woocommerce_order_id' => $woocommerceOrderId,
+                'source' => $source,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**

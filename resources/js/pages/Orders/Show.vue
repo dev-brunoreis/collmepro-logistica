@@ -128,6 +128,13 @@ interface Order {
     raw_invoice_data?: any;
     raw_tracking_data?: any;
     
+    // Seller information
+    seller?: {
+        id: number;
+        name: string;
+        email: string;
+    };
+    
     invoice?: {
         id: number;
         numero: string;
@@ -359,6 +366,13 @@ const formatTrackingDataForAPI = (tracking: TrackingData) => {
                             <div>
                                 <label class="text-sm font-medium text-muted-foreground">Cliente</label>
                                 <div class="mt-1 text-sm">{{ props.order.contato_nome }}</div>
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium text-muted-foreground">Vendedor</label>
+                                <div class="mt-1 text-sm">
+                                    <span v-if="props.order.seller">{{ props.order.seller.name }}</span>
+                                    <span v-else class="text-muted-foreground">-</span>
+                                </div>
                             </div>
                             <div>
                                 <label class="text-sm font-medium text-muted-foreground">Data do Pedido</label>
