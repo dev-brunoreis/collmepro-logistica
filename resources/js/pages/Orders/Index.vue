@@ -676,7 +676,7 @@ const getCurrentPerPage = () => {
 
             <!-- Pagination Top -->
             <div v-if="props.orders.links?.length > 3" class="mb-4">
-                <div class="hidden md:flex items-center justify-between mb-2">
+                <div class="hidden md:flex items-center justify-center mb-2">
                     <div class="text-sm text-muted-foreground">
                         Mostrando {{ props.orders.from || 0 }} a {{ props.orders.to || 0 }} de {{ props.orders.total || 0 }} resultados
                     </div>
