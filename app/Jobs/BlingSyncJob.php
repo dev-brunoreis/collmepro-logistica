@@ -236,10 +236,10 @@ class BlingSyncJob implements ShouldQueue
             // LEVEL 1: Skip very old orders in incremental sync
             if ($this->incrementalSync) {
                 $orderDate = Carbon::parse($blingOrder['data']);
-                if ($orderDate->lt(now()->subDays(30))) {
-                    $this->logBlingDebug("Order too old, skipping: #{$blingOrder['numero']}", ['bling_id' => $blingId]);
-                    return ['created' => false, 'updated' => false, 'skipped' => true, 'skip_reason' => 'too_old'];
-                }
+                // if ($orderDate->lt(now()->subDays(30))) {
+                //     $this->logBlingDebug("Order too old, skipping: #{$blingOrder['numero']}", ['bling_id' => $blingId]);
+                //     return ['created' => false, 'updated' => false, 'skipped' => true, 'skip_reason' => 'too_old'];
+                // }
             }
             
             // LEVEL 2: Quick cache check with lightweight hash

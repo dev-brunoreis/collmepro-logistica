@@ -184,15 +184,15 @@ abstract class BlingService
         // Para sincronização incremental, buscar apenas últimos 30 dias (1 mês)
         // Pedidos mais antigos raramente têm alterações
         // API Bling v3 usa parâmetros: dataAlteracaoInicial e dataAlteracaoFinal
-        if ($incrementalSync && !isset($filters['dataAlteracaoInicial'])) {
-            $since = now()->subDays(30)->format('Y-m-d H:i:s');
-            $filters['dataAlteracaoInicial'] = $since;
-            Log::info("Incremental sync enabled for account: {$this->getAccountType()}", [
-                'since' => $since,
-                'days_back' => 30,
-                'parameter' => 'dataAlteracaoInicial'
-            ]);
-        }
+        // if ($incrementalSync && !isset($filters['dataAlteracaoInicial'])) {
+        //     $since = now()->subDays(30)->format('Y-m-d H:i:s');
+        //     $filters['dataAlteracaoInicial'] = $since;
+        //     Log::info("Incremental sync enabled for account: {$this->getAccountType()}", [
+        //         'since' => $since,
+        //         'days_back' => 30,
+        //         'parameter' => 'dataAlteracaoInicial'
+        //     ]);
+        // }
         
         $orders = [];
         $pagina = 1;
