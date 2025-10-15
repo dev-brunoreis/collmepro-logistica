@@ -334,13 +334,13 @@ const formatTrackingDataForAPI = (tracking: TrackingData) => {
             </div>
 
             <!-- Order Details -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
                 <!-- Main Info -->
-                <div class="lg:col-span-2 space-y-6">
+                <div class="xl:col-span-2 space-y-6">
                     <!-- Order Summary Info -->
-                    <div class="rounded-lg border border-sidebar-border/70 p-6 dark:border-sidebar-border">
+                    <div class="rounded-lg border border-sidebar-border/70 p-4 sm:p-6 dark:border-sidebar-border">
                         <h2 class="text-lg font-semibold mb-4">Resumo do Pedido</h2>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="text-sm font-medium text-muted-foreground">Sistema</label>
                                 <div class="mt-1">
@@ -376,9 +376,9 @@ const formatTrackingDataForAPI = (tracking: TrackingData) => {
                     </div>
 
                     <!-- Shipping data -->
-                    <div v-if="props.order.order_data" class="rounded-lg border border-sidebar-border/70 p-6 dark:border-sidebar-border">
+                    <div v-if="props.order.order_data" class="rounded-lg border border-sidebar-border/70 p-4 sm:p-6 dark:border-sidebar-border">
                         <h2 class="text-lg font-semibold mb-4">Dados de entrega</h2>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div v-if="props.order.order_data.etiqueta_nome">
                                 <label class="text-sm font-medium text-muted-foreground">Nome do Destinatário</label>
                                 <div class="mt-1 text-sm">{{ props.order.order_data.etiqueta_nome }}</div>
@@ -420,9 +420,9 @@ const formatTrackingDataForAPI = (tracking: TrackingData) => {
 
 
                     <!-- Tracking Information -->
-                    <div v-if="props.order.tracking_code || props.order.logistics_provider" class="rounded-lg border border-sidebar-border/70 p-6 dark:border-sidebar-border">
+                    <div v-if="props.order.tracking_code || props.order.logistics_provider" class="rounded-lg border border-sidebar-border/70 p-4 sm:p-6 dark:border-sidebar-border">
                         <h2 class="text-lg font-semibold mb-4">Informações de Rastreamento</h2>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div v-if="props.order.tracking_code">
                                 <label class="text-sm font-medium text-muted-foreground">Código de Rastreamento</label>
                                 <div class="mt-1 flex items-center gap-2">
@@ -458,9 +458,9 @@ const formatTrackingDataForAPI = (tracking: TrackingData) => {
                     </div>
 
                     <!-- Invoice Information -->
-                    <div v-if="props.order.invoice_raw_data || props.order.nota_fiscal_id || props.order.invoice_numero || props.order.invoice" class="rounded-lg border border-sidebar-border/70 p-6 dark:border-sidebar-border">
+                    <div v-if="props.order.invoice_raw_data || props.order.nota_fiscal_id || props.order.invoice_numero || props.order.invoice" class="rounded-lg border border-sidebar-border/70 p-4 sm:p-6 dark:border-sidebar-border">
                         <h2 class="text-lg font-semibold mb-4">Nota Fiscal Eletrônica (NFE)</h2>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div v-if="props.order.invoice_raw_data?.numero || props.order.invoice?.numero">
                                 <label class="text-sm font-medium text-muted-foreground">Número da NFE</label>
                                 <div class="mt-1 text-sm font-medium">{{ props.order.invoice_raw_data?.numero || props.order.invoice?.numero }}</div>
@@ -477,9 +477,9 @@ const formatTrackingDataForAPI = (tracking: TrackingData) => {
                                 <label class="text-sm font-medium text-muted-foreground">Data de Emissão</label>
                                 <div class="mt-1 text-sm">{{ formatDate(props.order.invoice_raw_data?.dataEmissao || props.order.invoice?.data_emissao) }}</div>
                             </div>
-                            <div v-if="props.order.invoice_raw_data?.linkDanfe || props.order.invoice_raw_data?.linkPDF || props.order.invoice?.link_danfe || props.order.invoice?.link_pdf" class="md:col-span-2">
+                            <div v-if="props.order.invoice_raw_data?.linkDanfe || props.order.invoice_raw_data?.linkPDF || props.order.invoice?.link_danfe || props.order.invoice?.link_pdf" class="sm:col-span-2">
                                 <label class="text-sm font-medium text-muted-foreground">Links</label>
-                                <div class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2">
+                                <div class="mt-2 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                                     <a
                                         v-if="props.order.invoice_raw_data?.linkPDF || props.order.invoice?.link_pdf"
                                         :href="props.order.invoice_raw_data?.linkPDF || props.order.invoice?.link_pdf"
@@ -520,7 +520,7 @@ const formatTrackingDataForAPI = (tracking: TrackingData) => {
                       </div>
 
                       <!-- Order Items -->
-                    <div v-if="props.order.raw_order_data?.itens" class="rounded-lg border border-sidebar-border/70 p-6 dark:border-sidebar-border">
+                    <div v-if="props.order.raw_order_data?.itens" class="rounded-lg border border-sidebar-border/70 p-4 sm:p-6 dark:border-sidebar-border">
                         <h2 class="text-lg font-semibold mb-4">Itens do Pedido</h2>
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm">
@@ -554,7 +554,7 @@ const formatTrackingDataForAPI = (tracking: TrackingData) => {
                     </div>
 
                       <!-- Order Observations -->
-                    <div v-if="props.order.raw_order_data?.observacoes || props.order.raw_order_data?.observacoesInternas" class="rounded-lg border border-sidebar-border/70 p-6 dark:border-sidebar-border">
+                    <div v-if="props.order.raw_order_data?.observacoes || props.order.raw_order_data?.observacoesInternas" class="rounded-lg border border-sidebar-border/70 p-4 sm:p-6 dark:border-sidebar-border">
                         <h2 class="text-lg font-semibold mb-4">Observações</h2>
                         <div class="space-y-4">
                             <div v-if="props.order.raw_order_data?.observacoes">
@@ -572,7 +572,7 @@ const formatTrackingDataForAPI = (tracking: TrackingData) => {
                 <!-- Status Sidebar -->
                 <div class="space-y-6">
                     <!-- Order Status -->
-                    <div class="rounded-lg border border-sidebar-border/70 p-6 dark:border-sidebar-border">
+                    <div class="rounded-lg border border-sidebar-border/70 p-4 sm:p-6 dark:border-sidebar-border">
                         <h2 class="text-lg font-semibold mb-4">Status do Pedido</h2>
                         <div class="space-y-4">
                             <div class="flex items-center justify-between">
@@ -621,7 +621,7 @@ const formatTrackingDataForAPI = (tracking: TrackingData) => {
 
 
                     <!-- Status History -->
-                    <div v-if="props.order.status_history && props.order.status_history.length > 0" class="rounded-lg border border-sidebar-border/70 p-6 dark:border-sidebar-border">
+                    <div v-if="props.order.status_history && props.order.status_history.length > 0" class="rounded-lg border border-sidebar-border/70 p-4 sm:p-6 dark:border-sidebar-border">
                         <h2 class="text-lg font-semibold mb-4">Histórico de Alterações</h2>
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm">
@@ -667,7 +667,7 @@ const formatTrackingDataForAPI = (tracking: TrackingData) => {
 
 
                     <!-- Sync Logs -->
-                    <div v-if="props.order.sync_logs && props.order.sync_logs.length > 0" class="rounded-lg border border-sidebar-border/70 p-6 dark:border-sidebar-border">
+                    <div v-if="props.order.sync_logs && props.order.sync_logs.length > 0" class="rounded-lg border border-sidebar-border/70 p-4 sm:p-6 dark:border-sidebar-border">
                         <div class="flex items-center justify-between mb-4">
                             <h2 class="text-lg font-semibold">Histórico de Sincronização</h2>
                             <button
@@ -731,7 +731,7 @@ const formatTrackingDataForAPI = (tracking: TrackingData) => {
                     </div>
 
                     <!-- Order History -->
-                    <div v-if="props.order.order_history && props.order.order_history.length > 0" class="rounded-lg border border-sidebar-border/70 p-6 dark:border-sidebar-border">
+                    <div v-if="props.order.order_history && props.order.order_history.length > 0" class="rounded-lg border border-sidebar-border/70 p-4 sm:p-6 dark:border-sidebar-border">
                         <div class="flex items-center justify-between mb-4">
                             <h2 class="text-lg font-semibold">Histórico Completo do Pedido</h2>
                             <button
@@ -803,7 +803,7 @@ const formatTrackingDataForAPI = (tracking: TrackingData) => {
                     </div>
 
                     <!-- Raw Data (JSON) - Developer Only -->
-                    <div v-if="user?.role === 'developer'" class="rounded-lg border border-sidebar-border/70 p-6 dark:border-sidebar-border">
+                    <div v-if="user?.role === 'developer'" class="rounded-lg border border-sidebar-border/70 p-4 sm:p-6 dark:border-sidebar-border">
                         <div class="flex items-center justify-between mb-4">
                             <h2 class="text-lg font-semibold">Dados Brutos (JSON)</h2>
                             <button

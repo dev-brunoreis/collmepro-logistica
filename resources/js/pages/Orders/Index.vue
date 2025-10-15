@@ -583,9 +583,9 @@ const getCurrentPerPage = () => {
             <!-- Filters -->
             <div class="flex flex-col gap-4 rounded-lg border border-sidebar-border/70 p-4 dark:border-sidebar-border">
                 <!-- Search and basic filters -->
-                <div class="flex flex-wrap items-center gap-4">
-                    <div class="flex-1 min-w-64">
-                        <div class="flex gap-2">
+                <div class="flex flex-col lg:flex-row lg:flex-wrap items-stretch lg:items-center gap-4">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex flex-col sm:flex-row gap-2">
                             <div class="relative flex-1">
                                 <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                 <input
@@ -599,41 +599,45 @@ const getCurrentPerPage = () => {
                             <button
                                 @click="search"
                                 :disabled="isSearching || !searchValue.trim()"
-                                class="inline-flex items-center cursor-pointer gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                                class="inline-flex items-center justify-center cursor-pointer gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                             >
                                 <Loader2 v-if="isSearching" class="h-4 w-4 animate-spin" />
                                 <Search v-else class="h-4 w-4" />
-                                {{ isSearching ? 'Buscando...' : 'Buscar' }}
+                                <span class="hidden sm:inline">{{ isSearching ? 'Buscando...' : 'Buscar' }}</span>
                             </button>
                         </div>
                     </div>
                     
-                    <div class="flex items-center gap-2">
-                        <Filter class="h-4 w-4 text-muted-foreground" />
-                        <select
-                            :value="props.filters?.system || ''"
-                            @change="updateFilter('system', ($event.target as HTMLSelectElement).value)"
-                            class="min-w-48 rounded-lg border border-sidebar-border/70 bg-background px-4 py-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-sidebar-border"
-                        >
-                            <option value="">Todos os sistemas</option>
-                            <option v-for="(label, value) in props.systems || {}" :key="value" :value="value">
-                                {{ label }}
-                            </option>
-                        </select>
-                    </div>
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                        <div class="flex items-center gap-2">
+                            <Filter class="h-4 w-4 text-muted-foreground" />
+                            <select
+                                :value="props.filters?.system || ''"
+                                @change="updateFilter('system', ($event.target as HTMLSelectElement).value)"
+                                class="w-full sm:min-w-48 rounded-lg border border-sidebar-border/70 bg-background px-4 py-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-sidebar-border"
+                            >
+                                <option value="">Todos os sistemas</option>
+                                <option v-for="(label, value) in props.systems || {}" :key="value" :value="value">
+                                    {{ label }}
+                                </option>
+                            </select>
+                        </div>
 
-                    <button
-                        v-if="Object.values(props.filters || {}).some(filter => filter !== undefined && filter !== '')"
-                        @click="clearFilters"
-                        class="inline-flex items-center gap-2 rounded-lg border border-sidebar-border/70 px-3 py-2 text-sm font-medium text-foreground hover:bg-sidebar-border/70 dark:border-sidebar-border"
-                    >
-                        Limpar Filtros
-                    </button>
+                        <button
+                            v-if="Object.values(props.filters || {}).some(filter => filter !== undefined && filter !== '')"
+                            @click="clearFilters"
+                            class="inline-flex items-center justify-center gap-2 rounded-lg border border-sidebar-border/70 px-3 py-2 text-sm font-medium text-foreground hover:bg-sidebar-border/70 dark:border-sidebar-border whitespace-nowrap"
+                        >
+                            <Filter class="h-4 w-4" />
+                            <span class="hidden sm:inline">Limpar Filtros</span>
+                            <span class="sm:hidden">Limpar</span>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Advanced filters -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div class="min-w-48">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
                         <label class="block text-sm font-medium text-muted-foreground mb-2">Status Rastreamento</label>
                         <select
                             :value="props.filters?.tracking_status || ''"
@@ -646,7 +650,7 @@ const getCurrentPerPage = () => {
                             </option>
                         </select>
                     </div>
-                    <div class="min-w-48">
+                    <div>
                         <label class="block text-sm font-medium text-muted-foreground mb-2">Transportadora</label>
                         <select
                             :value="props.filters?.logistics_provider || ''"
@@ -698,21 +702,21 @@ const getCurrentPerPage = () => {
             <!-- Orders Table -->
             <div class="rounded-lg border border-sidebar-border/70 dark:border-sidebar-border">
                 <div class="overflow-x-auto">
-                    <table class="w-full">
+                    <table class="w-full min-w-[1200px]">
                         <thead class="border-b border-sidebar-border/70 dark:border-sidebar-border">
                             <tr>
-                                <th class="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Pedido</th>
-                                <th class="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Sistema</th>
-                                <th class="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Cliente</th>
-                                <th class="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Data</th>
-                                <th class="px-4 py-3 text-center text-sm font-medium text-muted-foreground">NFE</th>
-                                <th class="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Rastreamento</th>
-                                <th class="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Transportadora</th>
-                                <th class="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Status</th>
-                                <th class="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Separado</th>
-                                <th class="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Embalado</th>
-                                <th class="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Coletado</th>
-                                <th class="px-4 py-3 text-center text-sm font-medium text-muted-foreground">Ações</th>
+                                <th class="px-2 sm:px-4 py-3 text-center text-sm font-medium text-muted-foreground whitespace-nowrap">Pedido</th>
+                                <th class="px-2 sm:px-4 py-3 text-center text-sm font-medium text-muted-foreground whitespace-nowrap">Sistema</th>
+                                <th class="px-2 sm:px-4 py-3 text-center text-sm font-medium text-muted-foreground whitespace-nowrap min-w-[120px]">Cliente</th>
+                                <th class="px-2 sm:px-4 py-3 text-center text-sm font-medium text-muted-foreground whitespace-nowrap">Data</th>
+                                <th class="px-2 sm:px-4 py-3 text-center text-sm font-medium text-muted-foreground whitespace-nowrap min-w-[100px]">NFE</th>
+                                <th class="px-2 sm:px-4 py-3 text-center text-sm font-medium text-muted-foreground whitespace-nowrap min-w-[120px]">Rastreamento</th>
+                                <th class="px-2 sm:px-4 py-3 text-center text-sm font-medium text-muted-foreground whitespace-nowrap min-w-[100px]">Transportadora</th>
+                                <th class="px-2 sm:px-4 py-3 text-center text-sm font-medium text-muted-foreground whitespace-nowrap">Status</th>
+                                <th class="px-2 sm:px-4 py-3 text-center text-sm font-medium text-muted-foreground whitespace-nowrap">Separado</th>
+                                <th class="px-2 sm:px-4 py-3 text-center text-sm font-medium text-muted-foreground whitespace-nowrap">Embalado</th>
+                                <th class="px-2 sm:px-4 py-3 text-center text-sm font-medium text-muted-foreground whitespace-nowrap">Coletado</th>
+                                <th class="px-2 sm:px-4 py-3 text-center text-sm font-medium text-muted-foreground whitespace-nowrap">Ações</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -757,15 +761,15 @@ const getCurrentPerPage = () => {
                                 :key="`${order.id}-${updateTrigger}`"
                                 class="border-b border-sidebar-border/70 dark:border-sidebar-border last:border-b-0 hover:bg-sidebar-border/20"
                             >
-                            <td class="px-4 py-3 text-center">
+                            <td class="px-2 sm:px-4 py-3 text-center">
                                 <div class="font-medium">
-                                    <a :href="`https://www.bling.com.br/vendas.php#edit/${order?.bling_id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center hover:bg-sidebar-border/70" :title="`Abrir pedido no Bling`">
+                                    <a :href="`https://www.bling.com.br/vendas.php#edit/${order?.bling_id}`" target="_blank" class="text-foreground gap-1 font-medium rounded-md text-xs flex items-center justify-center hover:bg-sidebar-border/70" :title="`Abrir pedido no Bling`">
                                         <span class="text-sm">{{ order.numero }}</span>
                                             <ExternalLink class="h-3 w-3" />
                                         </a>
                                     </div>
                                 </td>
-                                <td class="px-4 py-3 text-center">
+                                <td class="px-2 sm:px-4 py-3 text-center">
                                     <span
                                         class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
                                         :class="getSystemBadgeClass(order)"
@@ -773,28 +777,28 @@ const getCurrentPerPage = () => {
                                         {{ order.source.toUpperCase() }}
                                     </span>
                                 </td>
-                                <td class="px-4 py-3 text-center">
-                                    <div>{{ order.contato_nome }}</div>
+                                <td class="px-2 sm:px-4 py-3 text-center">
+                                    <div class="text-sm truncate max-w-[120px]" :title="order.contato_nome">{{ order.contato_nome }}</div>
                                 </td>
-                                <td class="px-4 py-3 text-sm text-muted-foreground">
+                                <td class="px-2 sm:px-4 py-3 text-sm text-muted-foreground text-center">
                                     {{ formatDate(order.data) }}
                                 </td>
-                                <td class="px-4 py-3 text-center">
+                                <td class="px-2 sm:px-4 py-3 text-center">
                                     <div v-if="order.invoice?.numero" class="flex flex-col items-center gap-1">
                                         <!-- Número da NFE -->
-                                         <a :href="order.invoice?.link_pdf" target="_blank" class="text-primary gap-1 font-small rounded-md  flex items-center hover:bg-sidebar-border/70 " :title="`Abrir nota fiscal no Bling`">
-                                            {{ order.invoice.numero }}
+                                         <a :href="order.invoice?.link_pdf" target="_blank" class="text-foreground gap-1 font-small rounded-md flex items-center justify-center hover:bg-sidebar-border/70" :title="`Abrir nota fiscal no Bling`">
+                                            <span class="text-sm">{{ order.invoice.numero }}</span>
                                             <ExternalLink class="h-3 w-3" />
                                         </a>
-                                         <span class="flex text-sm">R$ {{ order.total }}</span>       
+                                         <span class="text-xs">R$ {{ order.total }}</span>       
                                         <!-- Botões de ação -->
-                                        <div class="flex items-center gap-2">
+                                        <div class="flex items-center gap-1">
                                             <!-- Visualizar DANFE -->
                                             <a
                                                 v-if="order.invoice?.linkDanfe"
                                                 :href="order.invoice.linkDanfe"
                                                 target="_blank"
-                                                class="inline-flex items-center justify-center w-6 h-6 rounded-md bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800 text-blue-600 dark:text-blue-400 transition-colors"
+                                                class="inline-flex items-center justify-center w-5 h-5 rounded-md bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800 text-blue-600 dark:text-blue-400 transition-colors"
                                                 :title="`Visualizar DANFE ${order.invoice.numero}`"
                                             >
                                                 <ZoomIn class="h-3 w-3" />
@@ -805,7 +809,7 @@ const getCurrentPerPage = () => {
                                                 v-if="order.invoice?.linkPDF"
                                                 :href="order.invoice.linkPDF"
                                                 target="_blank"
-                                                class="inline-flex items-center justify-center w-6 h-6 rounded-md bg-green-100 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800 text-green-600 dark:text-green-400 transition-colors"
+                                                class="inline-flex items-center justify-center w-5 h-5 rounded-md bg-green-100 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800 text-green-600 dark:text-green-400 transition-colors"
                                                 :title="`Baixar PDF da NFE ${order.invoice.numero}`"
                                             >
                                                 <Download class="h-3 w-3" />
@@ -814,8 +818,8 @@ const getCurrentPerPage = () => {
                                     </div>
                                     <span v-else class="text-sm text-muted-foreground">-</span>
                                 </td>
-                                <td class="px-4 py-3 text-center">
-                                    <div v-if="order.has_tracking_code" class="flex items-center gap-2">
+                                <td class="px-2 sm:px-4 py-3 text-center">
+                                    <div v-if="order.has_tracking_code" class="flex items-center justify-center gap-1">
                                         <a 
                                             v-if="order.tracking_url" 
                                             :href="order.tracking_url" 
@@ -823,33 +827,33 @@ const getCurrentPerPage = () => {
                                             class="inline-flex items-center gap-1 font-medium rounded-md px-1 py-0.5 text-xs hover:bg-sidebar-border/70"
                                             title="Abrir rastreamento"
                                         >
-                                            <span class="text-sm">{{ order.tracking_code }}</span>
-                                            <ExternalLink class="h-3 w-3" />
+                                            <span class="text-sm truncate max-w-[80px]">{{ order.tracking_code }}</span>
+                                            <ExternalLink class="h-3 w-3 flex-shrink-0" />
                                         </a>
-                                        <span v-else class="text-sm">{{ order.tracking_code }}</span>
+                                        <span v-else class="text-sm truncate max-w-[100px]">{{ order.tracking_code }}</span>
                                     </div>
                                     <span v-else class="text-sm text-muted-foreground">-</span>
                                 </td>
-                                <td class="px-4 py-3 text-center text-sm text-muted-foreground">
-                                    {{ order.logistics_provider }}
+                                <td class="px-2 sm:px-4 py-3 text-center text-sm text-muted-foreground">
+                                    <div class="truncate max-w-[100px]" :title="order.logistics_provider">{{ order.logistics_provider }}</div>
                                 </td>
-                                <td class="px-4 py-3 text-center">
-                                    <div v-if="order.situacao_id === 12" class="flex items-center justify-center gap-2">
-                                        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">
+                                <td class="px-2 sm:px-4 py-3 text-center">
+                                    <div v-if="order.situacao_id === 12" class="flex items-center justify-center">
+                                        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">
                                             CANCELADO
                                         </span>
                                     </div>
-                                    <div v-else class="flex items-center justify-center gap-2">
-                                        <span v-if="order.tracking && order.tracking[0]?.descricao" class="text-sm">{{ order.tracking[0].descricao }}</span>
+                                    <div v-else class="flex items-center justify-center">
+                                        <span v-if="order.tracking && order.tracking[0]?.descricao" class="text-xs truncate max-w-[80px]" :title="order.tracking[0].descricao">{{ order.tracking[0].descricao }}</span>
                                         <span v-else class="text-sm text-muted-foreground">-</span>
                                     </div>
                                 </td>
-                                <td class="px-4 py-3 text-center">
+                                <td class="px-2 sm:px-4 py-3 text-center">
                                     <button
                                         v-if="canUpdateStatus"
                                         @click="updateOrderStatus(order.id, 'picking', order.order_status?.picking || false, order.numero)"
                                         :disabled="isStatusButtonDisabled(order, 'picking')"
-                                        class="inline-flex items-center gap-1 rounded-md px-4 py-3 text-sm transition-colors"
+                                        class="inline-flex items-center gap-1 rounded-md px-2 py-2 text-sm transition-colors"
                                         :class="[
                                             order.order_status?.picking ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground',
                                             isStatusButtonDisabled(order, 'picking') 
@@ -858,22 +862,22 @@ const getCurrentPerPage = () => {
                                         ]"
                                         :title="getStatusButtonTooltip(order, 'picking')"
                                     >
-                                        <CheckCircle v-if="order.order_status?.picking" class="h-5 w-6" />
-                                        <XCircle v-else class="h-5 w-6" />
-                                        <Package class="h-5 w-6" />
+                                        <CheckCircle v-if="order.order_status?.picking" class="h-4 w-4" />
+                                        <XCircle v-else class="h-4 w-4" />
+                                        <Package class="h-4 w-4" />
                                     </button>
-                                    <div v-else class="inline-flex items-center gap-1 px-4 py-3 cursor-pointer text-sm text-muted-foreground">
-                                        <CheckCircle v-if="order.order_status?.picking" class="h-5 w-6 text-green-600 dark:text-green-400" />
-                                        <XCircle v-else class="h-5 w-6" />
-                                        <Package class="h-5 w-6" />
+                                    <div v-else class="inline-flex items-center gap-1 px-2 py-2 text-sm text-muted-foreground">
+                                        <CheckCircle v-if="order.order_status?.picking" class="h-4 w-4 text-green-600 dark:text-green-400" />
+                                        <XCircle v-else class="h-4 w-4" />
+                                        <Package class="h-4 w-4" />
                                     </div>
                                 </td>
-                                <td class="px-4 py-3 text-center">
+                                <td class="px-2 sm:px-4 py-3 text-center">
                                     <button
                                         v-if="canUpdateStatus"
                                         @click="updateOrderStatus(order.id, 'packing', order.order_status?.packing || false, order.numero)"
                                         :disabled="isStatusButtonDisabled(order, 'packing')"
-                                        class="inline-flex items-center gap-1 rounded-md px-4 py-3 text-sm transition-colors"
+                                        class="inline-flex items-center gap-1 rounded-md px-2 py-2 text-sm transition-colors"
                                         :class="[
                                             order.order_status?.packing ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground',
                                             isStatusButtonDisabled(order, 'packing') 
@@ -882,22 +886,22 @@ const getCurrentPerPage = () => {
                                         ]"
                                         :title="getStatusButtonTooltip(order, 'packing')"
                                     >
-                                        <CheckCircle v-if="order.order_status?.packing" class="h-5 w-6" />
-                                        <XCircle v-else class="h-5 w-6" />
-                                        <Package class="h-5 w-6" />
+                                        <CheckCircle v-if="order.order_status?.packing" class="h-4 w-4" />
+                                        <XCircle v-else class="h-4 w-4" />
+                                        <Package class="h-4 w-4" />
                                     </button>
-                                    <div v-else class="inline-flex items-center gap-1 px-4 py-3 cursor-pointer text-sm text-muted-foreground">
-                                        <CheckCircle v-if="order.order_status?.packing" class="h-5 w-6 text-green-600 dark:text-green-400" />
-                                        <XCircle v-else class="h-5 w-6" />
-                                        <Package class="h-5 w-6" />
+                                    <div v-else class="inline-flex items-center gap-1 px-2 py-2 text-sm text-muted-foreground">
+                                        <CheckCircle v-if="order.order_status?.packing" class="h-4 w-4 text-green-600 dark:text-green-400" />
+                                        <XCircle v-else class="h-4 w-4" />
+                                        <Package class="h-4 w-4" />
                                     </div>
                                 </td>
-                                <td class="px-4 py-3 text-center">
+                                <td class="px-2 sm:px-4 py-3 text-center">
                                     <button
                                         v-if="canUpdateStatus"
                                         @click="updateOrderStatus(order.id, 'picked_up', order.order_status?.picked_up || false, order.numero)"
                                         :disabled="isStatusButtonDisabled(order, 'picked_up')"
-                                        class="inline-flex items-center gap-1 rounded-md px-4 py-3 text-sm transition-colors"
+                                        class="inline-flex items-center gap-1 rounded-md px-2 py-2 text-sm transition-colors"
                                         :class="[
                                             order.order_status?.picked_up ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground',
                                             isStatusButtonDisabled(order, 'picked_up') 
@@ -906,24 +910,24 @@ const getCurrentPerPage = () => {
                                         ]"
                                         :title="getStatusButtonTooltip(order, 'picked_up')"
                                     >
-                                        <CheckCircle v-if="order.order_status?.picked_up" class="h-5 w-6" />
-                                        <XCircle v-else class="h-5 w-6" />
-                                        <Truck class="h-5 w-6" />
+                                        <CheckCircle v-if="order.order_status?.picked_up" class="h-4 w-4" />
+                                        <XCircle v-else class="h-4 w-4" />
+                                        <Truck class="h-4 w-4" />
                                     </button>
-                                    <div v-else class="inline-flex items-center gap-1 px-4 py-3 cursor-pointer text-sm text-muted-foreground">
-                                        <CheckCircle v-if="order.order_status?.picked_up" class="h-5 w-6 text-green-600 dark:text-green-400" />
-                                        <XCircle v-else class="h-5 w-6" />
-                                        <Truck class="h-5 w-6" />
+                                    <div v-else class="inline-flex items-center gap-1 px-2 py-2 text-sm text-muted-foreground">
+                                        <CheckCircle v-if="order.order_status?.picked_up" class="h-4 w-4 text-green-600 dark:text-green-400" />
+                                        <XCircle v-else class="h-4 w-4" />
+                                        <Truck class="h-4 w-4" />
                                     </div>
                                 </td>
-                                <td class="px-4 py-3 text-center">
+                                <td class="px-2 sm:px-4 py-3 text-center">
                                     <Link
                                         :href="`/dashboard/orders/${order.id}`"
-                                        class="inline-flex items-center gap-1 rounded-md px-4 py-3 text-sm text-muted-foreground hover:bg-sidebar-border/70"
+                                        class="inline-flex items-center gap-1 rounded-md px-2 py-2 text-sm text-muted-foreground hover:bg-sidebar-border/70"
                                         :title="`Ver pedido ${order.numero}`"
                                     >
-                                        <Eye class="h-5 w-6" />
-                                        Ver
+                                        <Eye class="h-4 w-4" />
+                                        <span class="hidden sm:inline">Ver</span>
                                     </Link>
                                 </td>
                             </tr>
@@ -959,8 +963,8 @@ const getCurrentPerPage = () => {
         </div>
 
         <!-- Confirmation Modal -->
-        <div v-if="showConfirmModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-md" @click="cancelStatusUpdate">
-            <div class="bg-background border border-sidebar-border/70 rounded-xl shadow-2xl max-w-lg w-full mx-4 animate-in fade-in-0 zoom-in-95 duration-200" @click.stop>
+        <div v-if="showConfirmModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-md p-4" @click="cancelStatusUpdate">
+            <div class="bg-background border border-sidebar-border/70 rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-200" @click.stop>
                 <div class="p-6">
                     <!-- Header -->
                     <div class="flex items-center gap-3 mb-4">
@@ -985,15 +989,16 @@ const getCurrentPerPage = () => {
                         
                         <!-- Order Information -->
                         <div class="bg-sidebar-border/20 rounded-lg p-4 mb-4">
-                            <div class="flex items-center gap-2 mb-2">
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
                                 <span class="font-medium text-foreground">{{ confirmData?.actionName }}</span>
-                                <span class="text-muted-foreground">•</span>
+                                <span class="text-muted-foreground hidden sm:inline">•</span>
                                 <span class="text-sm text-muted-foreground">Pedido {{ confirmData?.orderNumber }}</span>
                             </div>
                             
-                            <div v-if="confirmData?.orderData" class="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                            <div v-if="confirmData?.orderData" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-muted-foreground">
                                 <div>
-                                    <span class="font-medium">Cliente:</span> {{ confirmData.orderData.contato_nome }}
+                                    <span class="font-medium">Cliente:</span> 
+                                    <div class="truncate">{{ confirmData.orderData.contato_nome }}</div>
                                 </div>
                                 <div>
                                     <span class="font-medium">Total:</span> R$ {{ confirmData.orderData.total }}
@@ -1013,20 +1018,20 @@ const getCurrentPerPage = () => {
                     </div>
 
                     <!-- Actions -->
-                    <div class="flex gap-3 justify-end">
+                    <div class="flex flex-col sm:flex-row gap-3 justify-end">
                         <button
                             @click="cancelStatusUpdate"
-                            class="px-4 py-2 text-sm font-medium cursor-pointer text-muted-foreground hover:text-foreground transition-colors"
+                            class="px-4 py-2 text-sm font-medium cursor-pointer text-muted-foreground hover:text-foreground transition-colors order-2 sm:order-1"
                         >
                             Cancelar
                         </button>
                         <button
                             @click="confirmStatusUpdate"
                             :disabled="isUpdatingStatus"
-                            class="px-4 py-2 text-sm font-medium cursor-pointer text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            class="px-4 py-2 text-sm font-medium cursor-pointer text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed order-1 sm:order-2"
                             :class="confirmData?.newStatus ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'"
                         >
-                            <span v-if="isUpdatingStatus" class="flex items-center gap-2">
+                            <span v-if="isUpdatingStatus" class="flex items-center justify-center gap-2">
                                 <RefreshCw class="h-4 w-4 animate-spin" />
                                 Processando...
                             </span>
