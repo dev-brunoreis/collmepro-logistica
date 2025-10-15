@@ -10,15 +10,32 @@ import { logout } from '@/routes';
 import { edit } from '@/routes/profile';
 import type { User } from '@/types';
 import { Link, router } from '@inertiajs/vue3';
-import { LogOut, Settings, User as UserIcon } from 'lucide-vue-next';
+import { LogOut, Settings, User as UserIcon, Moon, Sun } from 'lucide-vue-next';
+import { useAppearance } from '@/composables/useAppearance';
+import { computed } from 'vue';
 
 interface Props {
     user: User;
 }
 
+const { appearance, updateAppearance } = useAppearance();
+
 const handleLogout = () => {
     router.flushAll();
 };
+
+const toggleTheme = () => {
+    const newTheme = appearance.value === 'light' ? 'dark' : 'light';
+    updateAppearance(newTheme);
+};
+
+const currentIcon = computed(() => {
+    return appearance.value === 'light' ? Moon : Sun;
+});
+
+const currentLabel = computed(() => {
+    return appearance.value === 'light' ? 'Tema Escuro' : 'Tema Claro';
+});
 
 defineProps<Props>();
 </script>
@@ -44,6 +61,11 @@ defineProps<Props>();
             </Link>
         </DropdownMenuItem> -->
     </DropdownMenuGroup>
+    <DropdownMenuSeparator />
+    <DropdownMenuItem @click="toggleTheme" class="cursor-pointer">
+        <component :is="currentIcon" class="mr-2 h-4 w-4" />
+        {{ currentLabel }}
+    </DropdownMenuItem>
     <DropdownMenuSeparator />
     <DropdownMenuItem :as-child="true">
         <Link
