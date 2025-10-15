@@ -400,6 +400,7 @@ class OrderController extends Controller
                 'summary_data' => $order->toArray(),
                 'order_history' => $orderHistory,
             ],
+            'systems_with_colors' => $this->getSystemsMap(),
         ]);
     }
 

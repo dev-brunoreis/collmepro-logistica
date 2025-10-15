@@ -136,6 +136,7 @@ interface Order {
         data_emissao: string;
         link_danfe?: string;
         link_pdf?: string;
+        loja_id?: number;
     };
     invoice_raw_data?: any;
     order_data?: {
@@ -167,6 +168,12 @@ interface User {
 
 interface Props {
     order: Order;
+    systems_with_colors?: {
+        [key: string]: {
+            name: string;
+            color: string;
+        };
+    };
 }
 
 const props = defineProps<Props>();
@@ -213,8 +220,18 @@ const formatDate = (dateString: string) => {
     }
 };
 
-const getSystemBadgeClass = (system: string) => {
-    switch (system) {
+const getSystemBadgeClass = (order: Order) => {
+    // Try to find the system by loja_id from invoice first
+    if (order.invoice?.loja_id) {
+        const lojaId = order.invoice.loja_id.toString();
+        const systemConfig = props.systems_with_colors?.[lojaId];
+        if (systemConfig) {
+            return systemConfig.color;
+        }
+    }
+    
+    // Fallback to old logic for backward compatibility
+    switch (order.source) {
         case 'collmepro':
             return 'bg-blue-600 text-white border border-blue-700';
         case 'collmepro_atacadista':
@@ -329,7 +346,7 @@ const formatTrackingDataForAPI = (tracking: TrackingData) => {
                                 <div class="mt-1">
                                     <span
                                         class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-                                        :class="getSystemBadgeClass(props.order.source)"
+                                        :class="getSystemBadgeClass(props.order)"
                                     >
                                         {{ props.order.source.toUpperCase() }}
                                     </span>
