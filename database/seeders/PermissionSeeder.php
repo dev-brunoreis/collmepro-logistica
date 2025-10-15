@@ -109,14 +109,6 @@ class PermissionSeeder extends Seeder
                 'roles' => ['admin', 'developer', 'manager', 'sales'],
             ],
 
-            // Labels permissions
-            [
-                'name' => 'labels.view',
-                'display_name' => 'Visualizar Etiquetas',
-                'description' => 'Permite visualizar etiquetas de envio',
-                'category' => 'labels',
-                'roles' => ['admin', 'developer', 'manager', 'sales'],
-            ],
         ];
 
         foreach ($permissions as $permissionData) {

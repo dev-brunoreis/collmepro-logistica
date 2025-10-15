@@ -804,6 +804,10 @@ abstract class BlingService
             return;
         }
 
+        // Check if invoice already exists before updateOrCreate
+        $existingInvoice = Invoice::where('bling_id', $invoiceId)->first();
+        $oldInvoiceNumber = $existingInvoice?->numero ?? null;
+        
         // Create or update invoice record in invoices table
         $invoiceData = $this->mapBlingInvoiceToInvoice($completeInvoiceData, $order->id);
         $invoiceData['raw_data'] = $completeInvoiceData;
@@ -822,8 +826,11 @@ abstract class BlingService
         $order->unsetRelation('invoice');
         $order->load('invoice');
 
-        // Record invoice sync in history
-        if (class_exists(OrderHistoryService::class)) {
+        // Only record invoice sync in history if invoice was created or updated
+        $wasInvoiceCreated = !$existingInvoice;
+        $wasInvoiceUpdated = $existingInvoice && ($oldInvoiceNumber !== $invoice->numero);
+        
+        if (($wasInvoiceCreated || $wasInvoiceUpdated) && class_exists(OrderHistoryService::class)) {
             app(OrderHistoryService::class)->recordInvoiceSynced($order, [
                 'invoice_id' => $invoiceId,
                 'numero' => $completeInvoiceData['numero'] ?? null,
@@ -861,8 +868,14 @@ abstract class BlingService
                         'external_updated_at' => now(),
                     ]);
 
+                    // Check if tracking already exists before updateOrCreate
+                    $existingTracking = \App\Models\Tracking::where('invoice_id', $invoice->id)
+                        ->where('volume_id', $volumeId)
+                        ->first();
+                    $oldTrackingCode = $existingTracking?->codigo_rastreamento ?? null;
+                    
                     // Create or update tracking record in tracking table
-                    \App\Models\Tracking::updateOrCreate(
+                    $trackingRecord = \App\Models\Tracking::updateOrCreate(
                         ['invoice_id' => $invoice->id, 'volume_id' => $volumeId],
                         [
                             'codigo_rastreamento' => $completeTrackingData['rastreamento']['codigo'] ?? null,
@@ -888,8 +901,11 @@ abstract class BlingService
                         ]
                     );
 
-                    // Record tracking fetch in history
-                    if (class_exists(OrderHistoryService::class)) {
+                    // Only record tracking fetch in history if tracking was created or updated
+                    $wasTrackingCreated = !$existingTracking;
+                    $wasTrackingUpdated = $existingTracking && ($oldTrackingCode !== $trackingRecord->codigo_rastreamento);
+                    
+                    if (($wasTrackingCreated || $wasTrackingUpdated) && class_exists(OrderHistoryService::class)) {
                         app(OrderHistoryService::class)->recordTrackingFetched($order, [
                             'volume_id' => $volumeId,
                             'tracking_code' => $completeTrackingData['rastreamento']['codigo'] ?? null,
