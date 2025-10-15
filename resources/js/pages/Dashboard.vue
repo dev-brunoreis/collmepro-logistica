@@ -7,8 +7,7 @@ import PlaceholderPattern from '../components/PlaceholderPattern.vue';
 import KanbanCompact from '../components/KanbanCompact.vue';
 import MetricCard from '../components/MetricCard.vue';
 import { ref, onMounted, computed } from 'vue';
-import { Package, CheckCircle, Sun, Moon, Monitor } from 'lucide-vue-next';
-import { useAppearance } from '@/composables/useAppearance';
+import { Package, CheckCircle } from 'lucide-vue-next';
 import axios from 'axios';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -31,37 +30,6 @@ const metrics = ref(props.metrics);
 const kanbanData = ref(props.kanbanData);
 const loading = ref(false);
 
-// Theme functionality
-const { appearance, updateAppearance } = useAppearance();
-
-const themeIcon = computed(() => {
-    switch (appearance.value) {
-        case 'light': return Sun;
-        case 'dark': return Moon;
-        case 'system': return Monitor;
-        default: return Monitor;
-    }
-});
-
-const themeLabel = computed(() => {
-    switch (appearance.value) {
-        case 'light': return 'Claro';
-        case 'dark': return 'Escuro';
-        case 'system': return 'Sistema';
-        default: return 'Sistema';
-    }
-});
-
-const themeButtonTitle = computed(() => {
-    return `Tema atual: ${themeLabel.value}. Clique para alternar.`;
-});
-
-const cycleTheme = () => {
-    const themes: Array<'light' | 'dark' | 'system'> = ['light', 'dark', 'system'];
-    const currentIndex = themes.indexOf(appearance.value);
-    const nextIndex = (currentIndex + 1) % themes.length;
-    updateAppearance(themes[nextIndex]);
-};
 
 const openKanbanFullscreen = () => {
     router.visit('/dashboard/painel');
@@ -110,7 +78,7 @@ onMounted(() => {
         <div
             class="flex h-full flex-1 flex-col gap-4 overflow-hidden rounded-xl p-4"
         >
-            <!-- Period Filter and Theme Toggle -->
+            <!-- Period Filter -->
             <div class="flex items-center gap-4">
                 <div class="flex items-center gap-2">
                     <label for="period-select" class="text-sm font-medium text-foreground">
@@ -129,16 +97,6 @@ onMounted(() => {
                         <option value="60">Últimos 60 dias</option>
                     </select>
                 </div>
-                
-                <!-- Theme Toggle Button -->
-                <button
-                    @click="cycleTheme"
-                    class="flex items-center gap-2 px-3 py-2 bg-card border border-border rounded-lg text-foreground hover:bg-muted transition-colors"
-                    :title="themeButtonTitle"
-                >
-                    <component :is="themeIcon" class="w-4 h-4" />
-                    <span class="hidden sm:inline text-sm">{{ themeLabel }}</span>
-                </button>
                 
                 <div v-if="loading" class="text-sm text-muted-foreground">
                     Carregando...

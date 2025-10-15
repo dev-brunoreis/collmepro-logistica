@@ -14,7 +14,6 @@
       <Clock class="w-3.5 h-3.5" />
       <div class="flex flex-col">
         <span class="text-xs">{{ nextSyncText }}</span>
-        <span class="text-xs opacity-60">{{ lastSyncText }}</span>
       </div>
     </div>
   </div>
