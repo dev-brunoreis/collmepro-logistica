@@ -9,6 +9,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use App\Services\BlingService;
 use App\Services\CollmeProBlingService;
 use App\Services\CollmeAtacadistaBlingService;
@@ -17,6 +18,7 @@ use App\Services\SystemMappingService;
 use App\Models\OrderSummary;
 use App\Models\Invoice;
 use App\Traits\BlingSyncLogger;
+use App\Events\BlingSyncStatusUpdated;
 use Carbon\Carbon;
 
 class BlingSyncJob implements ShouldQueue
@@ -52,6 +54,9 @@ class BlingSyncJob implements ShouldQueue
     public function handle(): void
     {
         $startTime = now();
+        
+        // Update sync status: starting
+        $this->updateSyncStatus(true, $startTime);
         
         $this->logBlingInfo('Starting Bling synchronization', [
             'force_update' => $this->forceUpdate,
@@ -101,12 +106,18 @@ class BlingSyncJob implements ShouldQueue
                 'duration_seconds' => $duration,
             ]);
 
+            // Update sync status: completed
+            $this->updateSyncStatus(false, now());
+
         } catch (\Exception $e) {
             $this->logBlingError('Fatal error during synchronization', [
                 'error' => $e->getMessage(),
                 'file' => $e->getFile() . ':' . $e->getLine(),
                 'duration_seconds' => now()->diffInSeconds($startTime)
             ]);
+            
+            // Update sync status: failed
+            $this->updateSyncStatus(false, now());
             
             throw $e;
         }
@@ -977,6 +988,38 @@ class BlingSyncJob implements ShouldQueue
             'error' => $exception->getMessage(),
             'file' => $exception->getFile() . ':' . $exception->getLine(),
             'force_update' => $this->forceUpdate
+        ]);
+        
+        // Update sync status: failed
+        $this->updateSyncStatus(false, now());
+    }
+
+    /**
+     * Update sync status in cache and broadcast event
+     */
+    private function updateSyncStatus(bool $isRunning, Carbon $lastSyncAt, Carbon $nextSyncAt = null): void
+    {
+        $statusData = [
+            'is_running' => $isRunning,
+            'last_sync_at' => $isRunning ? null : $lastSyncAt->toISOString(), // Only set when not running
+            'account_type' => $this->accountType ?? 'all',
+            'updated_at' => now()->toISOString(),
+        ];
+
+        // Store in cache for 2 hours
+        Cache::put('bling_sync_status', $statusData, now()->addHours(2));
+
+        // Broadcast event
+        event(new BlingSyncStatusUpdated(
+            $isRunning,
+            $isRunning ? null : $lastSyncAt->toISOString(),
+            null, // Frontend will calculate next sync time
+            $this->accountType ?? 'all'
+        ));
+
+        $this->logBlingInfo('Sync status updated', [
+            'is_running' => $isRunning,
+            'account_type' => $this->accountType ?? 'all',
         ]);
     }
 }

@@ -17,6 +17,7 @@ Route::get('/', function () {
 Route::group(['prefix' => 'dashboard', 'middleware' => ['auth', 'verified']], function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('data', [DashboardController::class, 'fetchDashboardData'])->name('dashboard.fetch-data');
+    Route::get('api/sync-status', [DashboardController::class, 'getSyncStatus'])->name('dashboard.sync-status');
     
     // User management routes (users with user permissions)
     Route::middleware(['permission:users.view'])->group(function () {

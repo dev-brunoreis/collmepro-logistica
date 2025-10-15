@@ -84,11 +84,20 @@ interface OrderUpdate {
     timestamp: string;
 }
 
+interface SyncStatusUpdate {
+    is_running: boolean;
+    last_sync_at: string | null;
+    next_sync_at: string | null;
+    account_type: string;
+    timestamp: string;
+}
+
 export function useOrderBroadcasting() {
     const isConnected = ref(false);
     const lastUpdate = ref<OrderStatusUpdate | null>(null);
     const lastNewOrder = ref<NewOrder | null>(null);
     const lastOrderUpdate = ref<OrderUpdate | null>(null);
+    const lastSyncStatus = ref<SyncStatusUpdate | null>(null);
     const connectionRetryCount = ref(0);
     const maxRetries = 3;
     let retryTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -160,14 +169,18 @@ export function useOrderBroadcasting() {
     };
 
     const setupChannelListeners = (echo: any) => {
-        // Leave existing channel if any
+        // Leave existing channels if any
         echo.leaveChannel('orders');
+        echo.leaveChannel('sync-status');
         
         // Listen to the orders channel for all order updates
-        const channel = echo.channel('orders');
+        const ordersChannel = echo.channel('orders');
         
-        // Listen for status updates
-        channel.listen('status.updated', (data: any) => {
+        // Listen to the sync-status channel for sync status updates
+        const syncStatusChannel = echo.channel('sync-status');
+        
+        // Listen for order status updates
+        ordersChannel.listen('status.updated', (data: any) => {
             console.log('Raw data received:', data);
             
             // Parse the data if it's a string (double-encoded JSON)
@@ -184,12 +197,18 @@ export function useOrderBroadcasting() {
         });
 
         // Also listen to the event with a different syntax
-        channel.listen('.status.updated', (data: any) => {
+        ordersChannel.listen('.status.updated', (data: any) => {
             lastUpdate.value = data;
         });
 
+        // Listen for sync status updates
+        syncStatusChannel.listen('sync-status.updated', (data: any) => {
+            console.log('Sync status updated:', data);
+            lastSyncStatus.value = data;
+        });
+
         // Listen for new orders
-        channel.listen('order.created', (data: any) => {
+        ordersChannel.listen('order.created', (data: any) => {
             console.log('New order received:', data);
             
             // Parse the data if it's a string (double-encoded JSON)
@@ -206,12 +225,12 @@ export function useOrderBroadcasting() {
         });
 
         // Also listen to the event with a different syntax
-        channel.listen('.order.created', (data: any) => {
+        ordersChannel.listen('.order.created', (data: any) => {
             lastNewOrder.value = data;
         });
 
         // Listen for order updates
-        channel.listen('order.updated', (data: any) => {
+        ordersChannel.listen('order.updated', (data: any) => {
             console.log('Order update received:', data);
             
             // Parse the data if it's a string (double-encoded JSON)
@@ -228,7 +247,7 @@ export function useOrderBroadcasting() {
         });
 
         // Also listen to the event with a different syntax
-        channel.listen('.order.updated', (data: any) => {
+        ordersChannel.listen('.order.updated', (data: any) => {
             lastOrderUpdate.value = data;
         });
     };
@@ -312,6 +331,7 @@ export function useOrderBroadcasting() {
         lastUpdate,
         lastNewOrder,
         lastOrderUpdate,
+        lastSyncStatus,
         connectToOrdersChannel,
         connectToSpecificOrder,
         disconnectFromOrdersChannel,

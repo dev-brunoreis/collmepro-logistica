@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\OrderSummary;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -415,5 +416,25 @@ class DashboardController extends Controller
 
         // 7. Pedidos Emitidos: default (shouldn't reach here normally)
         return 'pedidos_emitidos';
+    }
+
+    /**
+     * Get current Bling sync status
+     */
+    public function getSyncStatus()
+    {
+        $syncStatus = Cache::get('bling_sync_status');
+        
+        if (!$syncStatus) {
+            // Return default status if not found
+            $syncStatus = [
+                'is_running' => false,
+                'last_sync_at' => null,
+                'account_type' => 'all',
+                'updated_at' => now()->toISOString(),
+            ];
+        }
+        
+        return response()->json($syncStatus);
     }
 }

@@ -1,17 +1,8 @@
 <template>
   <div class="kanban-compact" :class="{ 'kanban-fullscreen': isFullscreen }">
-    <!-- Loading Indicator -->
-    <div v-if="loading" class="absolute inset-0 bg-background/90 backdrop-blur-sm flex justify-center items-center z-50 rounded-xl">
-      <div class="text-center">
-        <div class="w-16 h-16 border-4 border-muted border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
-        <h3 class="text-xl font-bold text-foreground mb-2">Carregando pedidos...</h3>
-        <p class="text-sm text-muted-foreground">
-          {{ loadingProgress }} / {{ totalOrders }} orders
-        </p>
-      </div>
-    </div>
+    <!-- Loading Indicator removed - now handled by sync status badge -->
 
-    <!-- Header with fullscreen button -->
+    <!-- Header with fullscreen button and sync status -->
     <div class="flex items-center justify-between mb-4">
       <button @click="toggleFullscreen"
         class="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200"
@@ -20,6 +11,7 @@
         <span class="cursor-pointer hidden sm:inline">{{ isFullscreen ? 'Diminuir' : 'Expandir' }}</span>
       </button>
 
+      <SyncStatusBadge :syncStatus="syncStatus" />
     </div>
     <!-- Pedidos Emitidos Layout -->
     <div class="bg-card rounded-lg shadow-lg border border-border">
@@ -415,6 +407,7 @@ import { Maximize, Plus } from 'lucide-vue-next'
 import { useOrderBroadcasting } from '@/composables/useBroadcasting'
 import { getSystemShortName, getSystemBadgeColor } from '@/helpers/systemMapping'
 import OrderCard from './OrderCard.vue'
+import SyncStatusBadge from './SyncStatusBadge.vue'
 import { ExternalLink } from 'lucide-vue-next'
 import axios from 'axios'
 
@@ -477,10 +470,7 @@ const emit = defineEmits<{
 // Fullscreen state
 const isFullscreen = ref(false)
 
-// Loading state
-const loading = ref(false) // Start as false since data comes from props
-const loadingProgress = ref(0)
-const totalOrders = ref(0)
+// Loading state removed - now handled by sync status badge
 
 // Initialize with empty data for async loading
 const kanbanData = ref<KanbanData>({
@@ -494,7 +484,18 @@ const kanbanData = ref<KanbanData>({
 })
 
 // Broadcasting setup
-const { isConnected, lastUpdate, lastNewOrder, lastOrderUpdate } = useOrderBroadcasting()
+const { isConnected, lastUpdate, lastNewOrder, lastOrderUpdate, lastSyncStatus } = useOrderBroadcasting()
+
+// Sync status state
+const syncStatus = ref<any>(null)
+
+// Watch for sync status updates from broadcasting
+watch(lastSyncStatus, (newSyncStatus) => {
+  if (newSyncStatus) {
+    syncStatus.value = newSyncStatus
+    console.log('Sync status updated:', newSyncStatus)
+  }
+})
 
 // Watch for real-time updates and update kanban data
 watch(lastUpdate, (update) => {
@@ -971,11 +972,10 @@ const handleEscapeKey = (event: KeyboardEvent) => {
   }
 }
 
-// Fetch orders asynchronously
+// Fetch orders asynchronously (simplified - no loading UI)
 const fetchOrdersAsync = async (daysBack: number = 7, loadAll: boolean = false) => {
   try {
     console.log('KanbanCompact: Starting to fetch orders...')
-    loading.value = true
     
     const response = await axios.get('/dashboard/data', {
       params: {
@@ -998,10 +998,6 @@ const fetchOrdersAsync = async (daysBack: number = 7, loadAll: boolean = false) 
       coleta_realizada: data.kanbanData.coleta_realizada || [],
     }
     
-    // Update progress
-    loadingProgress.value = data.metrics?.loaded || 0
-    totalOrders.value = data.metrics?.total_all || 0
-    
     console.log('KanbanCompact data loaded:', {
       loaded: data.metrics?.loaded,
       total: data.metrics?.total_all,
@@ -1014,46 +1010,46 @@ const fetchOrdersAsync = async (daysBack: number = 7, loadAll: boolean = false) 
     console.log('KanbanCompact: Faturamento column has', kanbanData.value.faturamento?.length || 0, 'orders')
   } catch (error) {
     console.error('Error fetching kanban compact orders:', error)
-  } finally {
-    loading.value = false
   }
 }
 
-// Watch for changes in props and update local data
+// Watch for changes in props and update local data (no loading animation)
 watch(() => props.kanbanData, (newData) => {
   if (newData) {
-    // Show loading briefly when data is being updated
-    loading.value = true
+    kanbanData.value = {
+      pedidos_emitidos: newData.pedidos_emitidos || [],
+      faturamento: newData.faturamento || [],
+      checkout: newData.checkout || [],
+      embalagem: newData.embalagem || [],
+      etiqueta: newData.etiqueta || [],
+      coleta_aguardando: newData.coleta_aguardando || [],
+      coleta_realizada: newData.coleta_realizada || [],
+    }
     
-    // Small delay to show loading animation
-    setTimeout(() => {
-      kanbanData.value = {
-        pedidos_emitidos: newData.pedidos_emitidos || [],
-        faturamento: newData.faturamento || [],
-        checkout: newData.checkout || [],
-        embalagem: newData.embalagem || [],
-        etiqueta: newData.etiqueta || [],
-        coleta_aguardando: newData.coleta_aguardando || [],
-        coleta_realizada: newData.coleta_realizada || [],
-      }
-      
-      // Hide loading after data is updated
-      loading.value = false
-      
-      console.log('KanbanCompact data updated from props:', {
-        pedidos_emitidos: kanbanData.value.pedidos_emitidos?.length || 0,
-        faturamento: kanbanData.value.faturamento?.length || 0,
-        checkout: kanbanData.value.checkout?.length || 0,
-        embalagem: kanbanData.value.embalagem?.length || 0,
-        etiqueta: kanbanData.value.etiqueta?.length || 0,
-        coleta_aguardando: kanbanData.value.coleta_aguardando?.length || 0,
-        coleta_realizada: kanbanData.value.coleta_realizada?.length || 0,
-      })
-    }, 300)
+    console.log('KanbanCompact data updated from props:', {
+      pedidos_emitidos: kanbanData.value.pedidos_emitidos?.length || 0,
+      faturamento: kanbanData.value.faturamento?.length || 0,
+      checkout: kanbanData.value.checkout?.length || 0,
+      embalagem: kanbanData.value.embalagem?.length || 0,
+      etiqueta: kanbanData.value.etiqueta?.length || 0,
+      coleta_aguardando: kanbanData.value.coleta_aguardando?.length || 0,
+      coleta_realizada: kanbanData.value.coleta_realizada?.length || 0,
+    })
   }
 }, { immediate: true, deep: true })
 
-// Initialize with props data (no need to fetch on mount)
+// Fetch initial sync status
+const fetchSyncStatus = async () => {
+  try {
+    const response = await axios.get('/dashboard/api/sync-status')
+    syncStatus.value = response.data
+    console.log('Initial sync status fetched:', response.data)
+  } catch (error) {
+    console.error('Error fetching sync status:', error)
+  }
+}
+
+// Initialize with props data and fetch sync status
 onMounted(() => {
   console.log('KanbanCompact mounted with data:', {
     pedidos_emitidos: kanbanData.value.pedidos_emitidos?.length || 0,
@@ -1064,6 +1060,9 @@ onMounted(() => {
     coleta_aguardando: kanbanData.value.coleta_aguardando?.length || 0,
     coleta_realizada: kanbanData.value.coleta_realizada?.length || 0,
   })
+  
+  // Fetch initial sync status
+  fetchSyncStatus()
 })
 
 // Cleanup on unmount
