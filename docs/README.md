@@ -1,152 +1,180 @@
-# Collmepro Logistics System Project Documentation
+# Documentacao Tecnica - Sistema Collmepro Logistica
 
-## Overview
+## Introducao
 
-This directory contains all documentation for the centralized logistics system for Collmepro and Collme Beauty. The documentation has been structured to facilitate development with AI agents.
+Bem-vindo a documentacao tecnica completa do Sistema Collmepro Logistica. Esta documentacao foi escrita para desenvolvedores e contem informacoes detalhadas sobre arquitetura, implementacao, configuracao e manutencao do sistema.
 
-## ⚠️ URGENT TIMELINE: January 15 Deadline
+## Visao Geral do Sistema
 
-**Total available time: ~15 days**
-**Accelerated development required**
+O Collmepro Logistica e um sistema centralizado de gestao logistica desenvolvido para gerenciar pedidos de multiplas plataformas de e-commerce (Collmepro Pro, Collmepro Atacadista e Collme Beauty). O sistema integra-se com a API do Bling para sincronizar pedidos, notas fiscais e dados de rastreamento.
 
-## Estrutura da Documentação
+### Stack Tecnologico
 
-### 📋 [00-database-uml.md](00-database-uml.md)
-Database UML diagram with table relationships.
+- **Backend**: Laravel 12 (PHP 8.2+)
+- **Frontend**: Vue.js 3 + Inertia.js
+- **Database**: MySQL / SQLite
+- **Cache/Queue**: Redis
+- **Broadcasting**: Laravel Reverb (WebSockets)
 
-### 📚 [01-project-knowledge-base.md](01-project-knowledge-base.md)
-Complete project knowledge base, including:
-- System overview
-- Technical architecture
-- Database structure
-- External integrations
-- System features
-- User profiles
-- Development principles
+## Indice da Documentacao
 
-### 📝 [02-detailed-requirements.md](02-detailed-requirements.md)
-Detailed system requirements, including:
-- Integration specifications
-- Features per screen
-- Acceptance criteria
-- System configurations
+### 1. Fundamentos
 
-### 🏗️ [03-agent-architecture.md](03-agent-architecture.md)
-Agent architecture for development, including:
-- Agent types and responsibilities
-- Workflow
-- Implementation patterns
-- Quality criteria
+#### [01 - Visao Geral](01-visao-geral.md)
+Introducao ao sistema, proposito, contexto de uso, arquitetura geral e stack tecnologico completo.
 
-### 🚀 [04-development-phases.md](04-development-phases.md)
-Progressive development phases, including:
-- 6 implementation phases
-- Estimated schedule
-- Acceptance criteria per phase
-- Deliverables
+#### [02 - Instalacao e Configuracao](02-instalacao.md)
+Requisitos do sistema, processo de instalacao, configuracao de ambiente, comandos de desenvolvimento e build.
 
-### 🤖 [05-agent-prompts.md](05-agent-prompts.md)
-Specific prompts for each agent type, including:
-- Agent Master (Coordinator)
-- Agent Tester (Testing Specialist)
-- Agent Backend (Laravel Specialist)
-- Agent Frontend (Vue.js Specialist)
-- Agent Integration (API Specialist)
+#### [03 - Arquitetura do Sistema](03-arquitetura.md)
+Estrutura de diretorios, camadas da aplicacao, padroes de design, sistema de filas, broadcasting e otimizacoes.
 
-### 🔒 [09-permission-system.md](09-permission-system.md)
-Comprehensive permission system documentation, including:
-- Role-Based Access Control (RBAC) architecture
-- Permission definitions and categories
-- Role assignments (Admin, Manager, Sales)
-- Backend and frontend security implementation
-- Testing and maintenance procedures
+### 2. Dados e Persistencia
 
-## How to Use This Documentation
+#### [04 - Banco de Dados](04-banco-de-dados.md)
+Diagrama ER, tabelas e relacionamentos, indices, migrations, seeders e estrategias de backup.
 
-### For Developers
-1. Start by reading the [knowledge base](01-project-knowledge-base.md)
-2. Consult the [detailed requirements](02-detailed-requirements.md) to understand scope
-3. Follow the [development phases](04-development-phases.md) for progressive implementation
+### 3. Seguranca e Acesso
 
-### For AI Agents
-1. Use the [specific prompts](05-agent-prompts.md) for each agent type
-2. Follow the [agent architecture](03-agent-architecture.md) for coordination
-3. Consult the [knowledge base](01-project-knowledge-base.md) for context
+#### [05 - Autenticacao e Autorizacao](05-autenticacao.md)
+Laravel Fortify, perfis de usuario, sistema de permissoes, middleware, gestao de sessoes e 2FA.
 
-### For Project Managers
-1. Use the [phase schedule](04-development-phases.md) for planning
-2. Consult the [acceptance criteria](02-detailed-requirements.md) for validation
-3. Monitor progress through the [agent architecture](03-agent-architecture.md)
+### 4. Integracoes
 
-## Project Principles
+#### [06 - Integracoes Externas](06-integracoes.md)
+Bling API v3, OAuth 2.0, rate limiting, WooCommerce API, mapeamento de transportadoras e APIs de rastreamento.
 
-### Development
-- **TDD**: Test-First Development
-- **DRY**: Don't Repeat Yourself
-- **SOLID**: Object-oriented design principles
-- **KISS**: Keep It Simple, Stupid
+### 5. Funcionalidades
 
-### Quality
-- Clean and readable code
-- Comprehensive tests
-- Updated documentation
-- Optimized performance
+#### [07 - Modulos Funcionais](07-modulos.md)
+Dashboard, gestao de pedidos, sistema Kanban, gestao de usuarios, sincronizacao de dados e historico de alteracoes.
 
-### Focus
-- Implement only what was requested
-- Progressive development
-- Testable functionalities
-- Continuous value delivery
+#### [08 - Jobs e Processamento em Background](08-jobs.md)
+Sistema de filas, workers, BlingSyncJob, SyncInvoiceJob, ExtractTrackingJob e estrategias de retry.
 
-## Technologies Used
+#### [09 - Frontend](09-frontend.md)
+Vue.js + Inertia, estrutura de componentes, roteamento Wayfinder, composables, broadcasting em tempo real e TypeScript.
 
-- **Backend**: Laravel 12 (PHP 8.4)
-- **Frontend**: Vue.js with Inertia.js
-- **Database**: MySQL (production) / SQLite (development)
-- **Authentication**: Laravel Fortify
-- **Testing**: PHPUnit
-- **Build**: Vite
+### 6. APIs e Services
 
-## External Integrations
+#### [10 - API e Rotas](10-rotas-api.md)
+Mapeamento completo de rotas, endpoints, middleware, parametros, respostas e canais de broadcasting.
 
-- **WooCommerce API**: Order import
-- **Shopify API**: Order import
-- **Bling API**: Invoices and labels
-- **Correios API**: Tracking
-- **Total Express API**: Tracking
-- **Melhor Envio API**: Tracking
+#### [11 - Services e Logica de Negocio](11-services.md)
+BlingService, BlingOAuthService, CarrierService, OrderHistoryService, SystemMappingService e WooCommerceService.
 
-## System Structure
+### 7. Qualidade e Testes
 
-### User Profiles & Permissions
-- **Admin**: Full system access with all 10 permissions
-- **Manager**: Operational access with 6 permissions (orders, dashboard, kanban, labels)
-- **Sales**: Read-only access with 4 permissions (orders view, dashboard, kanban, labels)
-- **Security**: Role-Based Access Control (RBAC) with database-driven permissions
+#### [12 - Testes](12-testes.md)
+Estrutura de testes, testes unitarios, testes de feature, mocks para APIs externas, factories e cobertura de codigo.
 
-### Main Screens
-- **Orders**: Complete order management
-- **Kanban**: Visual flow tracking
-- **Labels**: Shipping label control
-- **Dashboard**: Metrics and overview
+### 8. Operacao e Manutencao
 
-## Documentation Maintenance
+#### [13 - Deploy e Producao](13-deploy.md)
+Requisitos de servidor, configuracao, deploy, Nginx, Supervisor, SSL, backup, atualizacoes e otimizacoes.
 
-This documentation should be updated whenever:
-- New functionalities are implemented
-- Architecture changes are made
-- New requirements are identified
-- Problems or improvements are discovered
+#### [14 - Manutencao e Troubleshooting](14-manutencao.md)
+Logs do sistema, problemas comuns e solucoes, debug de integracoes, limpeza de cache e monitoramento.
 
-## Contact
+#### [15 - Referencia de Comandos](15-comandos.md)
+Comandos Artisan, NPM, Composer, Git, MySQL, Redis, Supervisor, Nginx e comandos de sistema.
 
-For questions about the documentation or project, consult the knowledge base or specific agent prompts.
+## Como Usar Esta Documentacao
 
-## 🚨 URGENT: January 15 Deadline
+### Para Desenvolvedores Novos no Projeto
 
-**This accelerated timeline requires:**
-- Maximum efficiency
-- Parallel development where possible
-- Focus on core functionality
-- Essential features only
-- Comprehensive testing after core completion
+1. Comece com [01 - Visao Geral](01-visao-geral.md) para entender o sistema
+2. Siga para [02 - Instalacao](02-instalacao.md) para configurar ambiente local
+3. Leia [03 - Arquitetura](03-arquitetura.md) para entender a estrutura
+4. Consulte [04 - Banco de Dados](04-banco-de-dados.md) para entender os dados
+5. Explore [07 - Modulos](07-modulos.md) para conhecer as funcionalidades
+
+### Para Desenvolvimento
+
+- [08 - Jobs](08-jobs.md): Entender processamento em background
+- [09 - Frontend](09-frontend.md): Desenvolver interfaces
+- [11 - Services](11-services.md): Implementar logica de negocio
+- [12 - Testes](12-testes.md): Escrever testes
+
+### Para Integracao
+
+- [06 - Integracoes](06-integracoes.md): Trabalhar com APIs externas
+- [10 - Rotas](10-rotas-api.md): Entender endpoints disponiveis
+
+### Para DevOps
+
+- [13 - Deploy](13-deploy.md): Deploy em producao
+- [14 - Manutencao](14-manutencao.md): Monitorar e resolver problemas
+- [15 - Comandos](15-comandos.md): Referencia rapida de comandos
+
+### Para Troubleshooting
+
+1. Consulte [14 - Manutencao](14-manutencao.md) para problemas comuns
+2. Verifique logs conforme documentado
+3. Use [15 - Comandos](15-comandos.md) para executar diagnosticos
+
+## Principios de Desenvolvimento
+
+O sistema foi desenvolvido seguindo:
+
+- **TDD** (Test-Driven Development)
+- **DRY** (Don't Repeat Yourself)
+- **SOLID** (Principios de design orientado a objetos)
+- **KISS** (Keep It Simple, Stupid)
+- **Event-Driven Architecture**
+
+## Convencoes
+
+### Codigo
+
+- **PHP**: PSR-12
+- **JavaScript/Vue**: ESLint
+- **Commits**: Conventional Commits
+- **Branches**: GitFlow
+
+### Nomenclatura
+
+- **Classes**: PascalCase
+- **Metodos**: camelCase
+- **Variaveis**: camelCase
+- **Constantes**: UPPER_SNAKE_CASE
+- **Arquivos**: kebab-case ou PascalCase
+
+### Commits
+
+- `feat:` Nova funcionalidade
+- `fix:` Correcao de bug
+- `docs:` Documentacao
+- `style:` Formatacao
+- `refactor:` Refatoracao
+- `test:` Testes
+- `chore:` Manutencao
+
+Exemplo: `feat: add order export to PDF`
+
+## Recursos Adicionais
+
+### Links Importantes
+
+- **Laravel**: https://laravel.com/docs
+- **Vue.js**: https://vuejs.org/guide
+- **Inertia.js**: https://inertiajs.com/
+- **Bling API**: https://developer.bling.com.br/
+- **Tailwind CSS**: https://tailwindcss.com/docs
+
+### Suporte
+
+- **Desenvolvedor**: Bruno Reis
+- **Email**: contato@brunoreis.dev
+- **Website**: https://brunoreis.dev
+
+## Licenca
+
+MIT License
+
+Copyright (c) 2025 Bruno Reis
+
+---
+
+Documentacao gerada para o projeto Collmepro Logistica.
+
