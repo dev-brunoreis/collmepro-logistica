@@ -229,8 +229,8 @@ const clearFilters = () => {
                                 <td class="px-4 py-3 text-center">
                                     <div class="font-medium">{{ user.name }}</div>
                                 </td>
-                                <td class="px-4 py-3 text-sm text-muted-foreground">{{ user.email }}</td>
-                                <td class="px-4 py-3 text-sm text-muted-foreground">{{ user.username }}</td>
+                                <td class="px-4 py-3 text-sm text-muted-foreground text-center">{{ user.email }}</td>
+                                <td class="px-4 py-3 text-sm text-muted-foreground text-center">{{ user.username }}</td>
                                 <td class="px-4 py-3 text-center">
                                     <span
                                         class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
@@ -244,11 +244,11 @@ const clearFilters = () => {
                                         {{ user.role_display_name }}
                                     </span>
                                 </td>
-                                <td class="px-4 py-3 text-sm text-muted-foreground">
+                                <td class="px-4 py-3 text-sm text-muted-foreground text-center">
                                     {{ new Date(user.created_at).toLocaleDateString('pt-BR') }}
                                 </td>
                                 <td class="px-4 py-3 text-center">
-                                    <div class="flex items-center gap-2">
+                                    <div class="flex items-center gap-2 justify-center">
                                         <Link
                                             :href="`/dashboard/users/${user.id}/edit`"
                                             class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-sidebar-border/70"
