@@ -28,7 +28,7 @@ class ScheduleServiceProvider extends ServiceProvider
                 
                 // Sync with chunking: Process 20 pages (2000 orders) per execution
                 // Uses persistent pagination to gradually process all orders
-                // Runs every 15 minutes to gradually process all orders
+                // Runs every 1 hour to gradually process all orders
                 // This prevents timeout and allows handling 60k+ orders
                 $schedule->call(function () {
                     $job = new BlingSyncJob(
@@ -39,7 +39,7 @@ class ScheduleServiceProvider extends ServiceProvider
                     );
                     $job->handle();
                 })
-                    ->everyFifteenMinutes()
+                    ->hourly()
                     ->name('bling-sync')
                     ->withoutOverlapping()
                     ->description('Bling full sync (paginated)');
