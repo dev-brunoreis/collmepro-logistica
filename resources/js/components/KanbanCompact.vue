@@ -64,14 +64,6 @@
                         <ExternalLink class="h-3 w-3" />
                       </a>
                       
-                      <!-- Linha 6: Informações adicionais (picking/packing - se existir) -->
-                      <div v-if="order.order_status?.picking_marked_by" class="text-xs opacity-90">
-                        Separado por: {{ order.order_status.picking_marked_by }}
-                      </div>
-                      <div v-if="order.order_status?.packing_marked_by" class="text-xs opacity-90">
-                        Embalado por: {{ order.order_status.packing_marked_by }}
-                      </div>
-                      
                       <!-- Linha Final: Quantidade de Items (com separador visual) -->
                       <div :class="['font-semibold border-t border-opacity-20 pt-1 mt-0.5 text-xs', getBorderColorClass(order)]">
                         {{ order.items_quantity }} item(s)
@@ -127,14 +119,6 @@
                         <ExternalLink class="h-3 w-3" />
                       </a>
                       
-                      <!-- Linha 6: Informações adicionais (picking/packing - se existir) -->
-                      <div v-if="order.order_status?.picking_marked_by" class="text-xs opacity-90">
-                        Separado por: {{ order.order_status.picking_marked_by }}
-                      </div>
-                      <div v-if="order.order_status?.packing_marked_by" class="text-xs opacity-90">
-                        Embalado por: {{ order.order_status.packing_marked_by }}
-                      </div>
-                      
                       <!-- Linha Final: Quantidade de Items (com separador visual) -->
                       <div :class="['font-semibold border-t border-opacity-20 pt-1 mt-0.5 text-xs', getBorderColorClass(order)]">
                         {{ order.items_quantity }} item(s)
@@ -189,14 +173,6 @@
                         <span class="text-xs">{{ order.tracking_code }}</span>
                         <ExternalLink class="h-3 w-3" />
                       </a>
-                      
-                      <!-- Linha 6: Informações adicionais (picking/packing - se existir) -->
-                      <div v-if="order.order_status?.picking_marked_by" class="text-xs opacity-90">
-                        Separado por: {{ order.order_status.picking_marked_by }}
-                      </div>
-                      <div v-if="order.order_status?.packing_marked_by" class="text-xs opacity-90">
-                        Embalado por: {{ order.order_status.packing_marked_by }}
-                      </div>
                       
                       <!-- Linha Final: Quantidade de Items (com separador visual) -->
                       <div :class="['font-semibold border-t border-opacity-20 pt-1 mt-0.5 text-xs', getBorderColorClass(order)]">
@@ -254,14 +230,6 @@
                     <ExternalLink class="h-3 w-3" />
                   </a>
                   
-                  <!-- Linha 6: Informações adicionais (picking/packing - se existir) -->
-                  <div v-if="order.order_status?.picking_marked_by" class="text-xs opacity-90">
-                    Separado por: {{ order.order_status.picking_marked_by }}
-                  </div>
-                  <div v-if="order.order_status?.packing_marked_by" class="text-xs opacity-90">
-                    Embalado por: {{ order.order_status.packing_marked_by }}
-                  </div>
-                  
                   <!-- Linha Final: Quantidade de Items (com separador visual) -->
                   <div :class="['font-semibold border-t border-opacity-20 pt-1 mt-0.5 text-xs', getBorderColorClass(order)]">
                     {{ order.items_quantity }} item(s)
@@ -315,14 +283,6 @@
                     <span class="text-xs">{{ order.tracking_code }}</span>
                     <ExternalLink class="h-3 w-3" />
                   </a>
-                  
-                  <!-- Linha 6: Informações adicionais (picking/packing - se existir) -->
-                  <div v-if="order.order_status?.picking_marked_by" class="text-xs opacity-90">
-                    Separado por: {{ order.order_status.picking_marked_by }}
-                  </div>
-                  <div v-if="order.order_status?.packing_marked_by" class="text-xs opacity-90">
-                    Embalado por: {{ order.order_status.packing_marked_by }}
-                  </div>
                   
                   <!-- Linha Final: Quantidade de Items (com separador visual) -->
                   <div :class="['font-semibold border-t border-opacity-20 pt-1 mt-0.5 text-xs', getBorderColorClass(order)]">
@@ -378,14 +338,6 @@
                     <ExternalLink class="h-3 w-3" />
                   </a>
                   
-                  <!-- Linha 6: Informações adicionais (picking/packing - se existir) -->
-                  <div v-if="order.order_status?.picking_marked_by" class="text-xs opacity-90">
-                    Separado por: {{ order.order_status.picking_marked_by }}
-                  </div>
-                  <div v-if="order.order_status?.packing_marked_by" class="text-xs opacity-90">
-                    Embalado por: {{ order.order_status.packing_marked_by }}
-                  </div>
-                  
                   <!-- Linha Final: Quantidade de Items (com separador visual) -->
                   <div :class="['font-semibold border-t border-opacity-20 pt-1 mt-0.5 text-xs', getBorderColorClass(order)]">
                     {{ order.items_quantity }} item(s)
@@ -439,14 +391,6 @@
                     <span class="text-xs">{{ order.tracking_code }}</span>
                     <ExternalLink class="h-3 w-3" />
                   </a>
-                  
-                  <!-- Linha 6: Informações adicionais (picking/packing - se existir) -->
-                  <div v-if="order.order_status?.picking_marked_by" class="text-xs opacity-90">
-                    Separado por: {{ order.order_status.picking_marked_by }}
-                  </div>
-                  <div v-if="order.order_status?.packing_marked_by" class="text-xs opacity-90">
-                    Embalado por: {{ order.order_status.packing_marked_by }}
-                  </div>
                   
                   <!-- Linha Final: Quantidade de Items (com separador visual) -->
                   <div :class="['font-semibold border-t border-opacity-20 pt-1 mt-0.5 text-xs', getBorderColorClass(order)]">
@@ -509,14 +453,6 @@
                         <ExternalLink class="h-3 w-3" />
                       </a>
                       
-                      <!-- Linha 6: Informações adicionais (picking/packing - se existir) -->
-                      <div v-if="order.order_status?.picking_marked_by" class="text-xs opacity-90">
-                        Separado por: {{ order.order_status.picking_marked_by }}
-                      </div>
-                      <div v-if="order.order_status?.packing_marked_by" class="text-xs opacity-90">
-                        Embalado por: {{ order.order_status.packing_marked_by }}
-                      </div>
-                      
                       <!-- Linha Final: Quantidade de Items (com separador visual) -->
                       <div :class="['font-semibold border-t border-opacity-20 pt-1 mt-0.5 text-xs', getBorderColorClass(order)]">
                         {{ order.items_quantity }} item(s)
@@ -574,14 +510,6 @@
                       <span v-else-if="order.tracking_code && !order.tracking?.url" class="inline-flex items-center gap-1 font-medium rounded-md px-1 py-0.5 text-xs text-gray-400" title="URL de rastreamento não disponível">
                         <span class="text-xs">{{ order.tracking_code }}</span>
                       </span>
-                      
-                      <!-- Linha 6: Informações adicionais (picking/packing - se existir) -->
-                      <div v-if="order.order_status?.picking_marked_by" class="text-xs opacity-90">
-                        Separado por: {{ order.order_status.picking_marked_by }}
-                      </div>
-                      <div v-if="order.order_status?.packing_marked_by" class="text-xs opacity-90">
-                        Embalado por: {{ order.order_status.packing_marked_by }}
-                      </div>
                       
                       <!-- Linha Final: Quantidade de Items (com separador visual) -->
                       <div :class="['font-semibold border-t border-opacity-20 pt-1 mt-0.5 text-xs', getBorderColorClass(order)]">
