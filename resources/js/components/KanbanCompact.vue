@@ -591,6 +591,7 @@ interface KanbanData {
 
 const props = defineProps<{
   kanbanData: KanbanData
+  selectedPeriod: number
 }>()
 
 const emit = defineEmits<{
@@ -619,6 +620,46 @@ const { isConnected, lastUpdate, lastNewOrder, lastOrderUpdate, lastSyncStatus }
 // Sync status state
 const syncStatus = ref<any>(null)
 
+// Date validation helper function
+const isOrderWithinDateRange = (order: Order): boolean => {
+  if (!order.data || !props.selectedPeriod) {
+    return true // If no date or period, include by default
+  }
+  
+  try {
+    // Parse order date
+    let orderDate: Date
+    if (typeof order.data === 'string') {
+      if (order.data.includes('T')) {
+        // ISO format
+        orderDate = new Date(order.data)
+      } else if (order.data.includes(' ')) {
+        // DateTime format (YYYY-MM-DD HH:mm:ss)
+        orderDate = new Date(order.data)
+      } else {
+        // Date only format (YYYY-MM-DD)
+        const [year, month, day] = order.data.split('-')
+        orderDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+      }
+    } else {
+      orderDate = new Date(order.data)
+    }
+    
+    // Calculate cutoff date (today - selectedPeriod days)
+    const cutoffDate = new Date()
+    cutoffDate.setDate(cutoffDate.getDate() - props.selectedPeriod)
+    cutoffDate.setHours(0, 0, 0, 0) // Start of day
+    
+    // Compare dates
+    const isWithinRange = orderDate >= cutoffDate
+    
+    return isWithinRange
+  } catch (error) {
+    console.warn('Error validating order date range:', error, order)
+    return true // On error, include the order to avoid losing data
+  }
+}
+
 // Polling state
 const pollingInterval = ref<ReturnType<typeof setInterval> | null>(null)
 const isPolling = ref(false)
@@ -635,6 +676,12 @@ watch(lastSyncStatus, (newSyncStatus) => {
 watch(lastUpdate, (update) => {
   if (update) {
     console.log('Kanban Compact received update:', update)
+
+    // Check if the order is within the selected date range
+    if (!isOrderWithinDateRange(update.order)) {
+      console.log(`Status update ignored - order ${update.order.numero} is outside selected date range (${props.selectedPeriod} days)`)
+      return
+    }
 
     // Find the order in all columns and update it
     Object.keys(kanbanData.value).forEach(columnKey => {
@@ -735,6 +782,12 @@ watch(lastNewOrder, (newOrderEvent) => {
 
     const order = newOrderEvent.order
 
+    // Check if the order is within the selected date range
+    if (!isOrderWithinDateRange(order)) {
+      console.log(`New order ${order.numero} ignored - outside selected date range (${props.selectedPeriod} days). Order date: ${order.data}`)
+      return
+    }
+
     // Check if order already exists to avoid duplicates
     const orderExists = Object.keys(kanbanData.value).some(columnKey => {
       const column = kanbanData.value[columnKey as keyof KanbanData]
@@ -799,6 +852,25 @@ watch(lastOrderUpdate, (updateEvent) => {
 
     const updatedOrder = updateEvent.order
     const changeTypes = updateEvent.change_types || []
+
+    // Check if the order is within the selected date range
+    if (!isOrderWithinDateRange(updatedOrder)) {
+      console.log(`Order update ignored - order ${updatedOrder.numero} is outside selected date range (${props.selectedPeriod} days). Order date: ${updatedOrder.data}`)
+      
+      // Remove the order from Kanban if it exists (in case date range changed)
+      Object.keys(kanbanData.value).forEach(columnKey => {
+        const column = kanbanData.value[columnKey as keyof KanbanData]
+        if (!column) return
+        
+        const orderIndex = column.findIndex(order => order.id === updatedOrder.id)
+        if (orderIndex !== -1) {
+          column.splice(orderIndex, 1)
+          console.log(`Order ${updatedOrder.numero} removed from column ${columnKey} - outside date range`)
+        }
+      })
+      
+      return
+    }
 
     // Find the order in all columns
     let foundOrder: any = null

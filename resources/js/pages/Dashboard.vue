@@ -149,6 +149,7 @@ onMounted(() => {
                 
                 <KanbanCompact 
                     :kanban-data="kanbanData"
+                    :selected-period="selectedPeriod"
                     @open-fullscreen="openKanbanFullscreen"
                 />
             </div>

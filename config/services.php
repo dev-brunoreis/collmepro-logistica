@@ -55,6 +55,6 @@ return [
 
     'stats' => [
         'url' => env('STATS_URL'),
-        'key' => env('STATUS_KEY'),
+        'key' => env('STATS_KEY'),
     ],
 ];

@@ -160,17 +160,28 @@ class BlingSyncJob implements ShouldQueue
      */
     private function syncAccount(BlingService $blingService, string $accountType): array
     {
+        // Get current page from cache (default to 1)
+        $cacheKey = "bling_sync_page_{$accountType}";
+        $startPage = Cache::get($cacheKey, 1);
+        
+        $this->logBlingInfo("Starting sync from page {$startPage}", [
+            'account' => $accountType,
+            'incremental' => $this->incrementalSync,
+            'max_pages' => $this->maxPagesPerExecution,
+        ]);
+
         // Get orders from Bling with incremental sync option and pagination limit
         // This prevents timeout by processing only a limited number of pages per execution
         $orders = $blingService->getAllOrders(
             filters: [], 
             incrementalSync: $this->incrementalSync,
             maxPages: $this->maxPagesPerExecution,
-            startPage: 1
+            startPage: $startPage
         );
         
         if (empty($orders)) {
-            $this->logBlingInfo("No orders found: {$accountType}");
+            $this->logBlingInfo("No more orders found, resetting to page 1");
+            Cache::forget($cacheKey);
             return [
                 'processed' => 0,
                 'created' => 0,
@@ -182,6 +193,7 @@ class BlingSyncJob implements ShouldQueue
 
         $this->logBlingInfo("Found orders: {$accountType}", [
             'count' => count($orders),
+            'start_page' => $startPage,
             'max_pages' => $this->maxPagesPerExecution,
         ]);
 
@@ -218,12 +230,30 @@ class BlingSyncJob implements ShouldQueue
             }
         }
 
+        // Calculate next page and save to cache
+        $nextPage = $startPage + $this->maxPagesPerExecution;
+        
+        // If we got less than expected, we've reached the end
+        if (count($orders) < ($this->maxPagesPerExecution * 100)) {
+            $this->logBlingInfo("Reached end of orders, resetting to page 1");
+            Cache::forget($cacheKey);
+        } else {
+            // Save next page for next execution
+            Cache::put($cacheKey, $nextPage, now()->addHours(24));
+            $this->logBlingInfo("Saved next page for next execution", [
+                'next_page' => $nextPage,
+                'account' => $accountType,
+            ]);
+        }
+
         $this->logSyncSummary($accountType, [
             'processed' => $processed,
             'created' => $created,
             'updated' => $updated,
             'skipped' => $skipped,
             'errors' => $errors,
+            'start_page' => $startPage,
+            'next_page' => Cache::get($cacheKey, 1),
         ]);
 
         return [

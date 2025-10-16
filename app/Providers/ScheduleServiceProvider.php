@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Jobs\BlingSyncJob;
+use App\Jobs\SendHourlyStatsJob;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\ServiceProvider;
 
@@ -25,7 +26,8 @@ class ScheduleServiceProvider extends ServiceProvider
             $this->app->booted(function () {
                 $schedule = $this->app->make(Schedule::class);
                 
-                // Sync with chunking: Process 10 pages (1000 orders) per execution
+                // Sync with chunking: Process 20 pages (2000 orders) per execution
+                // Uses persistent pagination to gradually process all orders
                 // Runs every 15 minutes to gradually process all orders
                 // This prevents timeout and allows handling 60k+ orders
                 $schedule->call(function () {
@@ -33,14 +35,20 @@ class ScheduleServiceProvider extends ServiceProvider
                         forceUpdate: false, 
                         accountType: null, 
                         incrementalSync: false,
-                        maxPagesPerExecution: 20  // 10 pages = ~1000 orders max per run
+                        maxPagesPerExecution: 20  // 20 pages = ~2000 orders max per run
                     );
                     $job->handle();
                 })
                     ->everyFifteenMinutes()
                     ->name('bling-sync')
                     ->withoutOverlapping()
-                    ->description('Bling incremental sync (last 30 days, chunked)');
+                    ->description('Bling full sync (paginated)');
+
+                // Send hourly stats ping
+                $schedule->job(new SendHourlyStatsJob())
+                    ->hourly()
+                    ->name('hourly-stats-ping')
+                    ->description('Send hourly stats ping');
             });
         }
     }
