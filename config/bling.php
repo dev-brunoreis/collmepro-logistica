@@ -17,7 +17,9 @@ return [
     ],
 
     'rate_limit' => [
-        'requests_per_second' => env('BLING_RATE_LIMIT', 1), // 1 request per second
+        'requests_per_second' => env('BLING_RATE_LIMIT', 0.5), // 0.5 req/s per worker (2000ms delay)
+        // Bling API limit: 3 req/s account-wide
+        // With 4 workers: 4 × 0.5 = 2 req/s total (67% of limit)
     ],
 
     'defaults' => [

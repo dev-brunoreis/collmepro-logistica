@@ -214,11 +214,12 @@ abstract class BlingService
     }
 
     /**
-     * Apply rate limiting for Bling API (EXTREMELY conservative approach)
+     * Apply rate limiting for Bling API (Account-wide limit approach)
      * 
-     * Bling API Limits:
-     * - 600 requests per 10 seconds = 60 req/s (THEORETICAL)
-     * - In PRACTICE: Still getting 429 errors even at 16 req/s
+     * Bling API Limits (official documentation):
+     * - 3 requests per second (ACCOUNT-WIDE, not per worker)
+     * - 120,000 requests per day
+     * - IP blocking: 600 requests in 10 seconds = 60 req/s triggers 10-minute block
      * 
      * System has 3-4 processes making Bling API requests simultaneously:
      * - BlingSyncJob (fetching orders list)
@@ -226,21 +227,24 @@ abstract class BlingService
      * - ExtractTrackingJob (fetching tracking)
      * - Plus any manual syncs or retries
      * 
-     * EXTREMELY conservative approach: Each worker does only ~2 req/s
-     * - 4 workers × 2 req/s = 8 req/s total (13% of 60 req/s limit)
-     * - 2 req/s = 500ms delay between requests
+     * Conservative approach accounting for multiple workers:
+     * - Bling limit: 3 req/s (account-wide)
+     * - Active workers: ~4 simultaneous
+     * - Safe rate per worker: 3 / 4 = 0.75 req/s
+     * - With safety margin: 0.5 req/s per worker = 2000ms delay
+     * - Total: 4 workers × 0.5 req/s = 2 req/s (67% of limit)
      * 
-     * This SUPER SLOW rate ensures:
-     * - GUARANTEED zero 429 errors
-     * - 87% safety margin
-     * - System works even if Bling's real limit is lower than documented
+     * This CONSERVATIVE rate ensures:
+     * - 33% safety margin below the 3 req/s limit
+     * - Zero 429 errors across all workers
+     * - No risk of IP blocking
      * - Sync is SLOW but 100% RELIABLE
      */
     protected function applyRateLimit(): void
     {
-        // EXTREMELY conservative delay: 600ms = 1.67 requests per second per worker
-        // With 4 workers max: 4 × 1.67 = 6.7 req/s total (11% of limit - BULLETPROOF)
-        usleep(600000); // 600ms - VERY slow, but GUARANTEED to work
+        // Conservative delay: 2000ms = 0.5 requests per second per worker
+        // With 4 workers max: 4 × 0.5 = 2 req/s total (67% of 3 req/s limit)
+        usleep(2000000); // 2000ms - Safe with multiple workers
     }
 
     /**
