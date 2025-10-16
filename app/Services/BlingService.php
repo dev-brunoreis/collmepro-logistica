@@ -319,7 +319,7 @@ abstract class BlingService
      * @param bool $incrementalSync If true, fetch only orders from last 30 days
      * @return array
      */
-    public function getAllOrders(array $filters = [], bool $incrementalSync = true): array
+    public function getAllOrders(array $filters = [], bool $incrementalSync = true, int $maxPages = 0, int $startPage = 1): array
     {
         // Para sincronização incremental, buscar apenas últimos 30 dias (1 mês)
         // Pedidos mais antigos raramente têm alterações
@@ -335,9 +335,10 @@ abstract class BlingService
         }
         
         $orders = [];
-        $pagina = 1;
+        $pagina = $startPage;
         $limite = 100;
         $requestCount = 0;
+        $pagesFetched = 0;
 
         do {
             try {
@@ -374,8 +375,15 @@ abstract class BlingService
                 }
 
                 $orders = array_merge($orders, $pageOrders);
+                $pagesFetched++;
                 
                 Log::info("Fetched " . count($pageOrders) . " orders from page {$pagina}");
+
+                // Check if we've reached the maximum number of pages
+                if ($maxPages > 0 && $pagesFetched >= $maxPages) {
+                    Log::info("Reached max pages limit ({$maxPages}), stopping pagination");
+                    break;
+                }
 
                 // If we got less than the limit, we've reached the end
                 if (count($pageOrders) < $limite) {
@@ -407,7 +415,7 @@ abstract class BlingService
 
         } while (true); // Continue until we hit one of the break conditions above
 
-        Log::info("Total orders fetched for account {$this->getAccountType()}: " . count($orders) . " (requests made: {$requestCount})");
+        Log::info("Total orders fetched for account {$this->getAccountType()}: " . count($orders) . " (requests made: {$requestCount}, pages fetched: {$pagesFetched})");
 
         return $orders;
     }

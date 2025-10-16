@@ -34,19 +34,26 @@ class BlingSyncJob implements ShouldQueue
     private ?string $accountType;
     private array $criticalChangesDetected = [];
     private bool $incrementalSync;
+    private int $maxPagesPerExecution;
 
     /**
      * Create a new job instance.
      * 
      * @param bool $forceUpdate Force update existing orders
      * @param string|null $accountType Account type to sync ('pro', 'atacadista', or null for all)
-     * @param bool $incrementalSync Use incremental sync (last 48h) instead of full sync
+     * @param bool $incrementalSync Use incremental sync (last 30 days) instead of full sync
+     * @param int $maxPagesPerExecution Maximum pages to process per execution (0 = unlimited)
      */
-    public function __construct(bool $forceUpdate = false, ?string $accountType = null, bool $incrementalSync = true)
-    {
+    public function __construct(
+        bool $forceUpdate = false, 
+        ?string $accountType = null, 
+        bool $incrementalSync = true,
+        int $maxPagesPerExecution = 10
+    ) {
         $this->forceUpdate = $forceUpdate;
         $this->accountType = $accountType;
         $this->incrementalSync = $incrementalSync;
+        $this->maxPagesPerExecution = $maxPagesPerExecution;
     }
 
     /**
@@ -62,6 +69,8 @@ class BlingSyncJob implements ShouldQueue
         $this->logBlingInfo('Starting Bling synchronization', [
             'force_update' => $this->forceUpdate,
             'account_type' => $this->accountType ?? 'all',
+            'incremental_sync' => $this->incrementalSync,
+            'max_pages_per_execution' => $this->maxPagesPerExecution,
         ]);
 
         try {
@@ -151,8 +160,14 @@ class BlingSyncJob implements ShouldQueue
      */
     private function syncAccount(BlingService $blingService, string $accountType): array
     {
-        // Get orders from Bling with incremental sync option
-        $orders = $blingService->getAllOrders([], $this->incrementalSync);
+        // Get orders from Bling with incremental sync option and pagination limit
+        // This prevents timeout by processing only a limited number of pages per execution
+        $orders = $blingService->getAllOrders(
+            filters: [], 
+            incrementalSync: $this->incrementalSync,
+            maxPages: $this->maxPagesPerExecution,
+            startPage: 1
+        );
         
         if (empty($orders)) {
             $this->logBlingInfo("No orders found: {$accountType}");
@@ -165,7 +180,10 @@ class BlingSyncJob implements ShouldQueue
             ];
         }
 
-        $this->logBlingInfo("Found orders: {$accountType}", ['count' => count($orders)]);
+        $this->logBlingInfo("Found orders: {$accountType}", [
+            'count' => count($orders),
+            'max_pages' => $this->maxPagesPerExecution,
+        ]);
 
         // Process orders
         $processed = 0;

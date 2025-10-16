@@ -25,10 +25,22 @@ class ScheduleServiceProvider extends ServiceProvider
             $this->app->booted(function () {
                 $schedule = $this->app->make(Schedule::class);
                 
-                $schedule->job(new BlingSyncJob(forceUpdate: false, accountType: null, incrementalSync: false))
-                    ->everyMinute()
+                // Sync with chunking: Process 10 pages (1000 orders) per execution
+                // Runs every 15 minutes to gradually process all orders
+                // This prevents timeout and allows handling 60k+ orders
+                $schedule->call(function () {
+                    $job = new BlingSyncJob(
+                        forceUpdate: false, 
+                        accountType: null, 
+                        incrementalSync: false,
+                        maxPagesPerExecution: 20  // 10 pages = ~1000 orders max per run
+                    );
+                    $job->handle();
+                })
+                    ->everyFifteenMinutes()
+                    ->name('bling-sync')
                     ->withoutOverlapping()
-                    ->description('Bling full sync (all orders) every 5 minutes');
+                    ->description('Bling incremental sync (last 30 days, chunked)');
             });
         }
     }
