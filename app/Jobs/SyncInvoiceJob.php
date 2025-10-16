@@ -26,8 +26,8 @@ class SyncInvoiceJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, InvoiceLogger, BroadcastsOrderUpdates;
 
     public int $timeout = 60;
-    public int $tries = 5;
-    public array $backoff = [60, 300, 600, 1800]; // 1min, 5min, 10min, 30min
+    public int $tries = 3;
+    public array $backoff = [60, 300]; // 1min, 5min
 
     private int $orderSummaryId;
 
