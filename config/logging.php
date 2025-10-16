@@ -88,6 +88,30 @@ return [
             'replace_placeholders' => true,
         ],
 
+        'invoices' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/invoices.log'),
+            'level' => env('LOG_LEVEL', 'info'),
+            'days' => 30,
+            'replace_placeholders' => true,
+        ],
+
+        'tracking' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/tracking.log'),
+            'level' => env('LOG_LEVEL', 'info'),
+            'days' => 30,
+            'replace_placeholders' => true,
+        ],
+
+        'sellers' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/sellers.log'),
+            'level' => env('LOG_LEVEL', 'info'),
+            'days' => 30,
+            'replace_placeholders' => true,
+        ],
+
         'ping' => [
             'driver' => 'daily',
             'path' => storage_path('logs/ping.log'),

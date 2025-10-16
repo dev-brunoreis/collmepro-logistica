@@ -18,35 +18,63 @@
       <!-- Flex Layout - Responsive -->
       <div class="flex gap-0 w-full kanban-layout" style="height: 600px; align-items: stretch;">
         <!-- Pedidos Emitidos Column (spans 3 columns) -->
-        <div class="border-r border-border flex-1 flex flex-col" style="max-width: 30%; min-width: 200px;">
+        <div class="border-r border-border flex-1 flex flex-col" style="max-width: 35%; min-width: 200px;">
           <div class="bg-muted px-4 py-3 text-center border-b border-border">
             <h3 class="text-foreground font-semibold">Pedidos Emitidos</h3>
           </div>
-          <div class="grid grid-cols-3 flex-1">
+          <div class="grid grid-cols-3 flex-1" style="height: 100%; max-height: 518px;">
             <!-- Collme Pro Sub-column -->
             <div class="border-r border-border flex flex-col">
               <div class="bg-muted px-2 py-2 text-center border-b border-border">
                 <h4 class="text-foreground text-xs font-medium">Collme Pro</h4>
               </div>
-              <div class="p-2 bg-card overflow-y-auto flex-1">
+              <div class="p-2 bg-card overflow-y-auto flex-1" style="max-height: 518px;">
                 <div class="space-y-3">
                   <div v-for="order in getOrdersBySource('Collme Pro')" :key="order.id"
                     :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]"
                     >
-                    <div class="flex flex-col gap-0.5">
-                      <div class="flex justify-between items-center">
+                    <div class="flex flex-col gap-1">
+                      <!-- Linha 1: ID do Pedido (sozinho, destaque) -->
+                      <div class="flex justify-start items-center">
                         <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Visualizar pedido no sistema de Logística `">
                             <span class="text-sm">{{ order.numero }}</span>
                             <ExternalLink class="h-3 w-3" />
                         </a>
-                        <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{
-                          getOrderSource(order) }}</span>
                       </div>
-                      <div class="flex flex-col gap-0.5 text-xs">
-                        <div class="font-semibold truncate">{{ order.contato_nome }}</div>
-                        <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
-                        <div class="opacity-90">{{ order.items_quantity }} item(s)</div>
-                        <div :class="['font-semibold border-t border-opacity-20 pt-0.5 mt-0.5', getBorderColorClass(order)]">{{ order.items_quantity }} item(s)</div>
+                      
+                      <!-- Linha 2: Nome completo (SEM truncate - permite quebra de linha) -->
+                      <div class="font-semibold text-xs break-words">
+                        {{ order.contato_nome }}
+                      </div>
+                      
+                      <!-- Linha 3: Data e Tag do Sistema juntas -->
+                      <div class="flex items-center justify-between gap-1 text-xs opacity-90">
+                        <span>{{ formatDateOnly(order.data) }}</span>
+                        <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{ getOrderSource(order) }}</span>
+                      </div>
+                      
+                      <!-- Linha 4: Nota Fiscal (se existir) -->
+                      <div v-if="order.invoice_number" class="text-xs opacity-90">
+                        NF: {{ order.invoice_number }}
+                      </div>
+                      
+                      <!-- Linha 5: Código de Rastreio (se existir) -->
+                      <a v-if="order.tracking_code" :href="order.tracking_url" target="_blank" class="inline-flex items-center gap-1 font-medium rounded-md text-xs" title="Abrir rastreamento">
+                        <span class="text-xs">{{ order.tracking_code }}</span>
+                        <ExternalLink class="h-3 w-3" />
+                      </a>
+                      
+                      <!-- Linha 6: Informações adicionais (picking/packing - se existir) -->
+                      <div v-if="order.order_status?.picking_marked_by" class="text-xs opacity-90">
+                        Separado por: {{ order.order_status.picking_marked_by }}
+                      </div>
+                      <div v-if="order.order_status?.packing_marked_by" class="text-xs opacity-90">
+                        Embalado por: {{ order.order_status.packing_marked_by }}
+                      </div>
+                      
+                      <!-- Linha Final: Quantidade de Items (com separador visual) -->
+                      <div :class="['font-semibold border-t border-opacity-20 pt-1 mt-0.5 text-xs', getBorderColorClass(order)]">
+                        {{ order.items_quantity }} item(s)
                       </div>
                     </div>
                   </div>
@@ -63,25 +91,53 @@
               <div class="bg-muted px-2 py-2 text-center border-b border-border">
                 <h4 class="text-foreground text-xs font-medium">Collme Beauty</h4>
               </div>
-              <div class="p-2 bg-card overflow-y-auto flex-1">
+              <div class="p-2 bg-card overflow-y-auto flex-1" style="max-height: 518px;">
                 <div class="space-y-3">
                   <div v-for="order in getOrdersBySource('Collme Beauty')" :key="order.id"
                     :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]"
                     >
-                    <div class="flex flex-col gap-0.5">
-                      <div class="flex justify-between items-center">
+                    <div class="flex flex-col gap-1">
+                      <!-- Linha 1: ID do Pedido (sozinho, destaque) -->
+                      <div class="flex justify-start items-center">
                         <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Visualizar pedido no sistema de Logística `">
                             <span class="text-sm">{{ order.numero }}</span>
                             <ExternalLink class="h-3 w-3" />
                         </a>
-                        <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{
-                          getOrderSource(order) }}</span>
                       </div>
-                      <div class="flex flex-col gap-0.5 text-xs">
-                        <div class="font-semibold truncate">{{ order.contato_nome }}</div>
-                        <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
-                        <div class="opacity-90">{{ order.items_quantity }} item(s)</div>
-                        <div :class="['font-semibold border-t border-opacity-20 pt-0.5 mt-0.5', getBorderColorClass(order)]">{{ order.items_quantity }} item(s)</div>
+                      
+                      <!-- Linha 2: Nome completo (SEM truncate - permite quebra de linha) -->
+                      <div class="font-semibold text-xs break-words">
+                        {{ order.contato_nome }}
+                      </div>
+                      
+                      <!-- Linha 3: Data e Tag do Sistema juntas -->
+                      <div class="flex items-center justify-between gap-1 text-xs opacity-90">
+                        <span>{{ formatDateOnly(order.data) }}</span>
+                        <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{ getOrderSource(order) }}</span>
+                      </div>
+                      
+                      <!-- Linha 4: Nota Fiscal (se existir) -->
+                      <div v-if="order.invoice_number" class="text-xs opacity-90">
+                        NF: {{ order.invoice_number }}
+                      </div>
+                      
+                      <!-- Linha 5: Código de Rastreio (se existir) -->
+                      <a v-if="order.tracking_code" :href="order.tracking_url" target="_blank" class="inline-flex items-center gap-1 font-medium rounded-md text-xs" title="Abrir rastreamento">
+                        <span class="text-xs">{{ order.tracking_code }}</span>
+                        <ExternalLink class="h-3 w-3" />
+                      </a>
+                      
+                      <!-- Linha 6: Informações adicionais (picking/packing - se existir) -->
+                      <div v-if="order.order_status?.picking_marked_by" class="text-xs opacity-90">
+                        Separado por: {{ order.order_status.picking_marked_by }}
+                      </div>
+                      <div v-if="order.order_status?.packing_marked_by" class="text-xs opacity-90">
+                        Embalado por: {{ order.order_status.packing_marked_by }}
+                      </div>
+                      
+                      <!-- Linha Final: Quantidade de Items (com separador visual) -->
+                      <div :class="['font-semibold border-t border-opacity-20 pt-1 mt-0.5 text-xs', getBorderColorClass(order)]">
+                        {{ order.items_quantity }} item(s)
                       </div>
                     </div>
                   </div>
@@ -98,25 +154,53 @@
               <div class="bg-muted px-2 py-2 text-center border-b border-border">
                 <h4 class="text-foreground text-xs font-medium">Atacadista</h4>
               </div>
-              <div class="p-2 bg-card overflow-y-auto flex-1">
+              <div class="p-2 bg-card overflow-y-auto flex-1" style="max-height: 518px;">
                 <div class="space-y-3">
                   <div v-for="order in getOrdersBySource('Atacadista')" :key="order.id"
                     :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]"
                     >
-                    <div class="flex flex-col gap-0.5">
-                      <div class="flex justify-between items-center">
+                    <div class="flex flex-col gap-1">
+                      <!-- Linha 1: ID do Pedido (sozinho, destaque) -->
+                      <div class="flex justify-start items-center">
                         <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Visualizar pedido no sistema de Logística `">
                             <span class="text-sm">{{ order.numero }}</span>
                             <ExternalLink class="h-3 w-3" />
                         </a>
-                        <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{
-                          getOrderSource(order) }}</span>
                       </div>
-                      <div class="flex flex-col gap-0.5 text-xs">
-                        <div class="font-semibold truncate">{{ order.contato_nome }}</div>
-                        <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
-                        <div class="opacity-90">{{ order.items_quantity }} item(s)</div>
-                        <div :class="['font-semibold border-t border-opacity-20 pt-0.5 mt-0.5', getBorderColorClass(order)]">{{ order.items_quantity }} item(s)</div>
+                      
+                      <!-- Linha 2: Nome completo (SEM truncate - permite quebra de linha) -->
+                      <div class="font-semibold text-xs break-words">
+                        {{ order.contato_nome }}
+                      </div>
+                      
+                      <!-- Linha 3: Data e Tag do Sistema juntas -->
+                      <div class="flex items-center justify-between gap-1 text-xs opacity-90">
+                        <span>{{ formatDateOnly(order.data) }}</span>
+                        <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{ getOrderSource(order) }}</span>
+                      </div>
+                      
+                      <!-- Linha 4: Nota Fiscal (se existir) -->
+                      <div v-if="order.invoice_number" class="text-xs opacity-90">
+                        NF: {{ order.invoice_number }}
+                      </div>
+                      
+                      <!-- Linha 5: Código de Rastreio (se existir) -->
+                      <a v-if="order.tracking_code" :href="order.tracking_url" target="_blank" class="inline-flex items-center gap-1 font-medium rounded-md text-xs" title="Abrir rastreamento">
+                        <span class="text-xs">{{ order.tracking_code }}</span>
+                        <ExternalLink class="h-3 w-3" />
+                      </a>
+                      
+                      <!-- Linha 6: Informações adicionais (picking/packing - se existir) -->
+                      <div v-if="order.order_status?.picking_marked_by" class="text-xs opacity-90">
+                        Separado por: {{ order.order_status.picking_marked_by }}
+                      </div>
+                      <div v-if="order.order_status?.packing_marked_by" class="text-xs opacity-90">
+                        Embalado por: {{ order.order_status.packing_marked_by }}
+                      </div>
+                      
+                      <!-- Linha Final: Quantidade de Items (com separador visual) -->
+                      <div :class="['font-semibold border-t border-opacity-20 pt-1 mt-0.5 text-xs', getBorderColorClass(order)]">
+                        {{ order.items_quantity }} item(s)
                       </div>
                     </div>
                   </div>
@@ -131,7 +215,7 @@
         </div>
 
         <!-- Faturamento/Emissão de NF Column -->
-        <div class="border-r border-border flex-1 flex flex-col" style="max-width: 12.5%; min-width: 120px;">
+        <div class="border-r border-border flex-1 flex flex-col" style="max-width: 10%; min-width: 120px;">
           <div class="bg-muted px-2 py-2 text-center border-b border-border flex items-center justify-center" style="height: 82px;">
             <h3 class="text-foreground text-xs font-semibold leading-tight">Faturamento/Emissão de NF</h3>
           </div>
@@ -139,20 +223,48 @@
             <div class="space-y-3">
               <div v-for="order in kanbanData.faturamento || []" :key="order.id"
                 :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]">
-                <div class="flex flex-col gap-0.5">
-                  <div class="flex justify-between items-center">
+                <div class="flex flex-col gap-1">
+                  <!-- Linha 1: ID do Pedido (sozinho, destaque) -->
+                  <div class="flex justify-start items-center">
                     <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Visualizar pedido no sistema de Logística `">
                             <span class="text-sm">{{ order.numero }}</span>
                             <ExternalLink class="h-3 w-3" />
                         </a>
-                    <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{
-                      getOrderSource(order) }}</span>
                   </div>
-                  <div class="flex flex-col gap-0.5 text-xs">
-                    <div class="font-semibold truncate">{{ order.contato_nome }}</div>
-                    <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
-                    <div class="opacity-90" v-if="order.invoice_number">NF: {{ order.invoice_number }}</div>
-                    <div :class="['font-semibold border-t border-opacity-20 pt-0.5 mt-0.5', getBorderColorClass(order)]">{{ order.items_quantity }} item(s)</div>
+                  
+                  <!-- Linha 2: Nome completo (SEM truncate - permite quebra de linha) -->
+                  <div class="font-semibold text-xs break-words">
+                    {{ order.contato_nome }}
+                  </div>
+                  
+                  <!-- Linha 3: Data e Tag do Sistema juntas -->
+                  <div class="flex items-center justify-between gap-1 text-xs opacity-90">
+                    <span>{{ formatDateOnly(order.data) }}</span>
+                    <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{ getOrderSource(order) }}</span>
+                  </div>
+                  
+                  <!-- Linha 4: Nota Fiscal (se existir) -->
+                  <div v-if="order.invoice_number" class="text-xs opacity-90">
+                    NF: {{ order.invoice_number }}
+                  </div>
+                  
+                  <!-- Linha 5: Código de Rastreio (se existir) -->
+                  <a v-if="order.tracking_code" :href="order.tracking_url" target="_blank" class="inline-flex items-center gap-1 font-medium rounded-md text-xs" title="Abrir rastreamento">
+                    <span class="text-xs">{{ order.tracking_code }}</span>
+                    <ExternalLink class="h-3 w-3" />
+                  </a>
+                  
+                  <!-- Linha 6: Informações adicionais (picking/packing - se existir) -->
+                  <div v-if="order.order_status?.picking_marked_by" class="text-xs opacity-90">
+                    Separado por: {{ order.order_status.picking_marked_by }}
+                  </div>
+                  <div v-if="order.order_status?.packing_marked_by" class="text-xs opacity-90">
+                    Embalado por: {{ order.order_status.packing_marked_by }}
+                  </div>
+                  
+                  <!-- Linha Final: Quantidade de Items (com separador visual) -->
+                  <div :class="['font-semibold border-t border-opacity-20 pt-1 mt-0.5 text-xs', getBorderColorClass(order)]">
+                    {{ order.items_quantity }} item(s)
                   </div>
                 </div>
               </div>
@@ -165,7 +277,7 @@
         </div>
 
         <!-- Checkout (Picking) Column -->
-        <div class="border-r border-border flex-1 flex flex-col" style="max-width: 12.5%; min-width: 120px;">
+        <div class="border-r border-border flex-1 flex flex-col" style="max-width: 10%; min-width: 120px;">
           <div class="bg-muted px-2 py-2 text-center border-b border-border flex items-center justify-center" style="height: 82px;">
             <h3 class="text-foreground text-xs font-semibold">Checkout (Picking)</h3>
           </div>
@@ -173,25 +285,48 @@
             <div class="space-y-3">
               <div v-for="order in kanbanData.checkout || []" :key="order.id"
                 :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]">
-                <div class="flex flex-col gap-0.5">
-                  <div class="flex justify-between items-center">
+                <div class="flex flex-col gap-1">
+                  <!-- Linha 1: ID do Pedido (sozinho, destaque) -->
+                  <div class="flex justify-start items-center">
                     <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Visualizar pedido no sistema de Logística `">
                             <span class="text-sm">{{ order.numero }}</span>
                             <ExternalLink class="h-3 w-3" />
                         </a>
-                    <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{
-                      getOrderSource(order) }}</span>
                   </div>
-                  <div class="flex flex-col gap-0.5 text-xs">
-                    <div class="font-semibold truncate">{{ order.contato_nome }}</div>
-                    <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
-                    <div v-if="order.invoice_number" class="">
-                          NF: {{ order.invoice_number }}
-                    </div>
-                    <div class="opacity-90" v-if="order.order_status?.picking_marked_by">
-                      Separado por: {{ order.order_status.picking_marked_by }}
-                    </div>
-                    <div :class="['font-semibold border-t border-opacity-20 pt-0.5 mt-0.5', getBorderColorClass(order)]">{{ order.items_quantity }} item(s)</div>
+                  
+                  <!-- Linha 2: Nome completo (SEM truncate - permite quebra de linha) -->
+                  <div class="font-semibold text-xs break-words">
+                    {{ order.contato_nome }}
+                  </div>
+                  
+                  <!-- Linha 3: Data e Tag do Sistema juntas -->
+                  <div class="flex items-center justify-between gap-1 text-xs opacity-90">
+                    <span>{{ formatDateOnly(order.data) }}</span>
+                    <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{ getOrderSource(order) }}</span>
+                  </div>
+                  
+                  <!-- Linha 4: Nota Fiscal (se existir) -->
+                  <div v-if="order.invoice_number" class="text-xs opacity-90">
+                    NF: {{ order.invoice_number }}
+                  </div>
+                  
+                  <!-- Linha 5: Código de Rastreio (se existir) -->
+                  <a v-if="order.tracking_code" :href="order.tracking_url" target="_blank" class="inline-flex items-center gap-1 font-medium rounded-md text-xs" title="Abrir rastreamento">
+                    <span class="text-xs">{{ order.tracking_code }}</span>
+                    <ExternalLink class="h-3 w-3" />
+                  </a>
+                  
+                  <!-- Linha 6: Informações adicionais (picking/packing - se existir) -->
+                  <div v-if="order.order_status?.picking_marked_by" class="text-xs opacity-90">
+                    Separado por: {{ order.order_status.picking_marked_by }}
+                  </div>
+                  <div v-if="order.order_status?.packing_marked_by" class="text-xs opacity-90">
+                    Embalado por: {{ order.order_status.packing_marked_by }}
+                  </div>
+                  
+                  <!-- Linha Final: Quantidade de Items (com separador visual) -->
+                  <div :class="['font-semibold border-t border-opacity-20 pt-1 mt-0.5 text-xs', getBorderColorClass(order)]">
+                    {{ order.items_quantity }} item(s)
                   </div>
                 </div>
               </div>
@@ -204,7 +339,7 @@
         </div>
 
         <!-- Embalagem (Packing) Column -->
-        <div class="border-r border-border flex-1 flex flex-col" style="max-width: 12.5%; min-width: 120px;">
+        <div class="border-r border-border flex-1 flex flex-col" style="max-width: 10%; min-width: 120px;">
           <div class="bg-muted px-2 py-2 text-center border-b border-border flex items-center justify-center" style="height: 82px;">
             <h3 class="text-foreground text-xs font-semibold">Embalagem (Packing)</h3>
           </div>
@@ -212,25 +347,48 @@
             <div class="space-y-3">
               <div v-for="order in kanbanData.embalagem || []" :key="order.id"
                 :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]">
-                <div class="flex flex-col gap-0.5">
-                  <div class="flex justify-between items-center">
+                <div class="flex flex-col gap-1">
+                  <!-- Linha 1: ID do Pedido (sozinho, destaque) -->
+                  <div class="flex justify-start items-center">
                     <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Visualizar pedido no sistema de Logística `">
                             <span class="text-sm">{{ order.numero }}</span>
                             <ExternalLink class="h-3 w-3" />
                         </a>
-                    <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{
-                      getOrderSource(order) }}</span>
                   </div>
-                  <div class="flex flex-col gap-0.5 text-xs">
-                    <div class="font-semibold truncate">{{ order.contato_nome }}</div>
-                    <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
-                    <div v-if="order.invoice_number" class="">
-                          NF: {{ order.invoice_number }}
-                    </div>
-                    <div class="opacity-90" v-if="order.order_status?.packing_marked_by">
-                      Embalado por: {{ order.order_status.packing_marked_by }}
-                    </div>
-                    <div :class="['font-semibold border-t border-opacity-20 pt-0.5 mt-0.5', getBorderColorClass(order)]">{{ order.items_quantity }} item(s)</div>
+                  
+                  <!-- Linha 2: Nome completo (SEM truncate - permite quebra de linha) -->
+                  <div class="font-semibold text-xs break-words">
+                    {{ order.contato_nome }}
+                  </div>
+                  
+                  <!-- Linha 3: Data e Tag do Sistema juntas -->
+                  <div class="flex items-center justify-between gap-1 text-xs opacity-90">
+                    <span>{{ formatDateOnly(order.data) }}</span>
+                    <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{ getOrderSource(order) }}</span>
+                  </div>
+                  
+                  <!-- Linha 4: Nota Fiscal (se existir) -->
+                  <div v-if="order.invoice_number" class="text-xs opacity-90">
+                    NF: {{ order.invoice_number }}
+                  </div>
+                  
+                  <!-- Linha 5: Código de Rastreio (se existir) -->
+                  <a v-if="order.tracking_code" :href="order.tracking_url" target="_blank" class="inline-flex items-center gap-1 font-medium rounded-md text-xs" title="Abrir rastreamento">
+                    <span class="text-xs">{{ order.tracking_code }}</span>
+                    <ExternalLink class="h-3 w-3" />
+                  </a>
+                  
+                  <!-- Linha 6: Informações adicionais (picking/packing - se existir) -->
+                  <div v-if="order.order_status?.picking_marked_by" class="text-xs opacity-90">
+                    Separado por: {{ order.order_status.picking_marked_by }}
+                  </div>
+                  <div v-if="order.order_status?.packing_marked_by" class="text-xs opacity-90">
+                    Embalado por: {{ order.order_status.packing_marked_by }}
+                  </div>
+                  
+                  <!-- Linha Final: Quantidade de Items (com separador visual) -->
+                  <div :class="['font-semibold border-t border-opacity-20 pt-1 mt-0.5 text-xs', getBorderColorClass(order)]">
+                    {{ order.items_quantity }} item(s)
                   </div>
                 </div>
               </div>
@@ -243,7 +401,7 @@
         </div>
 
         <!-- Etiqueta (Cód. Rastreio) Column -->
-        <div class="border-r border-border flex-1 flex flex-col" style="max-width: 12.5%; min-width: 120px;">
+        <div class="border-r border-border flex-1 flex flex-col" style="max-width: 10%; min-width: 120px;">
           <div class="bg-muted px-2 py-2 text-center border-b border-border flex items-center justify-center" style="height: 82px;">
             <h3 class="text-foreground text-xs font-semibold">Etiqueta (Cód. Rastreio)</h3>
           </div>
@@ -251,32 +409,48 @@
             <div class="space-y-3">
               <div v-for="order in kanbanData.etiqueta || []" :key="order.id"
                 :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]">
-                <div class="flex flex-col gap-0.5">
-                  <div class="flex justify-between items-center">
+                <div class="flex flex-col gap-1">
+                  <!-- Linha 1: ID do Pedido (sozinho, destaque) -->
+                  <div class="flex justify-start items-center">
                     <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Visualizar pedido no sistema de Logística `">
                             <span class="text-sm">{{ order.numero }}</span>
                             <ExternalLink class="h-3 w-3" />
                         </a>
-                    <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{
-                      getOrderSource(order) }}</span>
                   </div>
-                  <div class="flex flex-col gap-0.5 text-xs">
-                    <div class="font-semibold truncate">{{ order.contato_nome }}</div>
-                    <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
-                    <div v-if="order.invoice_number" class="">
-                          NF: {{ order.invoice_number }}
-                    </div>
-                    <a
-                            v-if="order.tracking_code" 
-                            :href="order.tracking_url" 
-                            target="_blank" 
-                            class="inline-flex items-center gap-1 font-medium rounded-md text-xs"
-                            title="Abrir rastreamento"
-                        >
-                            <span class="text-sm">{{ order.tracking_code }}</span>
-                            <ExternalLink class="h-3 w-3" />
-                        </a>
-                    <div :class="['font-semibold border-t border-opacity-20 pt-0.5 mt-0.5', getBorderColorClass(order)]">{{ order.items_quantity }} item(s)</div>
+                  
+                  <!-- Linha 2: Nome completo (SEM truncate - permite quebra de linha) -->
+                  <div class="font-semibold text-xs break-words">
+                    {{ order.contato_nome }}
+                  </div>
+                  
+                  <!-- Linha 3: Data e Tag do Sistema juntas -->
+                  <div class="flex items-center justify-between gap-1 text-xs opacity-90">
+                    <span>{{ formatDateOnly(order.data) }}</span>
+                    <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{ getOrderSource(order) }}</span>
+                  </div>
+                  
+                  <!-- Linha 4: Nota Fiscal (se existir) -->
+                  <div v-if="order.invoice_number" class="text-xs opacity-90">
+                    NF: {{ order.invoice_number }}
+                  </div>
+                  
+                  <!-- Linha 5: Código de Rastreio (se existir) -->
+                  <a v-if="order.tracking_code" :href="order.tracking_url" target="_blank" class="inline-flex items-center gap-1 font-medium rounded-md text-xs" title="Abrir rastreamento">
+                    <span class="text-xs">{{ order.tracking_code }}</span>
+                    <ExternalLink class="h-3 w-3" />
+                  </a>
+                  
+                  <!-- Linha 6: Informações adicionais (picking/packing - se existir) -->
+                  <div v-if="order.order_status?.picking_marked_by" class="text-xs opacity-90">
+                    Separado por: {{ order.order_status.picking_marked_by }}
+                  </div>
+                  <div v-if="order.order_status?.packing_marked_by" class="text-xs opacity-90">
+                    Embalado por: {{ order.order_status.packing_marked_by }}
+                  </div>
+                  
+                  <!-- Linha Final: Quantidade de Items (com separador visual) -->
+                  <div :class="['font-semibold border-t border-opacity-20 pt-1 mt-0.5 text-xs', getBorderColorClass(order)]">
+                    {{ order.items_quantity }} item(s)
                   </div>
                 </div>
               </div>
@@ -289,47 +463,63 @@
         </div>
 
         <!-- Coleta Column -->
-        <div class="flex-1 flex flex-col" style="max-width: 25%; min-width: 200px;">
+        <div class="flex-1 flex flex-col" style="max-width: 30%; min-width: 200px;">
           <div class="bg-muted px-4 py-3 text-center border-b border-border">
             <h3 class="text-foreground font-semibold">Coleta</h3>
           </div>
-          <div class="grid grid-cols-2 flex-1">
+          <div class="grid grid-cols-2 flex-1" style="height: 100%; max-height: 518px;">
             <!-- Aguardando Sub-column -->
             <div class="border-r border-border flex flex-col">
               <div class="bg-muted px-2 py-2 text-center border-b border-border">
                 <h4 class="text-foreground text-xs font-medium">Aguardando</h4>
               </div>
-              <div class="p-2 bg-card overflow-y-auto flex-1">
+              <div class="p-2 bg-card overflow-y-auto flex-1" style="max-height: 518px;">
                 <div class="space-y-3">
                   <div v-for="order in kanbanData.coleta_aguardando || []" :key="order.id"
                     :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]"
                     >
-                    <div class="flex flex-col gap-0.5">
-                      <div class="flex justify-between items-center">
+                    <div class="flex flex-col gap-1">
+                      <!-- Linha 1: ID do Pedido (sozinho, destaque) -->
+                      <div class="flex justify-start items-center">
                         <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-green-900 px-1 py-0.5" :title="`Visualizar pedido no sistema de Logística `">
                             <span class="text-sm">{{ order.numero }}</span>
                             <ExternalLink class="h-3 w-3" />
                         </a>
-                        <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{
-                          getOrderSource(order) }}</span>
                       </div>
-                      <div class="flex flex-col gap-0.5 text-xs">
-                        <div class="font-semibold truncate">{{ order.contato_nome }}</div>
-                        <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
-                        <a
-                            v-if="order.tracking_code" 
-                            :href="order.tracking_url" 
-                            target="_blank" 
-                            class="inline-flex items-center gap-1 font-medium rounded-md text-xs"
-                            title="Abrir rastreamento"
-                        >
-                            <span class="text-sm">{{ order.tracking_code }}</span>
-                            <ExternalLink class="h-3 w-3" />
-                        </a>
-                        <div v-if="order.invoice_number" class="">
-                          NF: {{ order.invoice_number }}
-                        </div>
-                        <div :class="['font-semibold border-t border-opacity-20 pt-0.5 mt-0.5', getBorderColorClass(order)]">{{ order.items_quantity }} item(s)</div>
+                      
+                      <!-- Linha 2: Nome completo (SEM truncate - permite quebra de linha) -->
+                      <div class="font-semibold text-xs break-words">
+                        {{ order.contato_nome }}
+                      </div>
+                      
+                      <!-- Linha 3: Data e Tag do Sistema juntas -->
+                      <div class="flex items-center justify-between gap-1 text-xs opacity-90">
+                        <span>{{ formatDateOnly(order.data) }}</span>
+                        <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{ getOrderSource(order) }}</span>
+                      </div>
+                      
+                      <!-- Linha 4: Nota Fiscal (se existir) -->
+                      <div v-if="order.invoice_number" class="text-xs opacity-90">
+                        NF: {{ order.invoice_number }}
+                      </div>
+                      
+                      <!-- Linha 5: Código de Rastreio (se existir) -->
+                      <a v-if="order.tracking_code" :href="order.tracking_url" target="_blank" class="inline-flex items-center gap-1 font-medium rounded-md text-xs" title="Abrir rastreamento">
+                        <span class="text-xs">{{ order.tracking_code }}</span>
+                        <ExternalLink class="h-3 w-3" />
+                      </a>
+                      
+                      <!-- Linha 6: Informações adicionais (picking/packing - se existir) -->
+                      <div v-if="order.order_status?.picking_marked_by" class="text-xs opacity-90">
+                        Separado por: {{ order.order_status.picking_marked_by }}
+                      </div>
+                      <div v-if="order.order_status?.packing_marked_by" class="text-xs opacity-90">
+                        Embalado por: {{ order.order_status.packing_marked_by }}
+                      </div>
+                      
+                      <!-- Linha Final: Quantidade de Items (com separador visual) -->
+                      <div :class="['font-semibold border-t border-opacity-20 pt-1 mt-0.5 text-xs', getBorderColorClass(order)]">
+                        {{ order.items_quantity }} item(s)
                       </div>
                     </div>
                   </div>
@@ -346,44 +536,56 @@
               <div class="bg-muted px-2 py-2 text-center border-b border-border">
                 <h4 class="text-foreground text-xs font-medium">Realizada</h4>
               </div>
-              <div class="p-2 bg-card overflow-y-auto flex-1">
+              <div class="p-2 bg-card overflow-y-auto flex-1" style="max-height: 518px;">
                 <div class="space-y-3">
                   <div v-for="order in kanbanData.coleta_realizada || []" :key="order.id"
                     :class="['rounded p-1.5 transition-all duration-200 hover:transform hover:shadow-lg border', getCardColorClasses(order)]"
                     >
-                    <div class="flex flex-col gap-0.5">
-                      <div class="flex justify-between items-center">
+                    <div class="flex flex-col gap-1">
+                      <!-- Linha 1: ID do Pedido (sozinho, destaque) -->
+                      <div class="flex justify-start items-center">
                         <a :href="`/dashboard/orders/${order?.id}`" target="_blank" class="text-primary gap-1 font-medium rounded-md text-xs flex items-center bg-gray-200 text-black-900 px-1 py-0.5" :title="`Visualizar pedido no sistema de Logística `">
                             <span class="text-sm">{{ order.numero }}</span>
                             <ExternalLink class="h-3 w-3" />
                         </a>
-                        <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{
-                          getOrderSource(order) }}</span>
                       </div>
-                      <div class="flex flex-col gap-0.5 text-xs">
-                        <div class="font-semibold truncate">{{ order.contato_nome }}</div>
-                        <div class="opacity-90">{{ formatDateOnly(order.data) }}</div>
-                        <div v-if="order.invoice_number" class="">
-                          NF: {{ order.invoice_number }}
-                        </div>
-                        <a
-                            v-if="order.tracking_code" 
-                            :href="order.tracking_url" 
-                            target="_blank" 
-                            class="inline-flex items-center gap-1 font-medium rounded-md text-xs"
-                            title="Abrir rastreamento"
-                        >
-                            <span class="text-sm">{{ order.tracking_code }}</span>
-                            <ExternalLink class="h-3 w-3" />
-                        </a>
-                        <span
-                            v-else-if="order.tracking_code && !order.tracking?.url"
-                            class="inline-flex items-center gap-1 font-medium rounded-md px-1 py-0.5 text-xs text-gray-400"
-                            title="URL de rastreamento não disponível"
-                        >
-                            <span class="text-sm">{{ order.tracking_code }}</span>
-                        </span>
-                        <div :class="['font-semibold border-t border-opacity-20 pt-0.5 mt-0.5', getBorderColorClass(order)]">{{ order.items_quantity }} item(s)</div>
+                      
+                      <!-- Linha 2: Nome completo (SEM truncate - permite quebra de linha) -->
+                      <div class="font-semibold text-xs break-words">
+                        {{ order.contato_nome }}
+                      </div>
+                      
+                      <!-- Linha 3: Data e Tag do Sistema juntas -->
+                      <div class="flex items-center justify-between gap-1 text-xs opacity-90">
+                        <span>{{ formatDateOnly(order.data) }}</span>
+                        <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{ getOrderSource(order) }}</span>
+                      </div>
+                      
+                      <!-- Linha 4: Nota Fiscal (se existir) -->
+                      <div v-if="order.invoice_number" class="text-xs opacity-90">
+                        NF: {{ order.invoice_number }}
+                      </div>
+                      
+                      <!-- Linha 5: Código de Rastreio (se existir) -->
+                      <a v-if="order.tracking_code" :href="order.tracking_url" target="_blank" class="inline-flex items-center gap-1 font-medium rounded-md text-xs" title="Abrir rastreamento">
+                        <span class="text-xs">{{ order.tracking_code }}</span>
+                        <ExternalLink class="h-3 w-3" />
+                      </a>
+                      <span v-else-if="order.tracking_code && !order.tracking?.url" class="inline-flex items-center gap-1 font-medium rounded-md px-1 py-0.5 text-xs text-gray-400" title="URL de rastreamento não disponível">
+                        <span class="text-xs">{{ order.tracking_code }}</span>
+                      </span>
+                      
+                      <!-- Linha 6: Informações adicionais (picking/packing - se existir) -->
+                      <div v-if="order.order_status?.picking_marked_by" class="text-xs opacity-90">
+                        Separado por: {{ order.order_status.picking_marked_by }}
+                      </div>
+                      <div v-if="order.order_status?.packing_marked_by" class="text-xs opacity-90">
+                        Embalado por: {{ order.order_status.packing_marked_by }}
+                      </div>
+                      
+                      <!-- Linha Final: Quantidade de Items (com separador visual) -->
+                      <div :class="['font-semibold border-t border-opacity-20 pt-1 mt-0.5 text-xs', getBorderColorClass(order)]">
+                        {{ order.items_quantity }} item(s)
                       </div>
                     </div>
                   </div>
@@ -489,11 +691,15 @@ const { isConnected, lastUpdate, lastNewOrder, lastOrderUpdate, lastSyncStatus }
 // Sync status state
 const syncStatus = ref<any>(null)
 
+// Polling state
+const pollingInterval = ref<ReturnType<typeof setInterval> | null>(null)
+const isPolling = ref(false)
+
 // Watch for sync status updates from broadcasting
 watch(lastSyncStatus, (newSyncStatus) => {
   if (newSyncStatus) {
     syncStatus.value = newSyncStatus
-    console.log('Sync status updated:', newSyncStatus)
+    console.log('Sync status updated via broadcasting:', newSyncStatus)
   }
 })
 
@@ -765,9 +971,9 @@ watch(lastOrderUpdate, (updateEvent) => {
       } else if (hasInvoice && orderStatus.picking && !orderStatus.packing) {
         targetColumn = 'embalagem'
       } else if (hasInvoice && !orderStatus.picking) {
-        targetColumn = 'checkout'
-      } else if (!hasInvoice) {
         targetColumn = 'faturamento'
+      } else if (!hasInvoice) {
+        targetColumn = 'pedidos_emitidos'
       }
 
       // Move if needed
@@ -1038,15 +1244,69 @@ watch(() => props.kanbanData, (newData) => {
   }
 }, { immediate: true, deep: true })
 
-// Fetch initial sync status
+// Fetch sync status via API (for polling)
 const fetchSyncStatus = async () => {
   try {
     const response = await axios.get('/dashboard/api/sync-status')
-    syncStatus.value = response.data
-    console.log('Initial sync status fetched:', response.data)
+    const newStatus = response.data
+    
+    // Only update if status actually changed to avoid unnecessary re-renders
+    if (!syncStatus.value || 
+        syncStatus.value.is_running !== newStatus.is_running ||
+        syncStatus.value.last_sync_at !== newStatus.last_sync_at) {
+      syncStatus.value = newStatus
+      console.log('Sync status fetched via polling:', newStatus)
+    }
+    
+    return newStatus
   } catch (error) {
     console.error('Error fetching sync status:', error)
+    return null
   }
+}
+
+// Start adaptive polling
+const startPolling = () => {
+  if (isPolling.value) {
+    console.log('Polling already active, skipping start')
+    return
+  }
+  
+  isPolling.value = true
+  console.log('Starting adaptive sync status polling')
+  
+  const poll = async () => {
+    if (!isPolling.value) return
+    
+    const status = await fetchSyncStatus()
+    if (status) {
+      // Adjust polling interval based on sync status
+      const interval = status.is_running ? 5000 : 30000 // 5s when running, 30s when idle
+      
+      // Clear existing interval and set new one
+      if (pollingInterval.value) {
+        clearInterval(pollingInterval.value)
+      }
+      
+      pollingInterval.value = setTimeout(poll, interval)
+    } else {
+      // On error, retry in 30 seconds
+      pollingInterval.value = setTimeout(poll, 30000)
+    }
+  }
+  
+  // Start first poll immediately
+  poll()
+}
+
+// Stop polling
+const stopPolling = () => {
+  if (pollingInterval.value) {
+    clearTimeout(pollingInterval.value)
+    pollingInterval.value = null
+  }
+  isPolling.value = false
+  console.log('Stopped sync status polling')
 }
 
 // Initialize with props data and fetch sync status
@@ -1061,13 +1321,16 @@ onMounted(() => {
     coleta_realizada: kanbanData.value.coleta_realizada?.length || 0,
   })
   
-  // Fetch initial sync status
-  fetchSyncStatus()
+  // Fetch initial sync status and start polling
+  fetchSyncStatus().then(() => {
+    startPolling()
+  })
 })
 
 // Cleanup on unmount
 onUnmounted(() => {
   document.removeEventListener('keydown', handleEscapeKey)
+  stopPolling()
 })
 </script>
 

@@ -41,7 +41,7 @@ class BlingOAuthService
         Log::channel('token')->error("No valid token found for account '{$accountType}'. Manual authorization required.");
         throw new Exception(
             "No valid token found for account '{$accountType}'. " .
-            "Please run: php artisan bling:authorize --account={$accountType}"
+            "Please run: php artisan bling:authorize {$accountType}"
         );
     }
 

@@ -6,6 +6,7 @@ use App\Events\OrderUpdated;
 use App\Models\OrderSummary;
 use App\Models\User;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 
 class BroadcastOrderUpdate extends Command
 {
@@ -27,8 +28,9 @@ class BroadcastOrderUpdate extends Command
         $this->info("Found order: {$order->numero} (ID: {$order->id})");
         
         // Get system user for broadcasting events
+        // Use orderBy with conditional to work with SQLite (no FIELD function)
         $systemUser = User::whereIn('role', ['admin', 'manager'])
-            ->orderByRaw("FIELD(role, 'admin', 'manager')")
+            ->orderBy(DB::raw("CASE WHEN role = 'admin' THEN 1 WHEN role = 'manager' THEN 2 ELSE 3 END"))
             ->first();
         
         // Fallback to any user if no admin/manager exists

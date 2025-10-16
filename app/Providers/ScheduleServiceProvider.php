@@ -25,12 +25,13 @@ class ScheduleServiceProvider extends ServiceProvider
             $this->app->booted(function () {
                 $schedule = $this->app->make(Schedule::class);
                 
-                // Sync incremental a cada 30 minutos (últimos 30 dias)
-                // Pedidos mais antigos que 30 dias são automaticamente ignorados
+                // Sync incremental a cada 2 horas (últimos 30 dias)
+                // Para sync completo inicial, usar: php artisan bling:sync --full
+                // Pedidos mais antigos que 30 dias são automaticamente ignorados em sync incremental
                 $schedule->job(new BlingSyncJob(forceUpdate: false, accountType: null, incrementalSync: true))
-                    ->everyThirtyMinutes()
+                    ->everyTwoHours()
                     ->withoutOverlapping()
-                    ->description('Bling incremental sync (last 30 days) every 30 minutes');
+                    ->description('Bling incremental sync (last 30 days) every 2 hours');
             });
         }
     }

@@ -216,8 +216,8 @@ class InvoiceBroadcastingTest extends TestCase
 
         // Run the manual broadcast command
         $this->artisan('broadcast:order-update', ['numero' => 'TEST123'])
-            ->expectsOutput('Found order: TEST123')
-            ->expectsOutput('Invoice found: NF001')
+            ->expectsOutputToContain('Found order: TEST123')
+            ->expectsOutputToContain('Invoice found: NF001')
             ->assertExitCode(0);
 
         Event::assertDispatched(OrderUpdated::class, function ($event) {
@@ -234,8 +234,8 @@ class InvoiceBroadcastingTest extends TestCase
 
         // Run command on order without invoice
         $this->artisan('broadcast:order-update', ['numero' => 'TEST123'])
-            ->expectsOutput('Found order: TEST123')
-            ->expectsOutput('No significant changes detected. Broadcasting general update.')
+            ->expectsOutputToContain('Found order: TEST123')
+            ->expectsOutputToContain('No significant changes detected. Broadcasting general update.')
             ->assertExitCode(0);
 
         Event::assertDispatched(OrderUpdated::class, function ($event) {

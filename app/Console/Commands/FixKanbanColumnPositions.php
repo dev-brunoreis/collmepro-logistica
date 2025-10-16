@@ -140,13 +140,13 @@ class FixKanbanColumnPositions extends Command
             return 'embalagem';
         }
 
-        // 5. Checkout: invoice + !picking
-        if ($hasInvoice && (!$orderStatus || !$orderStatus->picking)) {
-            return 'checkout';
+        // 5. Pedidos Emitidos: !invoice
+        if (!$hasInvoice) {
+            return 'pedidos_emitidos';
         }
 
-        // 6. Faturamento: !invoice
-        if (!$hasInvoice) {
+        // 6. Faturamento: invoice + !picking
+        if ($hasInvoice && (!$orderStatus || !$orderStatus->picking)) {
             return 'faturamento';
         }
 
