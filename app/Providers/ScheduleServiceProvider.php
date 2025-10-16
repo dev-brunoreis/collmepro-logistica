@@ -34,7 +34,7 @@ class ScheduleServiceProvider extends ServiceProvider
                     $job = new BlingSyncJob(
                         forceUpdate: false, 
                         accountType: null, 
-                        incrementalSync: false,
+                        incrementalSync: true,
                         maxPagesPerExecution: 20  // 20 pages = ~2000 orders max per run
                     );
                     $job->handle();
