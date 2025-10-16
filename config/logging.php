@@ -59,7 +59,7 @@ return [
         ],
 
         'single' => [
-            'driver' => 'single',
+            'driver' => 'daily',
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
             'replace_placeholders' => true,
@@ -82,7 +82,7 @@ return [
 
         'bling_sync' => [
             'driver' => 'daily',
-            'path' => storage_path('logs/bling_sync/bling-sync.log'),
+            'path' => storage_path('logs/bling/sync.log'),
             'level' => env('LOG_LEVEL', 'info'),
             'days' => 30,
             'replace_placeholders' => true,
@@ -90,7 +90,7 @@ return [
 
         'invoices' => [
             'driver' => 'daily',
-            'path' => storage_path('logs/invoices.log'),
+            'path' => storage_path('logs/invoices/invoices.log'),
             'level' => env('LOG_LEVEL', 'info'),
             'days' => 30,
             'replace_placeholders' => true,
@@ -98,7 +98,7 @@ return [
 
         'tracking' => [
             'driver' => 'daily',
-            'path' => storage_path('logs/tracking.log'),
+            'path' => storage_path('logs/tracking/tracking.log'),
             'level' => env('LOG_LEVEL', 'info'),
             'days' => 30,
             'replace_placeholders' => true,
@@ -106,7 +106,7 @@ return [
 
         'sellers' => [
             'driver' => 'daily',
-            'path' => storage_path('logs/sellers.log'),
+            'path' => storage_path('logs/sellers/sellers.log'),
             'level' => env('LOG_LEVEL', 'info'),
             'days' => 30,
             'replace_placeholders' => true,
@@ -114,7 +114,7 @@ return [
 
         'ping' => [
             'driver' => 'daily',
-            'path' => storage_path('logs/ping.log'),
+            'path' => storage_path('logs/stats/ping.log'),
             'level' => env('LOG_LEVEL', 'info'),
             'days' => 30,
             'replace_placeholders' => true,
