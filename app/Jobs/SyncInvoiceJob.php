@@ -9,7 +9,8 @@ use App\Services\BlingService;
 use App\Services\CollmeProBlingService;
 use App\Services\CollmeAtacadistaBlingService;
 use App\Services\OrderHistoryService;
-use App\Traits\BlingSyncLogger;
+use App\Traits\InvoiceLogger;
+use App\Traits\BroadcastsOrderUpdates;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -22,11 +23,11 @@ use Carbon\Carbon;
 
 class SyncInvoiceJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, BlingSyncLogger;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, InvoiceLogger, BroadcastsOrderUpdates;
 
     public int $timeout = 60;
-    public int $tries = 3;
-    public int $backoff = 30;
+    public int $tries = 5;
+    public array $backoff = [60, 300, 600, 1800]; // 1min, 5min, 10min, 30min
 
     private int $orderSummaryId;
 
@@ -56,7 +57,7 @@ class SyncInvoiceJob implements ShouldQueue
 
         // Idempotency check: Skip if processed recently (within 5 minutes)
         if (Cache::has($cacheKey)) {
-            $this->logBlingInfo('Invoice sync skipped (already processed recently)', [
+            $this->logInvoiceInfo('Invoice sync skipped (already processed recently)', [
                 'order_id' => $this->orderSummaryId,
             ]);
             return;
@@ -65,13 +66,13 @@ class SyncInvoiceJob implements ShouldQueue
         $order = OrderSummary::find($this->orderSummaryId);
 
         if (!$order) {
-            $this->logBlingError('Order not found for invoice sync', [
+            $this->logInvoiceError('Order not found for invoice sync', [
                 'order_id' => $this->orderSummaryId,
             ]);
             return;
         }
 
-        $this->logBlingInfo('Starting invoice sync', [
+        $this->logInvoiceInfo('Starting invoice sync', [
             'order_id' => $order->id,
             'order_number' => $order->numero,
             'bling_id' => $order->bling_id,
@@ -85,7 +86,7 @@ class SyncInvoiceJob implements ShouldQueue
             $completeOrderData = $blingService->getCompleteOrderData($order->bling_id);
 
             if (!$completeOrderData) {
-                $this->logBlingWarning('Failed to fetch complete order data', [
+                $this->logInvoiceWarning('Failed to fetch complete order data', [
                     'order_id' => $order->id,
                     'bling_id' => $order->bling_id,
                 ]);
@@ -96,7 +97,7 @@ class SyncInvoiceJob implements ShouldQueue
             $invoiceId = $completeOrderData['notaFiscal']['id'] ?? null;
 
             if (!$invoiceId) {
-                $this->logBlingDebug('Order has no invoice yet', [
+                $this->logInvoiceDebug('Order has no invoice yet', [
                     'order_id' => $order->id,
                 ]);
                 // Mark as processed to avoid constant re-checking
@@ -108,7 +109,7 @@ class SyncInvoiceJob implements ShouldQueue
             $completeInvoiceData = $blingService->getCompleteInvoiceData($invoiceId);
 
             if (!$completeInvoiceData) {
-                $this->logBlingWarning('Failed to fetch invoice data', [
+                $this->logInvoiceWarning('Failed to fetch invoice data', [
                     'order_id' => $order->id,
                     'invoice_id' => $invoiceId,
                 ]);
@@ -149,8 +150,8 @@ class SyncInvoiceJob implements ShouldQueue
                 }
             });
 
-            // Broadcast OrderUpdated to frontend
-            $this->broadcastOrderUpdate($order, ['invoice_added']);
+            // Broadcast OrderUpdated to frontend (non-blocking)
+            $this->safeBroadcastOrderUpdate($order, ['invoice_number'], ['invoice_added']);
 
             // Emit internal event for tracking extraction
             event(new InvoiceSynced($invoice, $wasCreated));
@@ -158,7 +159,7 @@ class SyncInvoiceJob implements ShouldQueue
             // Mark as processed (1 hour)
             Cache::put($cacheKey, now(), 3600);
 
-            $this->logBlingInfo('Invoice sync completed', [
+            $this->logInvoiceInfo('Invoice sync completed', [
                 'order_id' => $order->id,
                 'invoice_id' => $invoiceId,
                 'invoice_number' => $invoice->numero,
@@ -166,7 +167,7 @@ class SyncInvoiceJob implements ShouldQueue
             ]);
 
         } catch (\Exception $e) {
-            $this->logBlingError('Invoice sync failed', [
+            $this->logInvoiceError('Invoice sync failed', [
                 'order_id' => $order->id,
                 'error' => $e->getMessage(),
                 'file' => $e->getFile() . ':' . $e->getLine(),
@@ -193,7 +194,7 @@ class SyncInvoiceJob implements ShouldQueue
             'resolved' => false,
         ]);
 
-        $this->logBlingError('Invoice sync job failed permanently', [
+        $this->logInvoiceError('Invoice sync job failed permanently', [
             'order_id' => $this->orderSummaryId,
             'attempts' => $this->attempts(),
             'error' => $exception->getMessage(),
@@ -290,22 +291,5 @@ class SyncInvoiceJob implements ShouldQueue
         }
     }
 
-    /**
-     * Broadcast order update to frontend.
-     */
-    private function broadcastOrderUpdate(OrderSummary $order, array $changeTypes): void
-    {
-        $systemUser = \App\Models\User::whereIn('role', ['admin', 'manager'])
-            ->orderByRaw("FIELD(role, 'admin', 'manager')")
-            ->first();
-
-        if (!$systemUser) {
-            $systemUser = \App\Models\User::first();
-        }
-
-        if ($systemUser) {
-            event(new \App\Events\OrderUpdated($order, $systemUser, ['invoice_number'], $changeTypes));
-        }
-    }
 }
 

@@ -8,6 +8,16 @@ use Illuminate\Support\Facades\Log;
 class WooCommerceService
 {
     /**
+     * Apply rate limiting for WooCommerce API
+     * WooCommerce typically allows 10 requests per second per IP
+     * Using 5 req/s (50% of limit) for safety margin = 200ms between requests
+     */
+    protected function applyRateLimit(): void
+    {
+        usleep(200000); // 200ms = 5 requests per second
+    }
+
+    /**
      * Get seller information from WooCommerce order
      * 
      * @param string $woocommerceOrderId The WooCommerce order ID
@@ -16,6 +26,9 @@ class WooCommerceService
      */
     public function getOrderSeller(string $woocommerceOrderId, string $accountType): ?array
     {
+        // Apply rate limiting before request
+        $this->applyRateLimit();
+        
         try {
             // Get environment variables based on account type
             $url = $this->getWooCommerceUrl($accountType, $woocommerceOrderId);
@@ -36,6 +49,18 @@ class WooCommerceService
             ])->timeout(10)->get($url);
 
             if (!$response->successful()) {
+                // Check for rate limiting
+                if ($response->status() === 429) {
+                    Log::warning('WooCommerceService: Rate limit hit', [
+                        'account_type' => $accountType,
+                        'order_id' => $woocommerceOrderId,
+                        'status_code' => $response->status(),
+                    ]);
+                    // Wait and don't throw, let it be retried by the job
+                    sleep(2);
+                    return null;
+                }
+                
                 Log::warning('WooCommerceService: API request failed', [
                     'account_type' => $accountType,
                     'order_id' => $woocommerceOrderId,

@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Permission;
 use App\Models\RolePermission;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class PermissionSeeder extends Seeder
 {
@@ -14,17 +15,19 @@ class PermissionSeeder extends Seeder
     public function run(): void
     {
         // Clear existing data
-        $driver = \DB::getDriverName();
+        $driver = DB::getDriverName();
         
-        if ($driver === 'mysql') {
-            \DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        // Disable foreign key checks for MySQL/MariaDB
+        if (in_array($driver, ['mysql', 'mariadb'])) {
+            DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         }
         
         RolePermission::truncate();
         Permission::truncate();
         
-        if ($driver === 'mysql') {
-            \DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        // Re-enable foreign key checks for MySQL/MariaDB
+        if (in_array($driver, ['mysql', 'mariadb'])) {
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
         }
 
         // Define permissions - developer has same permissions as admin

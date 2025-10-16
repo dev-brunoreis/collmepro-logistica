@@ -18,16 +18,17 @@ use App\Services\SystemMappingService;
 use App\Models\OrderSummary;
 use App\Models\Invoice;
 use App\Traits\BlingSyncLogger;
+use App\Traits\BroadcastsOrderUpdates;
 use App\Events\BlingSyncStatusUpdated;
 use Carbon\Carbon;
 
 class BlingSyncJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, BlingSyncLogger;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, BlingSyncLogger, BroadcastsOrderUpdates;
 
     public int $timeout = 3600; // 1 hour
-    public int $tries = 3;
-    public int $backoff = 300; // 5 minutes between retries
+    public int $tries = 5;
+    public array $backoff = [60, 300, 600, 1800]; // 1min, 5min, 10min, 30min
 
     private bool $forceUpdate;
     private ?string $accountType;
@@ -501,29 +502,13 @@ class BlingSyncJob implements ShouldQueue
                 );
             }
 
-            // Get system user for broadcasting events
-            $systemUser = \App\Models\User::whereIn('role', ['admin', 'manager'])
-                ->orderByRaw("FIELD(role, 'admin', 'manager')")
-                ->first();
-            
-            // Fallback to any user if no admin/manager exists
-            if (!$systemUser) {
-                $systemUser = \App\Models\User::first();
-            }
-
-            // Broadcast events to frontend (for immediate Kanban update)
-            if ($systemUser) {
-                if ($created) {
-                    // For new orders, always broadcast OrderCreated
-                    event(new \App\Events\OrderCreated($order, $systemUser));
-                } else if (!empty($changedFields)) {
-                    // For existing orders, only broadcast if there are actual changes
-                    event(new \App\Events\OrderUpdated($order, $systemUser, $changedFields, $changeTypes));
-                }
-            }
-            
-            if (!$systemUser) {
-                $this->logBlingWarning('Cannot dispatch events: no users found', ['order_id' => $order->id]);
+            // Broadcast events to frontend (for immediate Kanban update) - non-blocking
+            if ($created) {
+                // For new orders, always broadcast OrderCreated
+                $this->safeBroadcastOrderCreated($order);
+            } else if (!empty($changedFields)) {
+                // For existing orders, only broadcast if there are actual changes
+                $this->safeBroadcastOrderUpdate($order, $changedFields, $changeTypes);
             }
 
             // EVENT-DRIVEN: Emit OrderSynced to trigger specialized jobs

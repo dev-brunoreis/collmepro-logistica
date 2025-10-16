@@ -10,7 +10,8 @@ use App\Services\BlingService;
 use App\Services\CollmeProBlingService;
 use App\Services\CollmeAtacadistaBlingService;
 use App\Services\OrderHistoryService;
-use App\Traits\BlingSyncLogger;
+use App\Traits\TrackingLogger;
+use App\Traits\BroadcastsOrderUpdates;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -22,11 +23,11 @@ use Carbon\Carbon;
 
 class ExtractTrackingJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, BlingSyncLogger;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, TrackingLogger, BroadcastsOrderUpdates;
 
     public int $timeout = 45;
-    public int $tries = 3;
-    public int $backoff = 20;
+    public int $tries = 5;
+    public array $backoff = [60, 300, 600, 1800]; // 1min, 5min, 10min, 30min
 
     private int $orderSummaryId;
 
@@ -56,7 +57,7 @@ class ExtractTrackingJob implements ShouldQueue
 
         // Idempotency check: Skip if processed recently (within 5 minutes)
         if (Cache::has($cacheKey)) {
-            $this->logBlingInfo('Tracking extraction skipped (already processed recently)', [
+            $this->logTrackingInfo('Tracking extraction skipped (already processed recently)', [
                 'order_id' => $this->orderSummaryId,
             ]);
             return;
@@ -65,20 +66,20 @@ class ExtractTrackingJob implements ShouldQueue
         $order = OrderSummary::with('invoice')->find($this->orderSummaryId);
 
         if (!$order) {
-            $this->logBlingError('Order not found for tracking extraction', [
+            $this->logTrackingError('Order not found for tracking extraction', [
                 'order_id' => $this->orderSummaryId,
             ]);
             return;
         }
 
         if (!$order->invoice) {
-            $this->logBlingDebug('Order has no invoice for tracking extraction', [
+            $this->logTrackingDebug('Order has no invoice for tracking extraction', [
                 'order_id' => $order->id,
             ]);
             return;
         }
 
-        $this->logBlingInfo('Starting tracking extraction', [
+        $this->logTrackingInfo('Starting tracking extraction', [
             'order_id' => $order->id,
             'order_number' => $order->numero,
             'invoice_id' => $order->invoice->id,
@@ -92,7 +93,7 @@ class ExtractTrackingJob implements ShouldQueue
             $completeInvoiceData = $blingService->getCompleteInvoiceData($order->invoice->bling_id);
 
             if (!$completeInvoiceData) {
-                $this->logBlingWarning('Failed to fetch invoice data for tracking', [
+                $this->logTrackingWarning('Failed to fetch invoice data for tracking', [
                     'order_id' => $order->id,
                     'invoice_id' => $order->invoice->id,
                 ]);
@@ -103,7 +104,7 @@ class ExtractTrackingJob implements ShouldQueue
             $volumes = $completeInvoiceData['transporte']['volumes'] ?? [];
 
             if (empty($volumes)) {
-                $this->logBlingDebug('Invoice has no volumes for tracking', [
+                $this->logTrackingDebug('Invoice has no volumes for tracking', [
                     'order_id' => $order->id,
                     'invoice_id' => $order->invoice->id,
                 ]);
@@ -115,7 +116,7 @@ class ExtractTrackingJob implements ShouldQueue
             $volumeId = $volumes[0]['id'] ?? null;
 
             if (!$volumeId) {
-                $this->logBlingDebug('Volume has no ID', [
+                $this->logTrackingDebug('Volume has no ID', [
                     'order_id' => $order->id,
                 ]);
                 Cache::put($cacheKey, now(), 300);
@@ -126,7 +127,7 @@ class ExtractTrackingJob implements ShouldQueue
             $completeTrackingData = $blingService->getCompleteTrackingData($volumeId);
 
             if (!$completeTrackingData) {
-                $this->logBlingWarning('Failed to fetch tracking data', [
+                $this->logTrackingWarning('Failed to fetch tracking data', [
                     'order_id' => $order->id,
                     'volume_id' => $volumeId,
                 ]);
@@ -187,8 +188,8 @@ class ExtractTrackingJob implements ShouldQueue
                 }
             });
 
-            // Broadcast OrderUpdated to frontend
-            $this->broadcastOrderUpdate($order, ['tracking_added']);
+            // Broadcast OrderUpdated to frontend (non-blocking)
+            $this->safeBroadcastOrderUpdate($order, ['tracking_code'], ['tracking_added']);
 
             // Emit internal event
             event(new TrackingSynced($order, $trackingCode));
@@ -196,14 +197,14 @@ class ExtractTrackingJob implements ShouldQueue
             // Mark as processed (1 hour)
             Cache::put($cacheKey, now(), 3600);
 
-            $this->logBlingInfo('Tracking extraction completed', [
+            $this->logTrackingInfo('Tracking extraction completed', [
                 'order_id' => $order->id,
                 'tracking_code' => $trackingCode,
                 'was_created' => $wasCreated,
             ]);
 
         } catch (\Exception $e) {
-            $this->logBlingError('Tracking extraction failed', [
+            $this->logTrackingError('Tracking extraction failed', [
                 'order_id' => $order->id,
                 'error' => $e->getMessage(),
                 'file' => $e->getFile() . ':' . $e->getLine(),
@@ -230,7 +231,7 @@ class ExtractTrackingJob implements ShouldQueue
             'resolved' => false,
         ]);
 
-        $this->logBlingError('Tracking extraction job failed permanently', [
+        $this->logTrackingError('Tracking extraction job failed permanently', [
             'order_id' => $this->orderSummaryId,
             'attempts' => $this->attempts(),
             'error' => $exception->getMessage(),
@@ -310,22 +311,5 @@ class ExtractTrackingJob implements ShouldQueue
         }
     }
 
-    /**
-     * Broadcast order update to frontend.
-     */
-    private function broadcastOrderUpdate(OrderSummary $order, array $changeTypes): void
-    {
-        $systemUser = \App\Models\User::whereIn('role', ['admin', 'manager'])
-            ->orderByRaw("FIELD(role, 'admin', 'manager')")
-            ->first();
-
-        if (!$systemUser) {
-            $systemUser = \App\Models\User::first();
-        }
-
-        if ($systemUser) {
-            event(new \App\Events\OrderUpdated($order, $systemUser, ['tracking_code'], $changeTypes));
-        }
-    }
 }
 

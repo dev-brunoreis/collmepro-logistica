@@ -6,9 +6,10 @@ import { Head, router } from '@inertiajs/vue3';
 import PlaceholderPattern from '../components/PlaceholderPattern.vue';
 import KanbanCompact from '../components/KanbanCompact.vue';
 import MetricCard from '../components/MetricCard.vue';
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { Package, CheckCircle } from 'lucide-vue-next';
 import axios from 'axios';
+import { useOrderBroadcasting } from '@/composables/useBroadcasting';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -30,6 +31,20 @@ const metrics = ref(props.metrics);
 const kanbanData = ref(props.kanbanData);
 const loading = ref(false);
 
+// Broadcasting setup
+const { lastNewOrder } = useOrderBroadcasting();
+
+// Watch for new orders from broadcasting and update total count
+watch(lastNewOrder, (newOrderEvent) => {
+    if (newOrderEvent && newOrderEvent.order) {
+        console.log('Dashboard received new order via broadcast:', newOrderEvent.order);
+        
+        // Increment total orders count
+        metrics.value.total_orders = (metrics.value.total_orders || 0) + 1;
+        
+        console.log('Dashboard total orders updated:', metrics.value.total_orders);
+    }
+});
 
 const openKanbanFullscreen = () => {
     router.visit('/dashboard/painel');

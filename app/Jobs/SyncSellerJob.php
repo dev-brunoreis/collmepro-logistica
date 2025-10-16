@@ -6,7 +6,7 @@ use App\Events\SellerSynced;
 use App\Models\OrderSummary;
 use App\Models\Seller;
 use App\Services\WooCommerceService;
-use App\Traits\BlingSyncLogger;
+use App\Traits\SellerLogger;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\DB;
 
 class SyncSellerJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, BlingSyncLogger;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, SellerLogger;
 
     public int $timeout = 30;
     public int $tries = 2;
@@ -51,7 +51,7 @@ class SyncSellerJob implements ShouldQueue
 
         // Idempotency check: Skip if processed recently (within 10 minutes)
         if (Cache::has($cacheKey)) {
-            $this->logBlingInfo('Seller sync skipped (already processed recently)', [
+            $this->logSellerInfo('Seller sync skipped (already processed recently)', [
                 'order_id' => $this->orderSummaryId,
             ]);
             return;
@@ -60,7 +60,7 @@ class SyncSellerJob implements ShouldQueue
         $order = OrderSummary::find($this->orderSummaryId);
 
         if (!$order) {
-            $this->logBlingError('Order not found for seller sync', [
+            $this->logSellerError('Order not found for seller sync', [
                 'order_id' => $this->orderSummaryId,
             ]);
             return;
@@ -69,7 +69,7 @@ class SyncSellerJob implements ShouldQueue
         // Only capture seller for pro and atacadista orders
         $source = strtolower($order->source);
         if (!in_array($source, ['pro', 'atacadista', 'collmepro', 'collmepro atacadista'])) {
-            $this->logBlingDebug('Order source not eligible for seller sync', [
+            $this->logSellerDebug('Order source not eligible for seller sync', [
                 'order_id' => $order->id,
                 'source' => $order->source,
             ]);
@@ -80,7 +80,7 @@ class SyncSellerJob implements ShouldQueue
 
         // Extract WooCommerce order ID from numero_loja
         if (empty($order->numero_loja)) {
-            $this->logBlingDebug('Order has no numero_loja for seller extraction', [
+            $this->logSellerDebug('Order has no numero_loja for seller extraction', [
                 'order_id' => $order->id,
             ]);
             Cache::put($cacheKey, now(), 600);
@@ -91,7 +91,7 @@ class SyncSellerJob implements ShouldQueue
         $woocommerceOrderId = $parts[0] ?? null;
 
         if (!$woocommerceOrderId) {
-            $this->logBlingDebug('Could not extract WooCommerce order ID', [
+            $this->logSellerDebug('Could not extract WooCommerce order ID', [
                 'order_id' => $order->id,
                 'numero_loja' => $order->numero_loja,
             ]);
@@ -99,7 +99,7 @@ class SyncSellerJob implements ShouldQueue
             return;
         }
 
-        $this->logBlingInfo('Starting seller sync', [
+        $this->logSellerInfo('Starting seller sync', [
             'order_id' => $order->id,
             'order_number' => $order->numero,
             'woocommerce_order_id' => $woocommerceOrderId,
@@ -112,7 +112,7 @@ class SyncSellerJob implements ShouldQueue
             $sellerData = $woocommerceService->getOrderSeller($woocommerceOrderId, $source);
 
             if (!$sellerData || empty($sellerData['id'])) {
-                $this->logBlingDebug('No seller data found in WooCommerce', [
+                $this->logSellerDebug('No seller data found in WooCommerce', [
                     'order_id' => $order->id,
                     'woocommerce_order_id' => $woocommerceOrderId,
                 ]);
@@ -142,14 +142,14 @@ class SyncSellerJob implements ShouldQueue
             // Mark as processed (1 hour)
             Cache::put($cacheKey, now(), 3600);
 
-            $this->logBlingInfo('Seller sync completed', [
+            $this->logSellerInfo('Seller sync completed', [
                 'order_id' => $order->id,
                 'seller_id' => $seller?->id,
                 'seller_name' => $seller?->name,
             ]);
 
         } catch (\Exception $e) {
-            $this->logBlingError('Seller sync failed', [
+            $this->logSellerError('Seller sync failed', [
                 'order_id' => $order->id,
                 'woocommerce_order_id' => $woocommerceOrderId,
                 'error' => $e->getMessage(),
@@ -177,7 +177,7 @@ class SyncSellerJob implements ShouldQueue
             'resolved' => false,
         ]);
 
-        $this->logBlingError('Seller sync job failed permanently', [
+        $this->logSellerError('Seller sync job failed permanently', [
             'order_id' => $this->orderSummaryId,
             'attempts' => $this->attempts(),
             'error' => $exception->getMessage(),
