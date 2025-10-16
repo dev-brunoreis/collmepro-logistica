@@ -487,56 +487,6 @@ class BlingSyncJob implements ShouldQueue
                 ]);
             }
 
-            // Capture seller information for pro and atacadista orders
-            $this->captureSeller($order);
-
-            // Capture invoice and tracking before sync for change detection
-            $oldInvoiceNumber = $order->invoice?->numero ?? null;
-            $oldTrackingCode = $order->tracking_code;
-            
-            // Sync invoices (NFE) and tracking with complete data
-            $this->syncInvoicesAndTrackingWithCompleteData($blingService, $order, $completeOrderData);
-            
-            // Refresh order to get updated data
-            $order->refresh();
-            $order->load(['invoice', 'orderStatus']);
-            
-            // Detect invoice and tracking changes
-            $newInvoiceNumber = $order->invoice?->numero ?? null;
-            $newTrackingCode = $order->tracking_code;
-            
-            // Detect invoice changes (added or modified) - for BOTH new and existing orders
-            if ($oldInvoiceNumber !== $newInvoiceNumber) {
-                $changedFields[] = 'invoice_number';
-                if (!$oldInvoiceNumber && $newInvoiceNumber) {
-                    $changeTypes[] = 'invoice_added';
-                } else if ($oldInvoiceNumber && $newInvoiceNumber && $oldInvoiceNumber !== $newInvoiceNumber) {
-                    $changeTypes[] = 'invoice_updated';
-                } else if ($oldInvoiceNumber && !$newInvoiceNumber) {
-                    $changeTypes[] = 'invoice_removed';
-                }
-            }
-            
-            // SPECIAL CASE: If order has invoice but no changes detected, 
-            // it might be a case where invoice was added but broadcast was missed
-            // Force a broadcast to ensure Kanban displays correctly
-            if (empty($changedFields) && $newInvoiceNumber && $created) {
-                $changedFields[] = 'invoice_number';
-                $changeTypes[] = 'invoice_added';
-            }
-            
-            // Detect tracking changes (added or modified) - for BOTH new and existing orders
-            if ($oldTrackingCode !== $newTrackingCode) {
-                $changedFields[] = 'tracking_code';
-                if (!$oldTrackingCode && $newTrackingCode) {
-                    $changeTypes[] = 'tracking_added';
-                } else if ($oldTrackingCode && $newTrackingCode && $oldTrackingCode !== $newTrackingCode) {
-                    $changeTypes[] = 'tracking_updated';
-                } else if ($oldTrackingCode && !$newTrackingCode) {
-                    $changeTypes[] = 'tracking_removed';
-                }
-            }
-
             DB::commit();
 
             // Log apenas se houver mudanças significativas
@@ -547,8 +497,6 @@ class BlingSyncJob implements ShouldQueue
                     $blingOrder['numero'],
                     [
                         'changed_fields' => implode(',', $changedFields),
-                        'has_invoice' => !empty($newInvoiceNumber),
-                        'has_tracking' => !empty($newTrackingCode),
                     ]
                 );
             }
@@ -563,33 +511,24 @@ class BlingSyncJob implements ShouldQueue
                 $systemUser = \App\Models\User::first();
             }
 
-            // Broadcast events only if there are meaningful changes or it's a new order
-            // SPECIAL CASE: Broadcast if order has invoice AND it's a new order (first sync)
-            $hasInvoice = !empty($newInvoiceNumber);
-            $shouldBroadcast = !empty($changedFields) || $created || ($hasInvoice && $created);
-            
-            if ($systemUser && $shouldBroadcast) {
+            // Broadcast events to frontend (for immediate Kanban update)
+            if ($systemUser) {
                 if ($created) {
                     // For new orders, always broadcast OrderCreated
                     event(new \App\Events\OrderCreated($order, $systemUser));
-                } else {
+                } else if (!empty($changedFields)) {
                     // For existing orders, only broadcast if there are actual changes
-                    // If no changes detected but has invoice, force invoice_added change type
-                    $finalChangeTypes = $changeTypes;
-                    $finalChangedFields = $changedFields;
-                    
-                    if (empty($changedFields) && $hasInvoice && $created) {
-                        $finalChangedFields = ['invoice_number'];
-                        $finalChangeTypes = ['invoice_added'];
-                    }
-                    
-                    event(new \App\Events\OrderUpdated($order, $systemUser, $finalChangedFields, $finalChangeTypes));
+                    event(new \App\Events\OrderUpdated($order, $systemUser, $changedFields, $changeTypes));
                 }
             }
             
             if (!$systemUser) {
                 $this->logBlingWarning('Cannot dispatch events: no users found', ['order_id' => $order->id]);
             }
+
+            // EVENT-DRIVEN: Emit OrderSynced to trigger specialized jobs
+            // This will queue: invoice sync, tracking extraction, and seller sync
+            event(new \App\Events\OrderSynced($order, $created, $changedFields));
 
             return ['created' => $created, 'updated' => $updated, 'order' => $order];
 

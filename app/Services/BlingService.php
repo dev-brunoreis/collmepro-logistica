@@ -96,11 +96,16 @@ abstract class BlingService
     }
 
     /**
-     * Apply rate limiting: 3 requests per second
+     * Apply rate limiting: 40 requests per second
+     * 
+     * Bling API Limits:
+     * - 600 requests per 10 seconds = 60 req/s
+     * - Using 40 req/s (66% of limit) for safety margin
+     * - 40 req/s = 25ms between requests
      */
     protected function applyRateLimit(): void
     {
-        usleep(333333); // 333ms = 3 requests per second
+        usleep(25000); // 25ms = 40 requests per second
     }
 
     /**
@@ -184,15 +189,15 @@ abstract class BlingService
         // Para sincronização incremental, buscar apenas últimos 30 dias (1 mês)
         // Pedidos mais antigos raramente têm alterações
         // API Bling v3 usa parâmetros: dataAlteracaoInicial e dataAlteracaoFinal
-        // if ($incrementalSync && !isset($filters['dataAlteracaoInicial'])) {
-        //     $since = now()->subDays(30)->format('Y-m-d H:i:s');
-        //     $filters['dataAlteracaoInicial'] = $since;
-        //     Log::info("Incremental sync enabled for account: {$this->getAccountType()}", [
-        //         'since' => $since,
-        //         'days_back' => 30,
-        //         'parameter' => 'dataAlteracaoInicial'
-        //     ]);
-        // }
+        if ($incrementalSync && !isset($filters['dataAlteracaoInicial'])) {
+            $since = now()->subDays(30)->format('Y-m-d H:i:s');
+            $filters['dataAlteracaoInicial'] = $since;
+            Log::info("Incremental sync enabled for account: {$this->getAccountType()}", [
+                'since' => $since,
+                'days_back' => 30,
+                'parameter' => 'dataAlteracaoInicial'
+            ]);
+        }
         
         $orders = [];
         $pagina = 1;

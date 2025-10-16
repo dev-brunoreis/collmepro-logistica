@@ -22,6 +22,15 @@ class BlingSyncCommand extends Command
 
     /**
      * The console command description.
+     * 
+     * Usage:
+     * - First sync (all orders): php artisan bling:sync --full
+     * - Daily sync (last 30 days): php artisan bling:sync (default)
+     * - Scheduled: Runs automatically every 2 hours (incremental)
+     * 
+     * Performance:
+     * - Full sync (~6k orders): ~15-20 minutes
+     * - Incremental sync (~200 orders): ~2-3 minutes
      */
     protected $description = 'Synchronize orders, invoices and tracking from Bling';
 
@@ -54,9 +63,12 @@ class BlingSyncCommand extends Command
         
         if ($fullSync) {
             $this->warn('⚠️  Full sync enabled - all orders will be fetched');
+            $this->warn('   Expected time: ~15-20 minutes for ~6k orders');
+            $this->info('   API Rate: 40 req/s (66% of Bling limit)');
         } else {
             $this->info('🔄 Incremental sync enabled - fetching orders from last 30 days');
             $this->info('   Orders older than 30 days will be automatically skipped');
+            $this->info('   Expected time: ~2-3 minutes for ~200 orders');
         }
 
         try {

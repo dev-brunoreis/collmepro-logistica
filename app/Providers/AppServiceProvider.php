@@ -22,6 +22,20 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Register event listeners for event-driven sync
+        \Illuminate\Support\Facades\Event::listen(
+            \App\Events\OrderSynced::class,
+            [\App\Listeners\QueueInvoiceSync::class, 'handle']
+        );
+
+        \Illuminate\Support\Facades\Event::listen(
+            \App\Events\OrderSynced::class,
+            [\App\Listeners\QueueSellerSync::class, 'handle']
+        );
+
+        \Illuminate\Support\Facades\Event::listen(
+            \App\Events\InvoiceSynced::class,
+            [\App\Listeners\QueueTrackingExtraction::class, 'handle']
+        );
     }
 }
