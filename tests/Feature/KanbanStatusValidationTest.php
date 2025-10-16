@@ -20,6 +20,9 @@ class KanbanStatusValidationTest extends TestCase
     {
         parent::setUp();
 
+        // Disable broadcasting in tests to avoid Pusher connection issues
+        $this->app['config']->set('broadcasting.default', 'null');
+
         // Create a test user with admin role (has all permissions)
         $this->user = User::factory()->create([
             'role' => 'admin',

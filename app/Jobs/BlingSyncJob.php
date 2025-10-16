@@ -475,7 +475,7 @@ class BlingSyncJob implements ShouldQueue
                     'bling_id' => $blingId,
                     'numero' => $blingOrder['numero'],
                     'total' => $blingOrder['total'] ?? null,
-                ]);
+                ], 'Orion Worker (Order)');
             }
 
             // Create or update order status if not exists
@@ -500,6 +500,16 @@ class BlingSyncJob implements ShouldQueue
                         'changed_fields' => implode(',', $changedFields),
                     ]
                 );
+            }
+
+            // Record order updates in history (only if there were changes)
+            if (!$created && !empty($changedFields)) {
+                app(OrderHistoryService::class)->recordOrderSyncCompleted($order, $changedFields, [
+                    'bling_id' => $blingId,
+                    'numero' => $blingOrder['numero'],
+                    'changed_fields' => $changedFields,
+                    'change_types' => $changeTypes,
+                ]);
             }
 
             // Broadcast events to frontend (for immediate Kanban update) - non-blocking
@@ -913,6 +923,14 @@ class BlingSyncJob implements ShouldQueue
             'file' => $exception->getFile() . ':' . $exception->getLine(),
             'force_update' => $this->forceUpdate
         ]);
+        
+        // Record failure in history for monitoring
+        try {
+            // Note: We don't have a specific order here since this is a batch job
+            // Failures for specific orders are already logged in processOrder catch block
+        } catch (\Exception $e) {
+            // Ignore history recording errors in failed()
+        }
         
         // Update sync status: failed
         $this->updateSyncStatus(false, now());

@@ -256,6 +256,11 @@ class OrderController extends Controller
                 if (empty($logisticsProvider)) {
                     $logisticsProvider = $order->logistics_provider;
                 }
+
+                // Use CarrierService to map service_type if logistics_provider is still empty or '-'
+                if (empty($logisticsProvider) || $logisticsProvider === '-') {
+                    $logisticsProvider = CarrierService::getCarrierDisplay($order->service_type);
+                }
                 
                 // Default to "-" if still empty
                 if (empty($logisticsProvider)) {
@@ -396,6 +401,11 @@ class OrderController extends Controller
         // Final fallback to order_summary field
         if (empty($logisticsProvider)) {
             $logisticsProvider = $order->logistics_provider;
+        }
+
+        // Use CarrierService to map service_type if logistics_provider is still empty or '-'
+        if (empty($logisticsProvider) || $logisticsProvider === '-') {
+            $logisticsProvider = CarrierService::getCarrierDisplay($order->service_type);
         }
         
         // Default to "-" if still empty

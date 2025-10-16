@@ -12,7 +12,7 @@ class CarrierService
         'SEDEX' => 'Correios - Sedex',
         'SEDEX CONTRATO AG' => 'Correios - Sedex',
         'PAC' => 'Correios - PAC',
-        'PAC CONTRATO PGTO ENTREGA' => 'Correios - PAC',
+        'PAC CONTRATO PGTO ENTREGA' => 'Correios',
         'Expresso' => 'Total Express - Expresso',
         'LSV-Standard-BR PICKUP' => 'Shopify Shipping',
         'Coleta' => 'Retirada em Loja',

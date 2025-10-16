@@ -1096,12 +1096,12 @@ const getCurrentPerPage = () => {
                                             <span class="text-sm truncate">{{ order.tracking_code }}</span>
                                             <ExternalLink class="h-3 w-3 flex-shrink-0" />
                                         </a>
-                                        <span v-else class="text-sm truncate max-w-[100px]">{{ order.tracking_code }}</span>
+                                        <span v-else class="text-sm truncate">{{ order.tracking_code }}</span>
                                     </div>
                                     <span v-else class="text-sm text-muted-foreground">-</span>
                                 </td>
                                 <td class="px-2 sm:px-4 py-3 text-center text-sm text-muted-foreground">
-                                    <div class="truncate max-w-[100px]" :title="order.logistics_provider">{{ order.logistics_provider }}</div>
+                                    <div class="truncate" :title="order.logistics_provider">{{ order.logistics_provider }}</div>
                                 </td>
                                 <td class="px-2 sm:px-4 py-3 text-center">
                                     <div v-if="order.situacao_id === 12" class="flex items-center justify-center">

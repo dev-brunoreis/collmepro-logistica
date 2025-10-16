@@ -35,6 +35,8 @@ interface OrderHistoryItem {
     event_color: string;
     user_name: string;
     user_username: string;
+    worker_name?: string;
+    worker_display?: string;
     metadata: any;
     created_at: string;
     formatted_created_at: string;
@@ -218,8 +220,6 @@ const formatDate = (dateString: string) => {
             day: '2-digit',
             month: '2-digit',
             year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
         });
     } catch (error) {
         console.warn('Error formatting date:', dateString, error);
@@ -770,6 +770,8 @@ const formatTrackingDataForAPI = (tracking: TrackingData) => {
                                             'bg-purple-500': history.event_color === 'purple',
                                             'bg-yellow-500': history.event_color === 'yellow',
                                             'bg-orange-500': history.event_color === 'orange',
+                                            'bg-cyan-500': history.event_color === 'cyan',
+                                            'bg-red-500': history.event_color === 'red',
                                             'bg-gray-500': history.event_color === 'gray',
                                         }"
                                     >
@@ -782,6 +784,9 @@ const formatTrackingDataForAPI = (tracking: TrackingData) => {
                                         <span v-else-if="history.event_icon === 'message-square'">💬</span>
                                         <span v-else-if="history.event_icon === 'refresh-cw'">🔄</span>
                                         <span v-else-if="history.event_icon === 'edit'">✏️</span>
+                                        <span v-else-if="history.event_icon === 'user-check'">👤</span>
+                                        <span v-else-if="history.event_icon === 'alert-circle'">⚠️</span>
+                                        <span v-else-if="history.event_icon === 'clock'">🕐</span>
                                         <span v-else>📋</span>
                                     </div>
                                 </div>
@@ -795,7 +800,10 @@ const formatTrackingDataForAPI = (tracking: TrackingData) => {
                                         </p>
                                     </div>
                                     <div class="flex items-center space-x-2 mt-1">
-                                        <span class="text-xs text-muted-foreground">
+                                        <span v-if="history.worker_name" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gradient-to-r from-purple-500/20 to-blue-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/30">
+                                            🤖 {{ history.worker_name }}
+                                        </span>
+                                        <span v-else class="text-xs text-muted-foreground">
                                             por {{ history.user_name }}
                                         </span>
                                         <span v-if="history.metadata && Object.keys(history.metadata).length > 0" class="text-xs text-muted-foreground">

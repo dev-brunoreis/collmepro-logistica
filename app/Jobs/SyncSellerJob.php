@@ -3,8 +3,10 @@
 namespace App\Jobs;
 
 use App\Events\SellerSynced;
+use App\Models\OrderHistory;
 use App\Models\OrderSummary;
 use App\Models\Seller;
+use App\Services\OrderHistoryService;
 use App\Services\WooCommerceService;
 use App\Traits\SellerLogger;
 use Illuminate\Bus\Queueable;
@@ -106,6 +108,19 @@ class SyncSellerJob implements ShouldQueue
             'source' => $source,
         ]);
 
+        // Record worker attempt in history
+        app(OrderHistoryService::class)->recordWorkerAttempt(
+            $order,
+            'Quasar Worker (Seller)',
+            'seller',
+            $this->attempts(),
+            [
+                'order_id' => $order->id,
+                'woocommerce_order_id' => $woocommerceOrderId,
+                'source' => $source,
+            ]
+        );
+
         try {
             // Fetch seller from WooCommerce
             $woocommerceService = app(WooCommerceService::class);
@@ -135,6 +150,14 @@ class SyncSellerJob implements ShouldQueue
                 // Sync the relationship (will not duplicate if already exists)
                 $order->seller()->syncWithoutDetaching([$seller->id]);
             });
+
+            // Record success in history
+            app(OrderHistoryService::class)->recordSellerSynced($order, [
+                'seller_id' => $seller?->id,
+                'seller_name' => $seller?->name,
+                'seller_email' => $seller?->email,
+                'woocommerce_id' => $sellerData['id'],
+            ]);
 
             // Emit internal event
             event(new SellerSynced($order, $seller));
@@ -182,6 +205,26 @@ class SyncSellerJob implements ShouldQueue
             'attempts' => $this->attempts(),
             'error' => $exception->getMessage(),
         ]);
+
+        // Record failure in history
+        try {
+            $order = OrderSummary::find($this->orderSummaryId);
+            if ($order) {
+                app(OrderHistoryService::class)->recordWorkerFailure(
+                    $order,
+                    OrderHistory::EVENT_SELLER_SYNC_FAILED,
+                    'Quasar Worker (Seller)',
+                    'Falha ao sincronizar vendedor após múltiplas tentativas',
+                    $exception->getMessage(),
+                    [
+                        'attempts' => $this->attempts(),
+                        'job_type' => 'seller_sync',
+                    ]
+                );
+            }
+        } catch (\Exception $e) {
+            // Ignore history recording errors in failed()
+        }
     }
 }
 

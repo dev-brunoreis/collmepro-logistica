@@ -17,6 +17,7 @@ class OrderHistory extends Model
         'event_type',
         'event_description',
         'user_id',
+        'worker_name',
         'metadata',
         'created_at',
     ];
@@ -37,6 +38,12 @@ class OrderHistory extends Model
     const EVENT_TRACKING_UPDATED = 'tracking_updated';
     const EVENT_MANUAL_SYNC = 'manual_sync';
     const EVENT_ORDER_UPDATED = 'order_updated';
+    const EVENT_SELLER_SYNCED = 'seller_synced';
+    const EVENT_ORDER_SYNC_FAILED = 'order_sync_failed';
+    const EVENT_INVOICE_SYNC_FAILED = 'invoice_sync_failed';
+    const EVENT_TRACKING_FETCH_FAILED = 'tracking_fetch_failed';
+    const EVENT_SELLER_SYNC_FAILED = 'seller_sync_failed';
+    const EVENT_WORKER_ATTEMPT = 'worker_attempt';
 
     /**
      * Get the order summary that owns this history entry.
@@ -83,7 +90,7 @@ class OrderHistory extends Model
      */
     public function getFormattedDescriptionAttribute(): string
     {
-        return match ($this->event_type) {
+        $description = match ($this->event_type) {
             self::EVENT_ORDER_IMPORTED => 'Pedido importado do sistema externo',
             self::EVENT_STATUS_PICKING => $this->metadata['status'] ? 'Status "Separado" marcado como concluído' : 'Status "Separado" desmarcado',
             self::EVENT_STATUS_PACKING => $this->metadata['status'] ? 'Status "Embalado" marcado como concluído' : 'Status "Embalado" desmarcado',
@@ -94,8 +101,21 @@ class OrderHistory extends Model
             self::EVENT_TRACKING_UPDATED => 'Rastreamento atualizado',
             self::EVENT_MANUAL_SYNC => 'Sincronização manual executada',
             self::EVENT_ORDER_UPDATED => 'Pedido atualizado',
+            self::EVENT_SELLER_SYNCED => 'Vendedor sincronizado',
+            self::EVENT_ORDER_SYNC_FAILED => 'Falha na sincronização do pedido',
+            self::EVENT_INVOICE_SYNC_FAILED => 'Falha na sincronização da NFE',
+            self::EVENT_TRACKING_FETCH_FAILED => 'Falha ao obter rastreamento',
+            self::EVENT_SELLER_SYNC_FAILED => 'Falha ao sincronizar vendedor',
+            self::EVENT_WORKER_ATTEMPT => 'Tentativa de processamento',
             default => $this->event_description,
         };
+
+        // Add worker name to description if present
+        // if ($this->worker_name) {
+        //     $description .= " | Por: {$this->worker_name}";
+        // }
+
+        return $description;
     }
 
     /**
@@ -114,6 +134,10 @@ class OrderHistory extends Model
             self::EVENT_TRACKING_UPDATED => 'refresh-cw',
             self::EVENT_MANUAL_SYNC => 'refresh-cw',
             self::EVENT_ORDER_UPDATED => 'edit',
+            self::EVENT_SELLER_SYNCED => 'user-check',
+            self::EVENT_ORDER_SYNC_FAILED, self::EVENT_INVOICE_SYNC_FAILED, 
+            self::EVENT_TRACKING_FETCH_FAILED, self::EVENT_SELLER_SYNC_FAILED => 'alert-circle',
+            self::EVENT_WORKER_ATTEMPT => 'clock',
             default => 'activity',
         };
     }
@@ -129,7 +153,19 @@ class OrderHistory extends Model
             self::EVENT_INVOICE_SYNCED, self::EVENT_TRACKING_FETCHED => 'purple',
             self::EVENT_NOTE_ADDED => 'yellow',
             self::EVENT_TRACKING_UPDATED, self::EVENT_MANUAL_SYNC, self::EVENT_ORDER_UPDATED => 'orange',
+            self::EVENT_SELLER_SYNCED => 'cyan',
+            self::EVENT_ORDER_SYNC_FAILED, self::EVENT_INVOICE_SYNC_FAILED, 
+            self::EVENT_TRACKING_FETCH_FAILED, self::EVENT_SELLER_SYNC_FAILED => 'red',
+            self::EVENT_WORKER_ATTEMPT => 'gray',
             default => 'gray',
         };
+    }
+
+    /**
+     * Get formatted worker display name.
+     */
+    public function getWorkerDisplayAttribute(): ?string
+    {
+        return $this->worker_name;
     }
 }

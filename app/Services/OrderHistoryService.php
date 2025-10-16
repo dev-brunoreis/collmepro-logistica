@@ -17,7 +17,8 @@ class OrderHistoryService
         string $eventType,
         string $description = null,
         array $metadata = [],
-        User $user = null
+        User $user = null,
+        string $workerName = null
     ): OrderHistory {
         $user = $user ?? Auth::user();
 
@@ -26,20 +27,122 @@ class OrderHistoryService
             'event_type' => $eventType,
             'event_description' => $description,
             'user_id' => $user?->id,
+            'worker_name' => $workerName,
             'metadata' => $metadata,
         ]);
     }
 
     /**
+     * Record a worker event (generic)
+     */
+    public function recordWorkerEvent(
+        OrderSummary $order,
+        string $eventType,
+        string $workerName,
+        string $description = null,
+        array $metadata = []
+    ): OrderHistory {
+        return $this->recordEvent(
+            $order,
+            $eventType,
+            $description,
+            array_merge($metadata, ['worker_name' => $workerName]),
+            null,
+            $workerName
+        );
+    }
+
+    /**
+     * Record a worker success event
+     */
+    public function recordWorkerSuccess(
+        OrderSummary $order,
+        string $eventType,
+        string $workerName,
+        string $description,
+        array $metadata = []
+    ): OrderHistory {
+        return $this->recordWorkerEvent(
+            $order,
+            $eventType,
+            $workerName,
+            $description,
+            array_merge($metadata, ['success' => true])
+        );
+    }
+
+    /**
+     * Record a worker failure event
+     */
+    public function recordWorkerFailure(
+        OrderSummary $order,
+        string $eventType,
+        string $workerName,
+        string $description,
+        string $error,
+        array $metadata = []
+    ): OrderHistory {
+        return $this->recordWorkerEvent(
+            $order,
+            $eventType,
+            $workerName,
+            $description,
+            array_merge($metadata, [
+                'success' => false,
+                'error' => $error,
+            ])
+        );
+    }
+
+    /**
+     * Record a worker attempt event
+     */
+    public function recordWorkerAttempt(
+        OrderSummary $order,
+        string $workerName,
+        string $workerType,
+        int $attempt = 1,
+        array $metadata = []
+    ): OrderHistory {
+        return $this->recordWorkerEvent(
+            $order,
+            OrderHistory::EVENT_WORKER_ATTEMPT,
+            $workerName,
+            "Iniciando processamento: {$workerType}",
+            array_merge($metadata, [
+                'worker_type' => $workerType,
+                'attempt' => $attempt,
+            ])
+        );
+    }
+
+    /**
      * Record order import event
      */
-    public function recordOrderImported(OrderSummary $order, string $source, array $metadata = []): OrderHistory
+    public function recordOrderImported(OrderSummary $order, string $source, array $metadata = [], string $workerName = null): OrderHistory
     {
         return $this->recordEvent(
             $order,
             OrderHistory::EVENT_ORDER_IMPORTED,
             "Pedido importado do {$source}",
-            array_merge($metadata, ['source' => $source])
+            array_merge($metadata, ['source' => $source]),
+            null,
+            $workerName
+        );
+    }
+
+    /**
+     * Record order sync completed (updates)
+     */
+    public function recordOrderSyncCompleted(OrderSummary $order, array $changes, array $metadata = []): OrderHistory
+    {
+        $changesList = implode(', ', $changes);
+        return $this->recordWorkerSuccess(
+            $order,
+            OrderHistory::EVENT_ORDER_UPDATED,
+            'Orion Worker (Order)',
+            "Pedido atualizado: {$changesList}",
+            array_merge($metadata, ['changes' => $changes])
         );
     }
 
@@ -78,26 +181,44 @@ class OrderHistoryService
     /**
      * Record invoice sync event
      */
-    public function recordInvoiceSynced(OrderSummary $order, array $metadata = []): OrderHistory
+    public function recordInvoiceSynced(OrderSummary $order, array $metadata = [], string $workerName = null): OrderHistory
     {
         return $this->recordEvent(
             $order,
             OrderHistory::EVENT_INVOICE_SYNCED,
             'NFE sincronizada com Bling',
-            array_merge($metadata, ['sync_type' => 'invoice'])
+            array_merge($metadata, ['sync_type' => 'invoice']),
+            null,
+            $workerName ?? 'Andromeda Worker (Invoice)'
         );
     }
 
     /**
      * Record tracking fetch event
      */
-    public function recordTrackingFetched(OrderSummary $order, array $metadata = []): OrderHistory
+    public function recordTrackingFetched(OrderSummary $order, array $metadata = [], string $workerName = null): OrderHistory
     {
         return $this->recordEvent(
             $order,
             OrderHistory::EVENT_TRACKING_FETCHED,
             'Dados de rastreamento obtidos',
-            array_merge($metadata, ['sync_type' => 'tracking'])
+            array_merge($metadata, ['sync_type' => 'tracking']),
+            null,
+            $workerName ?? 'Nova Worker (Tracking)'
+        );
+    }
+
+    /**
+     * Record seller sync event
+     */
+    public function recordSellerSynced(OrderSummary $order, array $metadata = []): OrderHistory
+    {
+        return $this->recordWorkerSuccess(
+            $order,
+            OrderHistory::EVENT_SELLER_SYNCED,
+            'Quasar Worker (Seller)',
+            'Vendedor sincronizado com sucesso',
+            array_merge($metadata, ['sync_type' => 'seller'])
         );
     }
 
@@ -174,8 +295,10 @@ class OrderHistoryService
                     'formatted_description' => $history->formatted_description,
                     'event_icon' => $history->event_icon,
                     'event_color' => $history->event_color,
-                    'user_name' => $history->user?->name ?? 'Sistema',
+                    'user_name' => $history->user?->name ?? ($history->worker_name ?? 'Sistema'),
                     'user_username' => $history->user?->username ?? 'system',
+                    'worker_name' => $history->worker_name,
+                    'worker_display' => $history->worker_display,
                     'metadata' => $history->metadata,
                     'created_at' => $history->created_at,
                     'formatted_created_at' => $history->created_at->format('d/m/Y H:i:s'),

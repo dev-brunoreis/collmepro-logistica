@@ -13,6 +13,9 @@ class BlingCommandsTest extends TestCase
     {
         parent::setUp();
         
+        // Disable broadcasting in tests to avoid Pusher connection issues
+        $this->app['config']->set('broadcasting.default', 'null');
+        
         // RefreshDatabase trait handles database cleanup automatically
         
         // Set test environment variables

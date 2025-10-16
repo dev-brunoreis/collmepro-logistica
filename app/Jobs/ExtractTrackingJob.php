@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Events\TrackingSynced;
 use App\Models\Invoice;
+use App\Models\OrderHistory;
 use App\Models\OrderSummary;
 use App\Models\Tracking;
 use App\Services\BlingService;
@@ -84,6 +85,18 @@ class ExtractTrackingJob implements ShouldQueue
             'order_number' => $order->numero,
             'invoice_id' => $order->invoice->id,
         ]);
+
+        // Record worker attempt in history
+        app(OrderHistoryService::class)->recordWorkerAttempt(
+            $order,
+            'Nova Worker (Tracking)',
+            'tracking',
+            $this->attempts(),
+            [
+                'order_id' => $order->id,
+                'invoice_id' => $order->invoice->id,
+            ]
+        );
 
         try {
             // Get the appropriate Bling service based on order source
@@ -236,6 +249,26 @@ class ExtractTrackingJob implements ShouldQueue
             'attempts' => $this->attempts(),
             'error' => $exception->getMessage(),
         ]);
+
+        // Record failure in history
+        try {
+            $order = OrderSummary::find($this->orderSummaryId);
+            if ($order) {
+                app(OrderHistoryService::class)->recordWorkerFailure(
+                    $order,
+                    OrderHistory::EVENT_TRACKING_FETCH_FAILED,
+                    'Nova Worker (Tracking)',
+                    'Falha ao extrair dados de rastreamento após múltiplas tentativas',
+                    $exception->getMessage(),
+                    [
+                        'attempts' => $this->attempts(),
+                        'job_type' => 'tracking_extraction',
+                    ]
+                );
+            }
+        } catch (\Exception $e) {
+            // Ignore history recording errors in failed()
+        }
     }
 
     /**

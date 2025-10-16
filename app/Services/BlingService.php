@@ -1052,23 +1052,8 @@ abstract class BlingService
                       $trackingData['rastreamento']['descricao'] ?? 
                       null;
 
-        // If we have invoice data, try to get the full provider name
-        if ($invoiceData && isset($invoiceData['transporte']['servico'])) {
-            $transportService = $invoiceData['transporte']['servico'];
-            
-            // Check if service name contains "PAC", "SEDEX", etc.
-            if (stripos($serviceName, 'PAC') !== false || stripos($serviceName, 'SEDEX') !== false) {
-                // Return "Correios - PAC" or "Correios - SEDEX"
-                return "Correios - {$serviceName}";
-            }
-            
-            // For other providers, use the service name as is
-            if ($serviceName) {
-                return $serviceName;
-            }
-        }
-        
-        return $serviceName;
+        // Use CarrierService to get proper display name
+        return CarrierService::getCarrierDisplay($serviceName);
     }
 
     /**

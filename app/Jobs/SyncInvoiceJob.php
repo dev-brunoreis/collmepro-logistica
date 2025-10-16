@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Events\InvoiceSynced;
 use App\Models\Invoice;
+use App\Models\OrderHistory;
 use App\Models\OrderSummary;
 use App\Services\BlingService;
 use App\Services\CollmeProBlingService;
@@ -77,6 +78,18 @@ class SyncInvoiceJob implements ShouldQueue
             'order_number' => $order->numero,
             'bling_id' => $order->bling_id,
         ]);
+
+        // Record worker attempt in history
+        app(OrderHistoryService::class)->recordWorkerAttempt(
+            $order,
+            'Andromeda Worker (Invoice)',
+            'invoice',
+            $this->attempts(),
+            [
+                'order_id' => $order->id,
+                'bling_id' => $order->bling_id,
+            ]
+        );
 
         try {
             // Get the appropriate Bling service based on order source
@@ -199,6 +212,26 @@ class SyncInvoiceJob implements ShouldQueue
             'attempts' => $this->attempts(),
             'error' => $exception->getMessage(),
         ]);
+
+        // Record failure in history
+        try {
+            $order = OrderSummary::find($this->orderSummaryId);
+            if ($order) {
+                app(OrderHistoryService::class)->recordWorkerFailure(
+                    $order,
+                    OrderHistory::EVENT_INVOICE_SYNC_FAILED,
+                    'Andromeda Worker (Invoice)',
+                    'Falha ao sincronizar NFE após múltiplas tentativas',
+                    $exception->getMessage(),
+                    [
+                        'attempts' => $this->attempts(),
+                        'job_type' => 'invoice_sync',
+                    ]
+                );
+            }
+        } catch (\Exception $e) {
+            // Ignore history recording errors in failed()
+        }
     }
 
     /**
