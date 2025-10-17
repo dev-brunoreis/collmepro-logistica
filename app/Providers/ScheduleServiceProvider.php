@@ -3,8 +3,10 @@
 namespace App\Providers;
 
 use App\Jobs\BlingSyncJob;
+use App\Jobs\RefreshTrackingsJob;
 use App\Jobs\SendHourlyStatsJob;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 
 class ScheduleServiceProvider extends ServiceProvider
@@ -39,11 +41,11 @@ class ScheduleServiceProvider extends ServiceProvider
                     );
                     $job->handle();
                 })
-                    ->everyThirtyMinutes()
+                    ->everyFifteenMinutes()
                     ->name('bling-sync')
                     ->withoutOverlapping(60) // Expires after 60 minutes - auto-releases if job hangs
                     ->onFailure(function () {
-                        \Log::error('Bling sync scheduled task failed');
+                        Log::error('Bling sync scheduled task failed');
                     })
                     ->description('Bling full sync (paginated)');
 
@@ -52,6 +54,16 @@ class ScheduleServiceProvider extends ServiceProvider
                     ->hourly()
                     ->name('hourly-stats-ping')
                     ->description('Send hourly stats ping');
+
+                // Refresh tracking for orders with invoices (last 30 days)
+                $schedule->job(new RefreshTrackingsJob())
+                    ->hourly()
+                    ->name('refresh-trackings')
+                    ->withoutOverlapping(30)
+                    ->onFailure(function () {
+                        Log::error('Tracking refresh scheduled task failed');
+                    })
+                    ->description('Refresh tracking data for recent orders');
             });
         }
     }

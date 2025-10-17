@@ -235,6 +235,57 @@ ExtractTrackingJob::dispatch($invoice)
     ->onQueue('tracking');
 ```
 
+### RefreshTrackingsJob
+
+**Arquivo**: `app/Jobs/RefreshTrackingsJob.php`
+
+**Descricao**: Job agendado que atualiza periodicamente os dados de rastreamento de pedidos recentes.
+
+**Fila**: `default`
+
+**Configuracao**:
+```php
+public int $timeout = 300; // 5 minutos
+public int $tries = 3;
+public array $backoff = [60, 300]; // 1min, 5min
+```
+
+**Agendamento**: Executa a cada 1 hora (hourly)
+
+**Fluxo de Execucao**:
+
+1. Busca pedidos dos ultimos 30 dias com:
+   - `tracking_code` nao nulo
+   - Invoice associada
+   - Nao cancelados (situacao_id != 12)
+2. Para cada pedido, dispara `ExtractTrackingJob` na fila tracking
+3. Registra estatisticas (total encontrado, enfileirado, pulado)
+4. Logs em `storage/logs/tracking/tracking-{date}.log`
+
+**Prevencao de Duplicatas**:
+- Verifica se job ja existe na fila antes de enfileirar
+- `ExtractTrackingJob` possui cache de 1 hora
+
+**Exemplo de Uso**:
+
+```php
+// Executado automaticamente pelo Laravel Scheduler
+// Configurado em ScheduleServiceProvider
+```
+
+**Monitoramento**:
+
+```bash
+# Verificar agendamento
+php artisan schedule:list | grep tracking
+
+# Ver logs
+tail -f storage/logs/tracking/tracking-$(date +%Y-%m-%d).log
+
+# Verificar fila
+php artisan tinker --execute="echo DB::table('jobs')->where('queue', 'tracking')->count();"
+```
+
 ### SyncSellerJob
 
 **Arquivo**: `app/Jobs/SyncSellerJob.php`

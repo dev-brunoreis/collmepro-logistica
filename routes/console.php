@@ -12,6 +12,3 @@ Artisan::command('inspire', function () {
 
 // Schedule automatic Bling token refresh every 4 hours
 Schedule::job(new RefreshBlingTokensJob)->everyFourHours();
-
-// Schedule hourly stats request
-Schedule::job(new SendHourlyStatsJob)->hourly();
