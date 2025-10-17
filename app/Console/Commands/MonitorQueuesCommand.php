@@ -13,7 +13,7 @@ class MonitorQueuesCommand extends Command
      * @var string
      */
     protected $signature = 'queue:monitor-status 
-                            {--refresh=5 : Refresh interval in seconds}';
+                            {--refresh=1 : Refresh interval in seconds}';
 
     /**
      * The console command description.

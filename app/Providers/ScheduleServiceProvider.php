@@ -35,13 +35,16 @@ class ScheduleServiceProvider extends ServiceProvider
                         forceUpdate: false, 
                         accountType: null, 
                         incrementalSync: true,
-                        maxPagesPerExecution: 20  // 20 pages = ~2000 orders max per run
+                        maxPagesPerExecution: 40  // 20 pages = ~2000 orders max per run
                     );
                     $job->handle();
                 })
-                    ->hourly()
+                    ->everyFifteenMinutes()
                     ->name('bling-sync')
-                    ->withoutOverlapping()
+                    ->withoutOverlapping(60) // Expires after 60 minutes - auto-releases if job hangs
+                    ->onFailure(function () {
+                        \Log::error('Bling sync scheduled task failed');
+                    })
                     ->description('Bling full sync (paginated)');
 
                 // Send hourly stats ping
