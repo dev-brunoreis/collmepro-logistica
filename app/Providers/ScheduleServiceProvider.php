@@ -39,7 +39,7 @@ class ScheduleServiceProvider extends ServiceProvider
                     );
                     $job->handle();
                 })
-                    ->everyFifteenMinutes()
+                    ->everyThirtyMinutes()
                     ->name('bling-sync')
                     ->withoutOverlapping(60) // Expires after 60 minutes - auto-releases if job hangs
                     ->onFailure(function () {

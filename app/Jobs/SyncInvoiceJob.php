@@ -55,10 +55,19 @@ class SyncInvoiceJob implements ShouldQueue
     public function handle(): void
     {
         $cacheKey = "invoice_synced_{$this->orderSummaryId}";
+        $lockKey = "invoice_sync_lock_{$this->orderSummaryId}";
 
         // Idempotency check: Skip if processed recently (within 5 minutes)
         if (Cache::has($cacheKey)) {
             $this->logInvoiceInfo('Invoice sync skipped (already processed recently)', [
+                'order_id' => $this->orderSummaryId,
+            ]);
+            return;
+        }
+
+        // Additional idempotency check: Use atomic lock to prevent concurrent processing
+        if (!Cache::lock($lockKey, 60)->get()) {
+            $this->logInvoiceInfo('Invoice sync skipped (already being processed)', [
                 'order_id' => $this->orderSummaryId,
             ]);
             return;
@@ -187,6 +196,9 @@ class SyncInvoiceJob implements ShouldQueue
             ]);
 
             throw $e;
+        } finally {
+            // Always release the lock
+            Cache::lock($lockKey)->release();
         }
     }
 

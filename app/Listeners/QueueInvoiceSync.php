@@ -5,6 +5,8 @@ namespace App\Listeners;
 use App\Events\OrderSynced;
 use App\Jobs\SyncInvoiceJob;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Listener that queues invoice synchronization when an order is synced.
@@ -16,14 +18,61 @@ class QueueInvoiceSync
      */
     public function handle(OrderSynced $event): void
     {
-        Log::info('QueueInvoiceSync: Queuing invoice sync', [
-            'order_id' => $event->order->id,
-            'order_number' => $event->order->numero,
-            'was_created' => $event->wasCreated,
-        ]);
+        $orderId = $event->order->id;
+        $cacheKey = "invoice_sync_queued_{$orderId}";
+        $lockKey = "invoice_sync_lock_{$orderId}";
 
-        // Dispatch invoice sync job to the invoices queue
-        dispatch(new SyncInvoiceJob($event->order->id));
+        // Prevent duplicate job creation with atomic lock
+        if (!Cache::lock($lockKey, 10)->get()) {
+            Log::info('QueueInvoiceSync: Skipped (already being processed)', [
+                'order_id' => $orderId,
+                'order_number' => $event->order->numero,
+            ]);
+            return;
+        }
+
+        try {
+            // Check if job was already queued recently (within 1 minute)
+            if (Cache::has($cacheKey)) {
+                Log::info('QueueInvoiceSync: Skipped (already queued recently)', [
+                    'order_id' => $orderId,
+                    'order_number' => $event->order->numero,
+                ]);
+                return;
+            }
+
+            // Check if job already exists in queue
+            $existingJob = DB::table('jobs')
+                ->where('queue', 'invoices')
+                ->where('payload', 'like', '%"displayName":"App\\\\Jobs\\\\SyncInvoiceJob"%')
+                ->where('payload', 'like', '%"orderSummaryId":' . $orderId . '%')
+                ->first();
+
+            if ($existingJob) {
+                Log::info('QueueInvoiceSync: Skipped (job already exists in queue)', [
+                    'order_id' => $orderId,
+                    'order_number' => $event->order->numero,
+                    'existing_job_id' => $existingJob->id,
+                ]);
+                return;
+            }
+
+            Log::info('QueueInvoiceSync: Queuing invoice sync', [
+                'order_id' => $orderId,
+                'order_number' => $event->order->numero,
+                'was_created' => $event->wasCreated,
+            ]);
+
+            // Dispatch invoice sync job to the invoices queue
+            dispatch(new SyncInvoiceJob($orderId))->onQueue('invoices');
+
+            // Mark as queued to prevent duplicates (1 minute)
+            Cache::put($cacheKey, now(), 60);
+
+        } finally {
+            // Always release the lock
+            Cache::lock($lockKey)->release();
+        }
     }
 }
 

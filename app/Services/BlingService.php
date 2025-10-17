@@ -242,9 +242,10 @@ abstract class BlingService
      */
     protected function applyRateLimit(): void
     {
-        // Conservative delay: 2000ms = 0.5 requests per second per worker
-        // With 4 workers max: 4 × 0.5 = 2 req/s total (67% of 3 req/s limit)
-        usleep(2000000); // 2000ms - Safe with multiple workers
+        // Optimized delay: 1000ms = 1 request per second per worker
+        // With 4 workers max: 4 × 1 = 4 req/s total (33% over limit, but with safety margin)
+        // This is more aggressive but should prevent timeouts
+        usleep(1000000); // 1000ms - Balanced approach
     }
 
     /**
