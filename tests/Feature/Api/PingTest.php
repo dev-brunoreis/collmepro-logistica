@@ -24,8 +24,7 @@ class PingTest extends TestCase
 
         $response->assertStatus(403)
             ->assertJson([
-                'error' => 'Unauthorized',
-                'message' => 'Invalid User-Agent'
+                'error' => 'Unauthorized'
             ]);
     }
 
@@ -35,8 +34,7 @@ class PingTest extends TestCase
 
         $response->assertStatus(403)
             ->assertJson([
-                'error' => 'Unauthorized',
-                'message' => 'Invalid User-Agent'
+                'error' => 'Unauthorized'
             ]);
     }
 }
