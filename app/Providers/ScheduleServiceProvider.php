@@ -57,9 +57,9 @@ class ScheduleServiceProvider extends ServiceProvider
 
                 // Refresh tracking for orders with invoices (last 30 days)
                 $schedule->job(new RefreshTrackingsJob())
-                    ->hourly()
+                    ->everyThreeHours()
                     ->name('refresh-trackings')
-                    ->withoutOverlapping(30)
+                    ->withoutOverlapping(180)
                     ->onFailure(function () {
                         Log::error('Tracking refresh scheduled task failed');
                     })

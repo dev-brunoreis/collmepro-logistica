@@ -15,7 +15,7 @@ class RefreshTrackingsJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, TrackingLogger;
 
-    public int $timeout = 300; // 5 minutes
+    public int $timeout = 600; // 10 minutes
     public int $tries = 3;
     public array $backoff = [60, 300]; // 1min, 5min
 
@@ -39,9 +39,31 @@ class RefreshTrackingsJob implements ShouldQueue
         ]);
 
         try {
+            // Check current queue size for tracking queue
+            $currentQueueSize = DB::table('jobs')
+                ->where('queue', 'tracking')
+                ->count();
+
+            $this->logTrackingInfo('Current tracking queue size', [
+                'queue_size' => $currentQueueSize,
+            ]);
+
+            // If queue is too large (>1000 jobs), skip this execution
+            if ($currentQueueSize > 1000) {
+                $this->logTrackingInfo('Skipping tracking refresh - queue too large', [
+                    'queue_size' => $currentQueueSize,
+                    'threshold' => 1000,
+                ]);
+                return;
+            }
+
             // Query orders from last 30 days with invoice and tracking code
+            // Exclude orders with delivered tracking (situacao = 4)
             $orders = OrderSummary::whereNotNull('tracking_code')
                 ->whereHas('invoice')
+                ->whereDoesntHave('invoice.tracking', function ($query) {
+                    $query->where('situacao', 4); // Exclude delivered
+                })
                 ->where('created_at', '>=', now()->subDays(30))
                 ->notCancelled()
                 ->get();
