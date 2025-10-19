@@ -4,7 +4,6 @@ namespace App\Providers;
 
 use App\Jobs\BlingSyncJob;
 use App\Jobs\RefreshTrackingsJob;
-use App\Jobs\SendHourlyStatsJob;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
@@ -48,12 +47,6 @@ class ScheduleServiceProvider extends ServiceProvider
                         Log::error('Bling sync scheduled task failed');
                     })
                     ->description('Bling full sync (paginated)');
-
-                // Send hourly stats ping
-                $schedule->job(new SendHourlyStatsJob())
-                    ->hourly()
-                    ->name('hourly-stats-ping')
-                    ->description('Send hourly stats ping');
 
                 // Refresh tracking for orders with invoices (last 30 days)
                 $schedule->job(new RefreshTrackingsJob())

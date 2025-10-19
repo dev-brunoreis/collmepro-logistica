@@ -52,9 +52,4 @@ return [
             'client_secret' => env('BLING_ATACADISTA_CLIENT_SECRET'),
         ],
     ],
-
-    'stats' => [
-        'url' => env('STATS_URL'),
-        'key' => env('STATS_KEY'),
-    ],
 ];
