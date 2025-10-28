@@ -15,6 +15,7 @@ use App\Traits\TrackingLogger;
 use App\Traits\BroadcastsOrderUpdates;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
@@ -22,13 +23,14 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
-class ExtractTrackingJob implements ShouldQueue
+class ExtractTrackingJob implements ShouldQueue, ShouldBeUnique
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, TrackingLogger, BroadcastsOrderUpdates;
 
     public int $timeout = 45;
     public int $tries = 3;
     public array $backoff = [60, 300]; // 1min, 5min
+    public int $uniqueFor = 1800; // 30 minutos - previne duplicatas na fila
 
     private int $orderSummaryId;
 

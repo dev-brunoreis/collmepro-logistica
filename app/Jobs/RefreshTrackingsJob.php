@@ -58,11 +58,19 @@ class RefreshTrackingsJob implements ShouldQueue
             }
 
             // Query orders from last 30 days with invoice and tracking code
-            // Exclude orders with delivered tracking (situacao = 4)
+            // Only sync trackings that need update (not synced recently and not delivered)
             $orders = OrderSummary::whereNotNull('tracking_code')
                 ->whereHas('invoice')
-                ->whereDoesntHave('invoice.tracking', function ($query) {
-                    $query->where('situacao', 4); // Exclude delivered
+                ->whereHas('invoice.tracking', function($q) {
+                    $q->where(function($query) {
+                        // Tracking nunca sincronizado OU
+                        $query->whereNull('last_sync_at')
+                            // Sincronizado há mais de 30 minutos E não entregue
+                            ->orWhere(function($q2) {
+                                $q2->where('last_sync_at', '<=', now()->subMinutes(30))
+                                   ->where('situacao', '!=', 4); // não entregue
+                            });
+                    });
                 })
                 ->where('created_at', '>=', now()->subDays(30))
                 ->notCancelled()

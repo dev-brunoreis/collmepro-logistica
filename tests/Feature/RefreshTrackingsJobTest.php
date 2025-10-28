@@ -30,9 +30,16 @@ class RefreshTrackingsJobTest extends TestCase
             'situacao_id' => 6, // Not cancelled
         ]);
 
-        Invoice::factory()->create([
+        $invoice = Invoice::factory()->create([
             'order_summary_id' => $order->id,
             'bling_id' => 12345,
+        ]);
+
+        // Create tracking record that needs sync (last_sync_at is null or old)
+        \App\Models\Tracking::factory()->create([
+            'invoice_id' => $invoice->id,
+            'last_sync_at' => null, // Never synced
+            'situacao' => 2, // Not delivered (situacao != 4)
         ]);
 
         // Execute job
@@ -143,9 +150,16 @@ class RefreshTrackingsJobTest extends TestCase
                 'situacao_id' => 6,
             ]);
 
-            Invoice::factory()->create([
+            $invoice = Invoice::factory()->create([
                 'order_summary_id' => $order->id,
                 'bling_id' => 12345 + $i,
+            ]);
+
+            // Create tracking record that needs sync
+            \App\Models\Tracking::factory()->create([
+                'invoice_id' => $invoice->id,
+                'last_sync_at' => null, // Never synced
+                'situacao' => 2, // Not delivered
             ]);
         }
 
@@ -166,9 +180,15 @@ class RefreshTrackingsJobTest extends TestCase
             'created_at' => now()->subDays(10),
             'situacao_id' => 6,
         ]);
-        Invoice::factory()->create([
+        $validInvoice = Invoice::factory()->create([
             'order_summary_id' => $validOrder->id,
             'bling_id' => 12345,
+        ]);
+        // Create tracking record that needs sync
+        \App\Models\Tracking::factory()->create([
+            'invoice_id' => $validInvoice->id,
+            'last_sync_at' => null, // Never synced
+            'situacao' => 2, // Not delivered
         ]);
 
         // Order without tracking
@@ -222,9 +242,16 @@ class RefreshTrackingsJobTest extends TestCase
             'situacao_id' => 6,
         ]);
 
-        Invoice::factory()->create([
+        $invoice = Invoice::factory()->create([
             'order_summary_id' => $order->id,
             'bling_id' => 12345,
+        ]);
+
+        // Create tracking record that needs sync
+        \App\Models\Tracking::factory()->create([
+            'invoice_id' => $invoice->id,
+            'last_sync_at' => null, // Never synced
+            'situacao' => 2, // Not delivered
         ]);
 
         // Execute job (should log without errors)
@@ -245,9 +272,16 @@ class RefreshTrackingsJobTest extends TestCase
             'situacao_id' => 6,
         ]);
 
-        Invoice::factory()->create([
+        $invoice = Invoice::factory()->create([
             'order_summary_id' => $order->id,
             'bling_id' => 12345,
+        ]);
+
+        // Create tracking record that needs sync
+        \App\Models\Tracking::factory()->create([
+            'invoice_id' => $invoice->id,
+            'last_sync_at' => null, // Never synced
+            'situacao' => 2, // Not delivered
         ]);
 
         // Execute job - should handle gracefully even with queue fake
