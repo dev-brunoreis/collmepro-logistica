@@ -191,6 +191,52 @@ class ReportControllerTest extends TestCase
     }
 
     /** @test */
+    public function sales_report_filters_by_product_name_search()
+    {
+        // Create test data with specific product names
+        $this->createTestOrdersWithSearchableProducts();
+
+        // Search for a specific product
+        $response = $this->actingAs($this->user)
+            ->get(route('reports.sales', ['search' => 'Produto Específico']));
+
+        $response->assertStatus(200);
+        $response->assertInertia(fn ($page) => 
+            $page->has('products.data')
+                ->where('filters.search', 'Produto Específico')
+        );
+
+        // Verify that only matching products are returned
+        $products = $response->viewData('page')['props']['products']['data'];
+        $this->assertNotEmpty($products);
+        
+        foreach ($products as $product) {
+            $this->assertStringContainsString('Produto Específico', $product['product_name']);
+        }
+    }
+
+    /** @test */
+    public function sales_report_handles_search_with_no_results()
+    {
+        // Create test data
+        $this->createTestOrders();
+
+        // Search for a non-existent product
+        $response = $this->actingAs($this->user)
+            ->get(route('reports.sales', ['search' => 'Produto Inexistente']));
+
+        $response->assertStatus(200);
+        $response->assertInertia(fn ($page) => 
+            $page->has('products.data')
+                ->where('filters.search', 'Produto Inexistente')
+        );
+
+        // Verify that no products are returned
+        $products = $response->viewData('page')['props']['products']['data'];
+        $this->assertEmpty($products);
+    }
+
+    /** @test */
     public function sales_report_validates_input_parameters()
     {
         // Test invalid source
@@ -282,5 +328,53 @@ class ReportControllerTest extends TestCase
                 ]
             ]);
         }
+    }
+
+    /**
+     * Create test orders with searchable product names
+     */
+    private function createTestOrdersWithSearchableProducts()
+    {
+        // Create order with specific product name for search testing
+        OrderSummary::factory()->create([
+            'source' => 'Pro',
+            'data' => '2025-10-15',
+            'raw_order_data' => [
+                'id' => 2000,
+                'numero' => 'ORDER-2000',
+                'itens' => [
+                    [
+                        'produto' => ['id' => 2001, 'codigo' => 'PROD-2001'],
+                        'codigo' => 'PROD-2001',
+                        'descricao' => 'Produto Específico para Teste',
+                        'quantidade' => 3
+                    ],
+                    [
+                        'produto' => ['id' => 2002, 'codigo' => 'PROD-2002'],
+                        'codigo' => 'PROD-2002',
+                        'descricao' => 'Outro Produto Diferente',
+                        'quantidade' => 1
+                    ]
+                ]
+            ]
+        ]);
+
+        // Create another order with different product
+        OrderSummary::factory()->create([
+            'source' => 'Atacadista',
+            'data' => '2025-10-20',
+            'raw_order_data' => [
+                'id' => 2001,
+                'numero' => 'ORDER-2001',
+                'itens' => [
+                    [
+                        'produto' => ['id' => 2003, 'codigo' => 'PROD-2003'],
+                        'codigo' => 'PROD-2003',
+                        'descricao' => 'Produto Específico Atacadista',
+                        'quantidade' => 5
+                    ]
+                ]
+            ]
+        ]);
     }
 }

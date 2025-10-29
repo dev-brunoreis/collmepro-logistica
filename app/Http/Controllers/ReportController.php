@@ -140,6 +140,9 @@ class ReportController extends Controller
         if ($source) {
             $params[] = $source;
         }
+        if ($search) {
+            $params[] = '%' . $search . '%';
+        }
 
         // Get the raw data
         $rawData = DB::select($rawQuery, $params);
