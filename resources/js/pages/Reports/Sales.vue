@@ -125,22 +125,18 @@
 
     <!-- Sales Report Table -->
     <div v-if="products.data && Object.keys(products.data).length > 0 && !loading" class="rounded-lg border border-sidebar-border/70 dark:border-sidebar-border">
-      <div class="table-container">
+      <div>
         <!-- Table Header -->
         <div class="table-header">
-          <div class="fixed-columns">
-            <div class="header-cell product-col">Produto</div>
-            <div class="header-cell system-col">Sistema</div>
-            <div class="header-cell stock-col">Estoque Atual</div>
-          </div>
-          <div class="scrollable-columns">
-            <div 
-              v-for="month in months" 
-              :key="month"
-              class="header-cell month-col"
-            >
-              {{ formatMonth(month) }}
-            </div>
+          <div class="header-cell product-col">Produto</div>
+          <div class="header-cell system-col">Sistema</div>
+          <div class="header-cell stock-col">Estoque Atual</div>
+          <div 
+            v-for="month in months" 
+            :key="month"
+            class="header-cell month-col"
+          >
+            {{ formatMonth(month) }}
           </div>
         </div>
         
@@ -151,32 +147,25 @@
             :key="key"
             class="table-row"
           >
-            <!-- Fixed Columns -->
-            <div class="fixed-columns">
-              <div class="data-cell product-col">
-                <div class="font-medium text-foreground">{{ product.product_name }}</div>
-              </div>
-              <div class="data-cell system-col">
-                <span class="text-xs px-2 py-1 rounded-full" :class="getSourceBadgeClass(product.source)">
-                  {{ product.source }}
-                </span>
-              </div>
-              <div class="data-cell stock-col">
-                <span class="text-muted-foreground font-medium">{{ product.current_stock }}</span>
-              </div>
+            <div class="data-cell product-col">
+              <div class="font-medium text-foreground">{{ product.product_name }}</div>
             </div>
-            
-            <!-- Scrollable Columns -->
-            <div class="scrollable-columns">
-              <div 
-                v-for="month in months" 
-                :key="month"
-                class="data-cell month-col"
-              >
-                <span class="font-medium text-foreground">
-                  {{ product.sales_by_month[month] || 0 }}
-                </span>
-              </div>
+            <div class="data-cell system-col">
+              <span class="text-xs px-2 py-1 rounded-full" :class="getSourceBadgeClass(product.source)">
+                {{ product.source }}
+              </span>
+            </div>
+            <div class="data-cell stock-col">
+              <span class="text-muted-foreground font-medium">{{ product.current_stock }}</span>
+            </div>
+            <div 
+              v-for="month in months" 
+              :key="month"
+              class="data-cell month-col"
+            >
+              <span class="font-medium text-foreground">
+                {{ product.sales_by_month[month] || 0 }}
+              </span>
             </div>
           </div>
         </div>
@@ -430,12 +419,13 @@ onMounted(() => {
   background: rgba(255, 255, 255, 0.5);
 }
 
-/* Table container with CSS Grid approach */
+/* Table container with horizontal scroll support */
 .table-container {
   display: flex;
   flex-direction: column;
-  height: 400px; /* Fixed height for the table */
+  height: 400px;
   overflow: hidden;
+  position: relative;
 }
 
 .table-header {
@@ -443,12 +433,18 @@ onMounted(() => {
   background-color: hsl(var(--muted) / 0.3);
   border-bottom: 1px solid hsl(var(--sidebar-border) / 0.7);
   flex-shrink: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  min-width: max-content;
+  position: sticky;
+  top: 0;
+  z-index: 20;
 }
 
 .table-body {
   flex: 1;
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: auto;
   min-height: 0;
 }
 
@@ -456,29 +452,11 @@ onMounted(() => {
   display: flex;
   border-bottom: 1px solid hsl(var(--sidebar-border) / 0.7);
   transition: background-color 0.2s;
+  min-width: max-content;
 }
 
 .table-row:hover {
   background-color: hsl(var(--muted) / 0.5);
-}
-
-/* Fixed columns container */
-.fixed-columns {
-  display: flex;
-  flex-shrink: 0;
-  position: sticky;
-  left: 0;
-  z-index: 10;
-  background-color: hsl(var(--background));
-}
-
-/* Scrollable columns container */
-.scrollable-columns {
-  display: flex;
-  overflow-x: auto;
-  overflow-y: hidden;
-  min-width: max-content;
-  flex: 1;
 }
 
 /* Header and data cells */
@@ -531,42 +509,79 @@ onMounted(() => {
   border-right: none;
 }
 
-/* Ensure scrollable columns can scroll horizontally */
-.scrollable-columns {
-  width: 100%;
-  max-width: 100%;
-  white-space: nowrap;
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  .table-container {
+    height: 300px;
+    overflow: auto; /* Allow both horizontal and vertical scroll on mobile */
+  }
+  
+  .table-header {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background-color: hsl(var(--muted) / 0.9);
+    backdrop-filter: blur(8px);
+  }
+  
+  .table-body {
+    overflow: visible; /* Let the container handle scrolling */
+  }
+  
+  .product-col {
+    width: 200px; /* Smaller product column on mobile */
+  }
+  
+  .system-col {
+    width: 80px; /* Smaller system column on mobile */
+  }
+  
+  .stock-col {
+    width: 100px; /* Smaller stock column on mobile */
+  }
+  
+  .month-col {
+    width: 80px; /* Smaller month columns on mobile */
+    min-width: 80px;
+  }
+  
+  .header-cell,
+  .data-cell {
+    padding: 8px 12px; /* Smaller padding on mobile */
+    font-size: 0.8rem;
+  }
 }
 
-/* Force horizontal scroll when content overflows */
-.table-row .scrollable-columns {
-  overflow-x: auto !important;
-}
-
-/* Custom scrollbar for scrollable columns */
-.scrollable-columns::-webkit-scrollbar {
+/* Custom scrollbar for table */
+.table-container::-webkit-scrollbar {
   height: 8px;
+  width: 8px;
 }
 
-.scrollable-columns::-webkit-scrollbar-track {
-  background: transparent;
+.table-container::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
 }
 
-.scrollable-columns::-webkit-scrollbar-thumb {
+.table-container::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.3);
   border-radius: 4px;
 }
 
-.scrollable-columns::-webkit-scrollbar-thumb:hover {
+.table-container::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.5);
 }
 
 /* Dark mode scrollbar */
-.dark .scrollable-columns::-webkit-scrollbar-thumb {
+.dark .table-container::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dark .table-container::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.3);
 }
 
-.dark .scrollable-columns::-webkit-scrollbar-thumb:hover {
+.dark .table-container::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.5);
 }
 </style>

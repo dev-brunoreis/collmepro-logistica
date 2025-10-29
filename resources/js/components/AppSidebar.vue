@@ -59,7 +59,7 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Relatórios de Vendas',
         href: '/dashboard/reports/sales',
-        icon: Package,
+        icon: BarChart3,
         visible: user?.permissions?.some(p => p.name === 'reports.sales.view') || false,
     },
 ];
