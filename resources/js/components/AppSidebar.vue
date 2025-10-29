@@ -44,18 +44,6 @@ const mainNavItems: NavItem[] = [
         icon: Package,
         visible: user?.permissions?.some(p => p.name === 'orders.view') || false,
     },
-    // {
-    //     title: 'Etiquetas',
-    //     href: '/dashboard/labels',
-    //     icon: Tag,
-    //     visible: user?.permissions?.some(p => p.name === 'labels.view') || false,
-    // },
-    // {
-    //     title: 'Kanban',
-    //     href: '#', // TODO: Implementar rota de kanban
-    //     icon: Kanban,
-    //     visible: true, // Todos os perfis podem acessar
-    // },
     {
         title: 'Usuários',
         href: users.index(),
@@ -68,12 +56,12 @@ const mainNavItems: NavItem[] = [
         icon: FileText,
         visible: user?.permissions?.some(p => p.name === 'permissions.view') || false,
     },
-    // {
-    //     title: 'Relatórios',
-    //     href: '#', // TODO: Implementar rota de relatórios
-    //     icon: BarChart3,
-    //     visible: user?.role === 'admin' || user?.role === 'manager',
-    // },
+    {
+        title: 'Relatórios de Vendas',
+        href: '/dashboard/reports/sales',
+        icon: Package,
+        visible: user?.permissions?.some(p => p.name === 'reports.sales.view') || false,
+    },
 ];
 
 const footerNavItems: NavItem[] = [

@@ -112,6 +112,15 @@ class PermissionSeeder extends Seeder
                 'roles' => ['admin', 'developer', 'manager', 'sales'],
             ],
 
+            // Reports permissions
+            [
+                'name' => 'reports.sales.view',
+                'display_name' => 'Visualizar Relatório de Vendas',
+                'description' => 'Permite visualizar o relatório de vendas por produto e período',
+                'category' => 'reports',
+                'roles' => ['admin', 'developer', 'manager'],
+            ],
+
         ];
 
         foreach ($permissions as $permissionData) {

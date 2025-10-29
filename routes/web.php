@@ -5,6 +5,7 @@ use App\Http\Controllers\KanbanController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -23,7 +24,12 @@ Route::group(['prefix' => 'dashboard', 'middleware' => ['auth', 'verified']], fu
     Route::middleware(['permission:users.view'])->group(function () {
         Route::get('users', [UserController::class, 'index'])->name('users.index');
     });
-
+    
+    // Reports routes (users with reports permissions)
+    Route::middleware(['permission:reports.sales.view'])->group(function () {
+        Route::get('reports/sales', [ReportController::class, 'sales'])->name('reports.sales');
+    });
+    
     Route::middleware(['permission:users.create'])->group(function () {
         Route::get('users/create', [UserController::class, 'create'])->name('users.create');
         Route::post('users', [UserController::class, 'store'])->name('users.store');
