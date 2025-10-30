@@ -20,7 +20,8 @@ class QueueTrackingExtraction
     {
         $orderId = $event->invoice->order_summary_id;
         $cacheKey = "tracking_extraction_queued_{$orderId}";
-        $lockKey = "tracking_extraction_lock_{$orderId}";
+        // Use a distinct lock for queuing to avoid colliding with job uniqueness
+        $lockKey = "tracking_extraction_queue_lock_{$orderId}";
 
         // Prevent duplicate job creation with atomic lock
         if (!Cache::lock($lockKey, 10)->get()) {

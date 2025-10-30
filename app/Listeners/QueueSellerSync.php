@@ -32,6 +32,15 @@ class QueueSellerSync
         }
 
         try {
+            // Skip if seller already associated to the order to avoid repeated history entries
+            if ($event->order->seller()->exists()) {
+                Log::info('QueueSellerSync: Skipped (seller already synced)', [
+                    'order_id' => $orderId,
+                    'order_number' => $event->order->numero,
+                ]);
+                return;
+            }
+
             // Check if job was already queued recently (within 1 minute)
             if (Cache::has($cacheKey)) {
                 Log::info('QueueSellerSync: Skipped (already queued recently)', [

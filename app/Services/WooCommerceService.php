@@ -4,18 +4,11 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use App\Services\RateLimiter\RateLimiter;
 
 class WooCommerceService
 {
-    /**
-     * Apply rate limiting for WooCommerce API
-     * WooCommerce typically allows 10 requests per second per IP
-     * Using 5 req/s (50% of limit) for safety margin = 200ms between requests
-     */
-    protected function applyRateLimit(): void
-    {
-        usleep(200000); // 200ms = 5 requests per second
-    }
+    // Centralized rate limiting handled via RateLimiter service
 
     /**
      * Get seller information from WooCommerce order
@@ -26,9 +19,6 @@ class WooCommerceService
      */
     public function getOrderSeller(string $woocommerceOrderId, string $accountType): ?array
     {
-        // Apply rate limiting before request
-        $this->applyRateLimit();
-        
         try {
             // Get environment variables based on account type
             $url = $this->getWooCommerceUrl($accountType, $woocommerceOrderId);
@@ -43,10 +33,15 @@ class WooCommerceService
                 return null;
             }
 
-            // Make request to WooCommerce API
-            $response = Http::withHeaders([
-                'Authorization' => 'Basic ' . base64_encode($consumerKey . ':' . $consumerSecret),
-            ])->timeout(10)->get($url);
+            // Make request to WooCommerce API via centralized rate limiter
+            $http = RateLimiter::for('woocommerce')->http(
+                Http::withHeaders([
+                    'Authorization' => 'Basic ' . base64_encode($consumerKey . ':' . $consumerSecret),
+                ])->timeout(10),
+                'woocommerce'
+            );
+
+            $response = $http->get($url);
 
             if (!$response->successful()) {
                 // Check for rate limiting
@@ -56,8 +51,7 @@ class WooCommerceService
                         'order_id' => $woocommerceOrderId,
                         'status_code' => $response->status(),
                     ]);
-                    // Wait and don't throw, let it be retried by the job
-                    sleep(2);
+                    // Let the queue/job control retries; limiter already backs off
                     return null;
                 }
                 

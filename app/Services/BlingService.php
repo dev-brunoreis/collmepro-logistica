@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use App\Services\RateLimiter\RateLimiter;
 use Carbon\Carbon;
 use Exception;
 
@@ -87,13 +88,16 @@ abstract class BlingService
             $attempt++;
             
             try {
-                $response = Http::withToken($token)
-                    ->timeout($timeout)
-                    ->withHeaders([
-                        'Accept' => 'application/json',
-                        'Content-Type' => 'application/json',
-                    ])
-                    ->$method(self::BLING_API_BASE_URL . $endpoint, $data);
+                $http = RateLimiter::for('bling')->http(
+                    Http::withToken($token)
+                        ->timeout($timeout)
+                        ->withHeaders([
+                            'Accept' => 'application/json',
+                            'Content-Type' => 'application/json',
+                        ]),
+                    'bling'
+                );
+                $response = $http->$method(self::BLING_API_BASE_URL . $endpoint, $data);
 
                 // Handle successful response
                 if ($response->successful()) {
@@ -240,13 +244,7 @@ abstract class BlingService
      * - No risk of IP blocking
      * - Sync is SLOW but 100% RELIABLE
      */
-    protected function applyRateLimit(): void
-    {
-        // Optimized delay: 1000ms = 1 request per second per worker
-        // With 4 workers max: 4 × 1 = 4 req/s total (33% over limit, but with safety margin)
-        // This is more aggressive but should prevent timeouts
-        usleep(1000000); // 1000ms - Balanced approach
-    }
+    // Rate limiting handled centrally via RateLimiter; no per-call sleeps here
 
     /**
      * Sync orders from Bling
@@ -398,8 +396,7 @@ abstract class BlingService
 
                 $pagina++;
 
-                // Rate limiting: 3 requests per second
-                $this->applyRateLimit();
+                // Centralized rate limiting in makeRequest
 
             } catch (Exception $e) {
                 Log::error("Exception while fetching orders", [
@@ -785,7 +782,6 @@ abstract class BlingService
     {
         try {
             $response = $this->makeRequest('GET', "/pedidos/vendas/{$orderId}");
-            $this->applyRateLimit();
 
             return $response['data'] ?? null;
 
@@ -805,7 +801,6 @@ abstract class BlingService
     {
         try {
             $response = $this->makeRequest('GET', "/nfe/{$invoiceId}");
-            $this->applyRateLimit();
 
             return $response['data'] ?? null;
 
@@ -825,7 +820,6 @@ abstract class BlingService
     {
         try {
             $response = $this->makeRequest('GET', "/logisticas/objetos/{$volumeId}");
-            $this->applyRateLimit();
 
             return $response['data'] ?? null;
 

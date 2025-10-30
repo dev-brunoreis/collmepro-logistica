@@ -20,7 +20,8 @@ class QueueInvoiceSync
     {
         $orderId = $event->order->id;
         $cacheKey = "invoice_sync_queued_{$orderId}";
-        $lockKey = "invoice_sync_lock_{$orderId}";
+        // Use a distinct lock key for queuing to avoid colliding with the processing job lock
+        $lockKey = "invoice_sync_queue_lock_{$orderId}";
 
         // Prevent duplicate job creation with atomic lock
         if (!Cache::lock($lockKey, 10)->get()) {

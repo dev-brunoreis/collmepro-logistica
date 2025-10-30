@@ -17,6 +17,14 @@ class HandleInertiaRequests extends Middleware
      */
     protected $rootView = 'app';
 
+    public function __construct()
+    {
+        // Use a minimal root view during tests to avoid Vite asset loading
+        if (app()->environment('testing')) {
+            $this->rootView = 'testing';
+        }
+    }
+
     /**
      * Determines the current asset version.
      *
