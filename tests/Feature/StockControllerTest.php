@@ -8,7 +8,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class ReportControllerTest extends TestCase
+class StockControllerTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -21,53 +21,53 @@ class ReportControllerTest extends TestCase
         // Seed permissions
         $this->seed(\Database\Seeders\PermissionSeeder::class);
         
-        // Create test user with manager role (which should have reports permission)
+        // Create test user with admin role (which should have stock permission)
         $this->user = User::factory()->create([
-            'role' => 'manager',
+            'role' => 'admin',
         ]);
     }
 
     /** @test */
-    public function authenticated_users_with_permission_can_access_sales_report()
+    public function authenticated_users_with_permission_can_access_stock_page()
     {
         $response = $this->actingAs($this->user)
-            ->get(route('reports.sales'));
+            ->get(route('stock.index'));
 
         $response->assertStatus(200);
         $response->assertInertia(fn ($page) => 
-            $page->component('Reports/Sales')
+            $page->component('Stock/Index')
         );
     }
 
     /** @test */
-    public function users_without_permission_cannot_access_sales_report()
+    public function users_without_permission_cannot_access_stock_page()
     {
         $userWithoutPermission = User::factory()->create([
             'role' => 'sales',
         ]);
 
         $response = $this->actingAs($userWithoutPermission)
-            ->get(route('reports.sales'));
+            ->get(route('stock.index'));
 
         $response->assertStatus(403);
     }
 
     /** @test */
-    public function unauthenticated_users_cannot_access_sales_report()
+    public function unauthenticated_users_cannot_access_stock_page()
     {
-        $response = $this->get(route('reports.sales'));
+        $response = $this->get(route('stock.index'));
 
         $response->assertRedirect(route('login'));
     }
 
     /** @test */
-    public function sales_report_filters_by_source_pro()
+    public function stock_page_filters_by_source_pro()
     {
         // Create test data
         $this->createTestOrders();
 
         $response = $this->actingAs($this->user)
-            ->get(route('reports.sales', ['source' => 'Pro']));
+            ->get(route('stock.index', ['source' => 'Pro']));
 
         $response->assertStatus(200);
         $response->assertInertia(fn ($page) => 
@@ -77,13 +77,13 @@ class ReportControllerTest extends TestCase
     }
 
     /** @test */
-    public function sales_report_filters_by_source_atacadista()
+    public function stock_page_filters_by_source_atacadista()
     {
         // Create test data
         $this->createTestOrders();
 
         $response = $this->actingAs($this->user)
-            ->get(route('reports.sales', ['source' => 'Atacadista']));
+            ->get(route('stock.index', ['source' => 'Atacadista']));
 
         $response->assertStatus(200);
         $response->assertInertia(fn ($page) => 
@@ -93,13 +93,13 @@ class ReportControllerTest extends TestCase
     }
 
     /** @test */
-    public function sales_report_filters_by_date_range()
+    public function stock_page_filters_by_date_range()
     {
         // Create test data
         $this->createTestOrders();
 
         $response = $this->actingAs($this->user)
-            ->get(route('reports.sales', [
+            ->get(route('stock.index', [
                 'start_month' => '2025-10',
                 'end_month' => '2025-10'
             ]));
@@ -112,13 +112,13 @@ class ReportControllerTest extends TestCase
     }
 
     /** @test */
-    public function sales_report_respects_pagination_parameters()
+    public function stock_page_respects_pagination_parameters()
     {
         // Create test data
         $this->createTestOrders();
 
         $response = $this->actingAs($this->user)
-            ->get(route('reports.sales', ['per_page' => 10]));
+            ->get(route('stock.index', ['per_page' => 10]));
 
         $response->assertStatus(200);
         $response->assertInertia(fn ($page) => 
@@ -127,13 +127,13 @@ class ReportControllerTest extends TestCase
     }
 
     /** @test */
-    public function sales_report_aggregates_products_correctly()
+    public function stock_page_aggregates_products_correctly()
     {
         // Create test orders with specific product data
         $this->createTestOrdersWithProducts();
 
         $response = $this->actingAs($this->user)
-            ->get(route('reports.sales'));
+            ->get(route('stock.index'));
 
         $response->assertStatus(200);
         $response->assertInertia(fn ($page) => 
@@ -156,13 +156,13 @@ class ReportControllerTest extends TestCase
     }
 
     /** @test */
-    public function sales_report_returns_correct_month_columns()
+    public function stock_page_returns_correct_month_columns()
     {
         // Create test data
         $this->createTestOrders();
 
         $response = $this->actingAs($this->user)
-            ->get(route('reports.sales', [
+            ->get(route('stock.index', [
                 'start_month' => '2025-09',
                 'end_month' => '2025-10'
             ]));
@@ -175,10 +175,10 @@ class ReportControllerTest extends TestCase
     }
 
     /** @test */
-    public function sales_report_handles_empty_results()
+    public function stock_page_handles_empty_results()
     {
         $response = $this->actingAs($this->user)
-            ->get(route('reports.sales', [
+            ->get(route('stock.index', [
                 'start_month' => '2020-01',
                 'end_month' => '2020-01'
             ]));
@@ -191,14 +191,14 @@ class ReportControllerTest extends TestCase
     }
 
     /** @test */
-    public function sales_report_filters_by_product_name_search()
+    public function stock_page_filters_by_product_name_search()
     {
         // Create test data with specific product names
         $this->createTestOrdersWithSearchableProducts();
 
         // Search for a specific product
         $response = $this->actingAs($this->user)
-            ->get(route('reports.sales', ['search' => 'Produto Específico']));
+            ->get(route('stock.index', ['search' => 'Produto Específico']));
 
         $response->assertStatus(200);
         $response->assertInertia(fn ($page) => 
@@ -216,14 +216,14 @@ class ReportControllerTest extends TestCase
     }
 
     /** @test */
-    public function sales_report_handles_search_with_no_results()
+    public function stock_page_handles_search_with_no_results()
     {
         // Create test data
         $this->createTestOrders();
 
         // Search for a non-existent product
         $response = $this->actingAs($this->user)
-            ->get(route('reports.sales', ['search' => 'Produto Inexistente']));
+            ->get(route('stock.index', ['search' => 'Produto Inexistente']));
 
         $response->assertStatus(200);
         $response->assertInertia(fn ($page) => 
@@ -237,23 +237,23 @@ class ReportControllerTest extends TestCase
     }
 
     /** @test */
-    public function sales_report_validates_input_parameters()
+    public function stock_page_validates_input_parameters()
     {
         // Test invalid source
         $response = $this->actingAs($this->user)
-            ->get(route('reports.sales', ['source' => 'Invalid']));
+            ->get(route('stock.index', ['source' => 'Invalid']));
 
         $response->assertStatus(302); // Validation error redirect
 
         // Test invalid date format
         $response = $this->actingAs($this->user)
-            ->get(route('reports.sales', ['start_month' => 'invalid-date']));
+            ->get(route('stock.index', ['start_month' => 'invalid-date']));
 
         $response->assertStatus(302); // Validation error redirect
 
         // Test invalid per_page
         $response = $this->actingAs($this->user)
-            ->get(route('reports.sales', ['per_page' => 1000]));
+            ->get(route('stock.index', ['per_page' => 1000]));
 
         $response->assertStatus(302); // Validation error redirect
     }

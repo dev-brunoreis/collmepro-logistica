@@ -112,13 +112,13 @@ class PermissionSeeder extends Seeder
                 'roles' => ['admin', 'developer', 'manager', 'sales'],
             ],
 
-            // Reports permissions
+            // Stock permissions
             [
-                'name' => 'reports.sales.view',
-                'display_name' => 'Visualizar Relatório de Vendas',
-                'description' => 'Permite visualizar o relatório de vendas por produto e período',
-                'category' => 'reports',
-                'roles' => ['admin', 'developer', 'manager'],
+                'name' => 'stock.view',
+                'display_name' => 'Visualizar Estoque',
+                'description' => 'Permite visualizar o controle de estoque por produto e período',
+                'category' => 'stock',
+                'roles' => ['admin', 'developer'],
             ],
 
         ];

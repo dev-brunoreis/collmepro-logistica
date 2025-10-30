@@ -57,10 +57,10 @@ const mainNavItems: NavItem[] = [
         visible: user?.permissions?.some(p => p.name === 'permissions.view') || false,
     },
     {
-        title: 'Relatórios de Vendas',
-        href: '/dashboard/reports/sales',
-        icon: BarChart3,
-        visible: user?.permissions?.some(p => p.name === 'reports.sales.view') || false,
+        title: 'Estoque',
+        href: '/dashboard/stock',
+        icon: Package,
+        visible: user?.permissions?.some(p => p.name === 'stock.view') || false,
     },
 ];
 

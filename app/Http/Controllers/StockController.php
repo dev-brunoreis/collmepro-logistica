@@ -7,12 +7,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
-class ReportController extends Controller
+class StockController extends Controller
 {
     /**
-     * Display the sales report page
+     * Display the stock page
      */
-    public function sales(Request $request)
+    public function index(Request $request)
     {
         // Validate request parameters
         $validated = $request->validate([
@@ -43,7 +43,7 @@ class ReportController extends Controller
         }
 
         // Get paginated results - always filter to show only Pro and Atacadista
-        $products = $this->buildSalesReportQuery($source, $startMonth, $endMonth, $search, true);
+        $products = $this->buildStockQuery($source, $startMonth, $endMonth, $search, true);
 
         // Get available months for the table headers
         $months = $this->getAvailableMonths($startMonth, $endMonth);
@@ -75,7 +75,7 @@ class ReportController extends Controller
             ];
         });
 
-        return Inertia::render('Reports/Sales', [
+        return Inertia::render('Stock/Index', [
             'products' => $transformedProducts,
             'months' => $months,
             'filters' => [
@@ -96,7 +96,7 @@ class ReportController extends Controller
     /**
      * Build the complex query to extract and aggregate products from JSON
      */
-    private function buildSalesReportQuery($source, $startMonth, $endMonth, $search = null, $filterProAtacadista = false)
+    private function buildStockQuery($source, $startMonth, $endMonth, $search = null, $filterProAtacadista = false)
     {
         $startDate = $startMonth . '-01';
         $endDate = $endMonth . '-' . date('t', strtotime($endMonth . '-01'));

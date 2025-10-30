@@ -1,12 +1,12 @@
 <template>
-   <Head title="Relatório de Vendas" />
+   <Head title="Estoque" />
 
   <AppLayout :breadcrumbs="breadcrumbs">
     <div class="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
     <!-- Page Header -->
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-foreground">Relatório de Vendas</h1>
+        <h1 class="text-2xl font-bold text-foreground">Estoque</h1>
         <p class="text-muted-foreground">Análise de vendas por produto e período</p>
       </div>
     </div>
@@ -229,8 +229,8 @@ import { Head } from '@inertiajs/vue3'
 
 const breadcrumbs = computed(() => [
     {
-        title: 'Relatório de Vendas',
-        href: '/dashboard/reports/sales',
+        title: 'Estoque',
+        href: '/dashboard/stock',
     },
 ])
 
@@ -262,7 +262,7 @@ const applyFilters = debounce(() => {
   loading.value = true
   error.value = null
   
-  router.get('/dashboard/reports/sales', filters, {
+  router.get('/dashboard/stock', filters, {
     preserveState: true,
     onSuccess: () => {
       loading.value = false
@@ -322,7 +322,7 @@ const goToPage = (page) => {
   if (page < 1 || page > props.products.last_page) return
   
   loading.value = true
-  router.get('/dashboard/reports/sales', { ...filters, page }, {
+  router.get('/dashboard/stock', { ...filters, page }, {
     preserveState: true,
     onSuccess: () => {
       loading.value = false
