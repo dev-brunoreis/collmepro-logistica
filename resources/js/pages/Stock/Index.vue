@@ -125,7 +125,7 @@
 
     <!-- Sales Report Table -->
     <div v-if="products.data && Object.keys(products.data).length > 0 && !loading" class="rounded-lg border border-sidebar-border/70 dark:border-sidebar-border">
-      <div>
+      <div class="table-container">
         <!-- Table Header -->
         <div class="table-header">
           <div class="header-cell product-col">Produto</div>
@@ -424,7 +424,8 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   height: 400px;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   position: relative;
 }
 
@@ -433,8 +434,6 @@ onMounted(() => {
   background-color: hsl(var(--muted) / 0.3);
   border-bottom: 1px solid hsl(var(--sidebar-border) / 0.7);
   flex-shrink: 0;
-  overflow-x: auto;
-  overflow-y: hidden;
   min-width: max-content;
   position: sticky;
   top: 0;
@@ -444,8 +443,9 @@ onMounted(() => {
 .table-body {
   flex: 1;
   overflow-y: auto;
-  overflow-x: auto;
+  overflow-x: hidden;
   min-height: 0;
+  min-width: max-content;
 }
 
 .table-row {
@@ -513,7 +513,8 @@ onMounted(() => {
 @media (max-width: 768px) {
   .table-container {
     height: 300px;
-    overflow: auto; /* Allow both horizontal and vertical scroll on mobile */
+    overflow-x: auto;
+    overflow-y: hidden;
   }
   
   .table-header {
@@ -525,7 +526,8 @@ onMounted(() => {
   }
   
   .table-body {
-    overflow: visible; /* Let the container handle scrolling */
+    overflow-y: auto;
+    overflow-x: hidden;
   }
   
   .product-col {
