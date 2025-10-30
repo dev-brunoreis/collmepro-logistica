@@ -73,7 +73,8 @@
       </div>
 
       <!-- Action Buttons -->
-      <div class="flex gap-2 mt-4">
+      <div class="flex gap-2 mt-4 justify-between">
+        <div class="flex gap-2">
         <button 
           @click="applyFilters"
           :disabled="loading"
@@ -90,11 +91,19 @@
           Limpar
         </button>
       </div>
+        <button 
+          @click="exportToCSV"
+          :disabled="loading || !props.products.data || Object.keys(props.products.data).length === 0"
+          class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Exportar
+        </button>
+      </div>
     </div>
 
     <!-- Results Summary -->
-    <div v-if="products.data && Object.keys(products.data).length > 0" class="text-sm text-muted-foreground">
-      Mostrando {{ Object.keys(products.data).length }} de {{ products.total }} produtos
+    <div v-if="props.products.data && Object.keys(props.products.data).length > 0" class="text-sm text-muted-foreground">
+      Mostrando {{ Object.keys(props.products.data).length }} de {{ props.products.total }} produtos
       <span v-if="filters.months_back">
         • Período: {{ getPeriodDescription() }}
       </span>
@@ -113,7 +122,7 @@
 
 
     <!-- No Data State -->
-    <div v-if="products.data && Object.keys(products.data).length === 0 && !loading" class="text-center py-12">
+    <div v-if="props.products.data && Object.keys(props.products.data).length === 0 && !loading" class="text-center py-12">
       <div class="text-muted-foreground">
         <svg class="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -124,7 +133,7 @@
     </div>
 
     <!-- Sales Report Table -->
-    <div v-if="products.data && Object.keys(products.data).length > 0 && !loading" class="rounded-lg border border-sidebar-border/70 dark:border-sidebar-border">
+    <div v-if="props.products.data && Object.keys(props.products.data).length > 0 && !loading" class="rounded-lg border border-sidebar-border/70 dark:border-sidebar-border">
       <div class="table-container">
         <!-- Table Header -->
         <div class="table-header">
@@ -143,7 +152,7 @@
         <!-- Table Body -->
         <div class="table-body">
           <div 
-            v-for="(product, key) in products.data" 
+            v-for="(product, key) in props.products.data" 
             :key="key"
             class="table-row"
           >
@@ -172,16 +181,16 @@
       </div>
 
       <!-- Pagination -->
-      <div v-if="products.last_page > 1" class="flex items-center justify-between px-4 py-3 border-t border-sidebar-border/70 dark:border-sidebar-border">
+      <div v-if="props.products.last_page > 1" class="flex items-center justify-between px-4 py-3 border-t border-sidebar-border/70 dark:border-sidebar-border">
         <div class="text-sm text-muted-foreground">
-          Página {{ products.current_page }} de {{ products.last_page }}
+          Página {{ props.products.current_page }} de {{ props.products.last_page }}
         </div>
         
         <div class="flex items-center space-x-2">
           <!-- Previous Button -->
           <button 
-            @click="goToPage(products.current_page - 1)"
-            :disabled="products.current_page <= 1"
+            @click="goToPage(props.products.current_page - 1)"
+            :disabled="props.products.current_page <= 1"
             class="px-3 py-1 text-sm border border-input rounded-md hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Anterior
@@ -195,7 +204,7 @@
               @click="goToPage(page)"
               :class="[
                 'px-3 py-1 text-sm rounded-md',
-                page === products.current_page 
+                page === props.products.current_page 
                   ? 'bg-primary text-primary-foreground' 
                   : 'border border-input hover:bg-muted'
               ]"
@@ -206,8 +215,8 @@
           
           <!-- Next Button -->
           <button 
-            @click="goToPage(products.current_page + 1)"
-            :disabled="products.current_page >= products.last_page"
+            @click="goToPage(props.products.current_page + 1)"
+            :disabled="props.products.current_page >= props.products.last_page"
             class="px-3 py-1 text-sm border border-input rounded-md hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Próximo
@@ -370,6 +379,28 @@ const formatMonth = (monthString) => {
   return `${monthNames[parseInt(month) - 1]}/${year}`
 }
 
+const exportToCSV = () => {
+  if (!props.products.data || Object.keys(props.products.data).length === 0) return
+  
+  loading.value = true
+  
+  // Build query string with filters
+  const queryParams = new URLSearchParams()
+  Object.keys(filters).forEach(key => {
+    if (filters[key] !== null && filters[key] !== '') {
+      queryParams.append(key, filters[key])
+    }
+  })
+  
+  // Create export URL with filters as query parameters
+  const exportUrl = `/dashboard/stock/export?${queryParams.toString()}`
+  
+  // Open in new window/tab to trigger download
+  window.open(exportUrl, '_blank')
+  
+  loading.value = false
+}
+
 // Watch for filter changes
 watch(filters, () => {
   // Don't auto-apply filters on mount
@@ -423,7 +454,6 @@ onMounted(() => {
 .table-container {
   display: flex;
   flex-direction: column;
-  height: 400px;
   overflow-x: auto;
   overflow-y: hidden;
   position: relative;

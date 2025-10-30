@@ -28,6 +28,7 @@ Route::group(['prefix' => 'dashboard', 'middleware' => ['auth', 'verified']], fu
     // Stock routes (users with stock permissions)
     Route::middleware(['permission:stock.view'])->group(function () {
         Route::get('stock', [StockController::class, 'index'])->name('stock.index');
+        Route::get('stock/export', [StockController::class, 'export'])->name('stock.export');
     });
     
     Route::middleware(['permission:users.create'])->group(function () {

@@ -43,7 +43,7 @@ class StockController extends Controller
         }
 
         // Get paginated results - always filter to show only Pro and Atacadista
-        $products = $this->buildStockQuery($source, $startMonth, $endMonth, $search, true);
+        $products = $this->buildStockQuery($source, $startMonth, $endMonth, $search, true, true);
 
         // Get available months for the table headers
         $months = $this->getAvailableMonths($startMonth, $endMonth);
@@ -96,7 +96,7 @@ class StockController extends Controller
     /**
      * Build the complex query to extract and aggregate products from JSON
      */
-    private function buildStockQuery($source, $startMonth, $endMonth, $search = null, $filterProAtacadista = false)
+    private function buildStockQuery($source, $startMonth, $endMonth, $search = null, $filterProAtacadista = false, $paginate = true)
     {
         $startDate = $startMonth . '-01';
         $endDate = $endMonth . '-' . date('t', strtotime($endMonth . '-01'));
@@ -105,16 +105,16 @@ class StockController extends Controller
         $isMySQL = DB::getDriverName() === 'mysql';
         
         if ($isMySQL) {
-            return $this->buildMySQLQuery($source, $startDate, $endDate, $search, $filterProAtacadista);
+            return $this->buildMySQLQuery($source, $startDate, $endDate, $search, $filterProAtacadista, $paginate);
         } else {
-            return $this->buildSQLiteQuery($source, $startDate, $endDate, $search, $filterProAtacadista);
+            return $this->buildSQLiteQuery($source, $startDate, $endDate, $search, $filterProAtacadista, $paginate);
         }
     }
 
     /**
      * Build query for MySQL using JSON_TABLE
      */
-    private function buildMySQLQuery($source, $startDate, $endDate, $search = null, $filterProAtacadista = false)
+    private function buildMySQLQuery($source, $startDate, $endDate, $search = null, $filterProAtacadista = false, $paginate = true)
     {
         // Raw SQL to extract JSON data and aggregate from raw_order_data
         $rawQuery = "
@@ -147,13 +147,13 @@ class StockController extends Controller
         // Get the raw data
         $rawData = DB::select($rawQuery, $params);
 
-        return $this->processRawData($rawData, $search);
+        return $this->processRawData($rawData, $search, $paginate);
     }
 
     /**
      * Build query for SQLite using a simpler approach
      */
-    private function buildSQLiteQuery($source, $startDate, $endDate, $search = null, $filterProAtacadista = false)
+    private function buildSQLiteQuery($source, $startDate, $endDate, $search = null, $filterProAtacadista = false, $paginate = true)
     {
         // For SQLite, we'll get all orders and process the JSON in PHP
         $query = DB::table('order_summary as os')
@@ -194,13 +194,13 @@ class StockController extends Controller
             }
         }
 
-        return $this->processRawData($rawData, $search);
+        return $this->processRawData($rawData, $search, $paginate);
     }
 
     /**
      * Process raw data and return paginated results
      */
-    private function processRawData($rawData, $search = null)
+    private function processRawData($rawData, $search = null, $paginate = true)
     {
         // Group by product and month
         $groupedData = [];
@@ -252,29 +252,116 @@ class StockController extends Controller
             ];
         });
 
-        // Manual pagination
-        $page = request('page', 1);
-        $perPage = request('per_page', 25);
-        $offset = ($page - 1) * $perPage;
+        // Return paginated or all results based on $paginate parameter
+        if ($paginate) {
+            // Manual pagination
+            $page = request('page', 1);
+            $perPage = request('per_page', 25);
+            $offset = ($page - 1) * $perPage;
+            
+            $paginatedItems = $collection->slice($offset, $perPage);
+            $total = $collection->count();
+            
+            // Create a paginator instance
+            $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+                $paginatedItems,
+                $total,
+                $perPage,
+                $page,
+                [
+                    'path' => request()->url(),
+                    'pageName' => 'page',
+                ]
+            );
+            
+            $paginator->appends(request()->query());
+            
+            return $paginator;
+        } else {
+            // Return all results for export
+            return $collection;
+        }
+    }
+
+    /**
+     * Export stock data to CSV
+     */
+    public function export(Request $request)
+    {
+        // Validate request parameters (same as index)
+        $validated = $request->validate([
+            'search' => 'nullable|string|max:255',
+            'source' => 'nullable|in:Pro,Atacadista',
+            'months_back' => 'nullable|integer|min:1|max:60',
+            'start_month' => 'nullable|date_format:Y-m',
+            'end_month' => 'nullable|date_format:Y-m|after_or_equal:start_month',
+        ]);
+
+        // Set default values
+        $source = $validated['source'] ?? null;
+        $search = $validated['search'] ?? null;
         
-        $paginatedItems = $collection->slice($offset, $perPage);
-        $total = $collection->count();
-        
-        // Create a paginator instance
-        $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
-            $paginatedItems,
-            $total,
-            $perPage,
-            $page,
-            [
-                'path' => request()->url(),
-                'pageName' => 'page',
-            ]
-        );
-        
-        $paginator->appends(request()->query());
-        
-        return $paginator;
+        // Calculate date range based on months_back or use provided dates
+        if (isset($validated['months_back'])) {
+            $monthsBack = $validated['months_back'];
+            $startMonth = now()->subMonths($monthsBack - 1)->format('Y-m');
+            $endMonth = now()->format('Y-m');
+        } else {
+            $startMonth = $validated['start_month'] ?? now()->subMonths(5)->format('Y-m');
+            $endMonth = $validated['end_month'] ?? now()->format('Y-m');
+        }
+
+        // Get all results (no pagination for export)
+        $products = $this->buildStockQuery($source, $startMonth, $endMonth, $search, true, false);
+
+        // Get available months for the CSV headers
+        $months = $this->getAvailableMonths($startMonth, $endMonth);
+
+        // Transform the data for CSV
+        $csvData = [];
+        foreach ($products as $product) {
+            // Initialize all months with 0
+            $salesByMonth = [];
+            foreach ($months as $month) {
+                $salesByMonth[$month] = 0;
+            }
+            
+            // Fill in actual sales data
+            if ($product->sales_data) {
+                foreach (json_decode($product->sales_data, true) as $sale) {
+                    $month = $sale['month'];
+                    $salesByMonth[$month] = (int) $sale['total_quantity'];
+                }
+            }
+
+            $row = [
+                'Produto' => $product->product_name,
+                'Código' => $product->product_code,
+                'Sistema' => $product->source ?? 'Unknown',
+                'Estoque Atual' => 0, // Hardcoded as requested
+            ];
+
+            // Add monthly sales data
+            foreach ($months as $month) {
+                $monthName = $this->formatMonthForCSV($month);
+                $row[$monthName] = $salesByMonth[$month];
+            }
+
+            $csvData[] = $row;
+        }
+
+        // Generate CSV content
+        $csvContent = $this->arrayToCsv($csvData);
+
+        // Generate filename with date range
+        $filename = 'estoque_' . $startMonth . '_a_' . $endMonth . '_' . now()->format('Y-m-d_H-i-s') . '.csv';
+
+        return response($csvContent)
+            ->header('Content-Type', 'text/csv; charset=UTF-8')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
+            ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', '0');
     }
 
     /**
@@ -292,5 +379,51 @@ class StockController extends Controller
         }
 
         return array_reverse($months); // Most recent first
+    }
+
+    /**
+     * Format month for CSV header
+     */
+    private function formatMonthForCSV($monthString)
+    {
+        $monthNames = [
+            'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+            'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
+        ];
+        
+        $parts = explode('-', $monthString);
+        $year = $parts[0];
+        $month = (int) $parts[1];
+        
+        return $monthNames[$month - 1] . '/' . $year;
+    }
+
+    /**
+     * Convert array to CSV string
+     */
+    private function arrayToCsv($data)
+    {
+        if (empty($data)) {
+            return '';
+        }
+
+        $output = fopen('php://temp', 'r+');
+        
+        // Add BOM for UTF-8
+        fwrite($output, "\xEF\xBB\xBF");
+        
+        // Add headers
+        fputcsv($output, array_keys($data[0]), ';');
+        
+        // Add data rows
+        foreach ($data as $row) {
+            fputcsv($output, $row, ';');
+        }
+        
+        rewind($output);
+        $csv = stream_get_contents($output);
+        fclose($output);
+        
+        return $csv;
     }
 }
