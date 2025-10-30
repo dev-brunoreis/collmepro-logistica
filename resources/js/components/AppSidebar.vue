@@ -25,7 +25,8 @@ import {
     Tag, 
     FileText,
     BarChart3,
-    SquareKanban
+    SquareKanban,
+    Box as BoxIcon
 } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
@@ -59,7 +60,7 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Estoque',
         href: '/dashboard/stock',
-        icon: Package,
+        icon: BoxIcon,
         visible: user?.permissions?.some(p => p.name === 'stock.view') || false,
     },
 ];
