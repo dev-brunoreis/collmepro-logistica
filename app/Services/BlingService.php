@@ -225,24 +225,26 @@ abstract class BlingService
      * - 120,000 requests per day
      * - IP blocking: 600 requests in 10 seconds = 60 req/s triggers 10-minute block
      * 
-     * System has 3-4 processes making Bling API requests simultaneously:
-     * - BlingSyncJob (fetching orders list)
-     * - SyncInvoiceJob (fetching invoices)
-     * - ExtractTrackingJob (fetching tracking)
+     * System has 5 workers potentially making Bling API requests simultaneously:
+     * - BlingSyncJob (default queue - fetching orders list)
+     * - SyncInvoiceJob × 2 (invoices queue - fetching invoices)
+     * - ExtractTrackingJob × 2 (tracking queue - fetching tracking)
      * - Plus any manual syncs or retries
      * 
-     * Conservative approach accounting for multiple workers:
+     * Optimized approach with centralized rate limiting:
      * - Bling limit: 3 req/s (account-wide)
-     * - Active workers: ~4 simultaneous
-     * - Safe rate per worker: 3 / 4 = 0.75 req/s
-     * - With safety margin: 0.5 req/s per worker = 2000ms delay
-     * - Total: 4 workers × 0.5 req/s = 2 req/s (67% of limit)
+     * - Rate limiter: 2.7 req/s account-wide (90% of limit)
+     * - Burst: 3 req (allows peaks up to API limit)
+     * - Safety margin: 10% below limit to prevent 429 errors
      * 
-     * This CONSERVATIVE rate ensures:
-     * - 33% safety margin below the 3 req/s limit
-     * - Zero 429 errors across all workers
+     * Rate limiting is handled centrally via RateLimiter service using Redis token bucket.
+     * All workers share the same token pool, ensuring we never exceed 3 req/s total.
+     * 
+     * This OPTIMIZED rate ensures:
+     * - 10% safety margin below the 3 req/s limit
+     * - Near-zero 429 errors across all workers
      * - No risk of IP blocking
-     * - Sync is SLOW but 100% RELIABLE
+     * - Sync is FAST and RELIABLE (using 90% of available capacity)
      */
     // Rate limiting handled centrally via RateLimiter; no per-call sleeps here
 

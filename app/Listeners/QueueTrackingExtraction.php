@@ -58,15 +58,37 @@ class QueueTrackingExtraction
                 return;
             }
 
+            // Check queue size before enqueueing to prevent overflow
+            $queueSize = DB::table('jobs')
+                ->where('queue', 'tracking')
+                ->count();
+
+            // If queue is too large (>2000 jobs), skip to prevent further overload
+            // This prevents the queue from growing indefinitely
+            if ($queueSize > 2000) {
+                Log::warning('QueueTrackingExtraction: Skipped (queue too large)', [
+                    'order_id' => $orderId,
+                    'invoice_id' => $event->invoice->id,
+                    'queue_size' => $queueSize,
+                    'threshold' => 2000,
+                ]);
+                return;
+            }
+
             Log::info('QueueTrackingExtraction: Queuing tracking extraction', [
                 'invoice_id' => $event->invoice->id,
                 'invoice_number' => $event->invoice->numero,
                 'order_id' => $orderId,
                 'was_created' => $event->wasCreated,
+                'queue_size' => $queueSize,
             ]);
 
-            // Dispatch tracking extraction job to the tracking queue
-            dispatch(new ExtractTrackingJob($orderId))->onQueue('tracking');
+            // Dispatch tracking extraction job to the tracking queue with small delay for throttling
+            // Add progressive delay based on queue size to smooth out load spikes
+            $delaySeconds = min($queueSize * 0.01, 5); // Max 5 seconds delay
+            dispatch(new ExtractTrackingJob($orderId))
+                ->onQueue('tracking')
+                ->delay(now()->addSeconds($delaySeconds));
 
             // Mark as queued to prevent duplicates (1 minute)
             Cache::put($cacheKey, now(), 60);

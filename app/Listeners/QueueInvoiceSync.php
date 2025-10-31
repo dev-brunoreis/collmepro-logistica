@@ -58,14 +58,36 @@ class QueueInvoiceSync
                 return;
             }
 
+            // Check queue size before enqueueing to prevent overflow
+            $queueSize = DB::table('jobs')
+                ->where('queue', 'invoices')
+                ->count();
+
+            // If queue is too large (>2000 jobs), skip to prevent further overload
+            // This prevents the queue from growing indefinitely
+            if ($queueSize > 2000) {
+                Log::warning('QueueInvoiceSync: Skipped (queue too large)', [
+                    'order_id' => $orderId,
+                    'order_number' => $event->order->numero,
+                    'queue_size' => $queueSize,
+                    'threshold' => 2000,
+                ]);
+                return;
+            }
+
             Log::info('QueueInvoiceSync: Queuing invoice sync', [
                 'order_id' => $orderId,
                 'order_number' => $event->order->numero,
                 'was_created' => $event->wasCreated,
+                'queue_size' => $queueSize,
             ]);
 
-            // Dispatch invoice sync job to the invoices queue
-            dispatch(new SyncInvoiceJob($orderId))->onQueue('invoices');
+            // Dispatch invoice sync job to the invoices queue with small delay for throttling
+            // Add progressive delay based on queue size to smooth out load spikes
+            $delaySeconds = min($queueSize * 0.01, 5); // Max 5 seconds delay
+            dispatch(new SyncInvoiceJob($orderId))
+                ->onQueue('invoices')
+                ->delay(now()->addSeconds($delaySeconds));
 
             // Mark as queued to prevent duplicates (1 minute)
             Cache::put($cacheKey, now(), 60);

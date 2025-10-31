@@ -17,9 +17,10 @@ return [
     ],
 
     'rate_limit' => [
-        'requests_per_second' => env('BLING_RATE_LIMIT', 0.5), // 0.5 req/s per worker (2000ms delay)
-        // Bling API limit: 3 req/s account-wide
-        // With 4 workers: 4 × 0.5 = 2 req/s total (67% of limit)
+        'requests_per_second' => env('BLING_RATE_LIMIT', 2.7), // 2.7 req/s account-wide (90% of 3 req/s limit)
+        // Bling API limit: 3 req/s account-wide, 120k req/day
+        // Optimized: 2.7 req/s = ~233k req/day capacity (well within 120k daily limit)
+        // Safety margin: 10% below limit to prevent 429 errors
     ],
 
     'defaults' => [

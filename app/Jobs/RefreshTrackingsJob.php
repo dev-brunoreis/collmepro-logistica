@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\OrderSummary;
+use App\Jobs\ExtractTrackingJob;
 use App\Traits\TrackingLogger;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -57,8 +58,9 @@ class RefreshTrackingsJob implements ShouldQueue
                 return;
             }
 
-            // Query orders from last 30 days with invoice and tracking code
+            // Query orders from last 7 days with invoice and tracking code (reduced from 30 days)
             // Only sync trackings that need update (not synced recently and not delivered)
+            // Process in smaller batches to prevent queue overflow
             $orders = OrderSummary::whereNotNull('tracking_code')
                 ->whereHas('invoice')
                 ->whereHas('invoice.tracking', function($q) {
@@ -72,8 +74,9 @@ class RefreshTrackingsJob implements ShouldQueue
                             });
                     });
                 })
-                ->where('created_at', '>=', now()->subDays(30))
+                ->where('created_at', '>=', now()->subDays(7)) // Reduced from 30 to 7 days
                 ->notCancelled()
+                ->limit(500) // Limit to 500 orders per execution to prevent queue overflow
                 ->get();
 
             $totalOrders = $orders->count();
@@ -84,7 +87,21 @@ class RefreshTrackingsJob implements ShouldQueue
                 'total_orders' => $totalOrders,
             ]);
 
+            // Add throttling to prevent queue overflow
+            // Enqueue max 100 jobs per execution to avoid overwhelming the queue
+            $maxJobsPerExecution = 100;
+            $jobsEnqueued = 0;
+
             foreach ($orders as $order) {
+                // Stop if we've already enqueued enough jobs
+                if ($jobsEnqueued >= $maxJobsPerExecution) {
+                    $this->logTrackingInfo('Reached max jobs per execution limit', [
+                        'max_jobs' => $maxJobsPerExecution,
+                        'remaining_orders' => $totalOrders - $enqueuedCount - $skippedCount,
+                    ]);
+                    break;
+                }
+
                 try {
                     // Check if job already exists in queue to avoid duplicates
                     $existingJob = DB::table('jobs')
@@ -98,9 +115,14 @@ class RefreshTrackingsJob implements ShouldQueue
                         continue;
                     }
 
-                    // Dispatch tracking extraction job
-                    dispatch(new ExtractTrackingJob($order->id))->onQueue('tracking');
+                    // Dispatch tracking extraction job with small delay to throttle
+                    // This prevents overwhelming the queue workers
+                    dispatch(new ExtractTrackingJob($order->id))
+                        ->onQueue('tracking')
+                        ->delay(now()->addSeconds($jobsEnqueued * 0.1)); // 100ms delay between jobs
+                    
                     $enqueuedCount++;
+                    $jobsEnqueued++;
 
                 } catch (\Exception $e) {
                     $this->logTrackingError('Failed to enqueue tracking job for order', [

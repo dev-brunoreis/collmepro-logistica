@@ -27,36 +27,38 @@ class ScheduleServiceProvider extends ServiceProvider
             $this->app->booted(function () {
                 $schedule = $this->app->make(Schedule::class);
                 
-                // Sync with chunking: Process 40 pages (4000 orders) per execution
+                // Sync with chunking: Process 20 pages (2000 orders) per execution
                 // Uses persistent pagination to gradually process all orders
-                // Runs every 1 hour to gradually process all orders
+                // Runs every 2 hours to gradually process all orders
                 // This prevents timeout and allows handling 60k+ orders
+                // DISPATCHES to queue instead of running directly (prevents cron blocking)
                 $schedule->call(function () {
-                    $job = new BlingSyncJob(
+                    BlingSyncJob::dispatch(
                         forceUpdate: false, 
                         accountType: null, 
                         incrementalSync: true,
-                        maxPagesPerExecution: 40  // 40 pages = ~4000 orders max per run
-                    );
-                    $job->handle();
+                        maxPagesPerExecution: 20  // 20 pages = ~2000 orders max per run (reduced to lower queue load)
+                    )->onQueue('default');
                 })
-                    ->everyFifteenMinutes()
+                    ->everyTwoHours() // Changed from hourly to every 2 hours to reduce load
                     ->name('bling-sync')
-                    ->withoutOverlapping(120) // Expires after 120 minutes - auto-releases if job hangs
+                    ->withoutOverlapping(180) // Expires after 180 minutes - auto-releases if job hangs
                     ->onFailure(function () {
                         Log::error('Bling sync scheduled task failed');
                     })
-                    ->description('Bling full sync (paginated)');
+                    ->description('Bling incremental sync (paginated, queued)');
 
-                // Refresh tracking for orders with invoices (last 30 days)
+                // Refresh tracking for orders with invoices (last 7 days, runs twice daily)
+                // Reduced scope from 30 days to 7 days to lower queue load
+                // Runs twice daily instead of once to process in smaller batches
                 $schedule->job(new RefreshTrackingsJob())
-                    ->everySixHours()
+                    ->twiceDaily(6, 18) // At 6:00 and 18:00 - spreads load throughout the day
                     ->name('refresh-trackings')
-                    ->withoutOverlapping(180)
+                    ->withoutOverlapping(240) // Expires after 240 minutes
                     ->onFailure(function () {
                         Log::error('Tracking refresh scheduled task failed');
                     })
-                    ->description('Refresh tracking data for recent orders');
+                    ->description('Refresh tracking data for recent orders (last 7 days)');
             });
         }
     }
