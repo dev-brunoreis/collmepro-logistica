@@ -36,7 +36,7 @@ class StockController extends Controller
         $validated['source'] = $validated['source'] ?? null;
 
         // Set default values
-        $perPage = $validated['per_page'] ?? 25;
+        $perPage = $validated['per_page'] ?? 10;
         $source = $validated['source'] ?? null;
         $search = $validated['search'] ?? null;
         
@@ -265,13 +265,13 @@ class StockController extends Controller
                 'source' => $item['source'],
                 'sales_data' => json_encode($salesData)
             ];
-        });
+        })->sortBy('product_name')->values();
 
         // Return paginated or all results based on $paginate parameter
         if ($paginate) {
             // Manual pagination
             $page = request('page', 1);
-            $perPage = request('per_page', 25);
+            $perPage = request('per_page', 10);
             $offset = ($page - 1) * $perPage;
             
             $paginatedItems = $collection->slice($offset, $perPage);

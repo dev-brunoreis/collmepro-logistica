@@ -299,7 +299,7 @@ const filters = reactive({
   months_back: props.filters?.months_back || 6,
   start_month: props.filters?.start_month || '',
   end_month: props.filters?.end_month || '',
-  per_page: props.filters?.per_page || 25,
+  per_page: props.filters?.per_page || 10,
 })
 
 // Methods
@@ -360,7 +360,7 @@ const resetFilters = () => {
   filters.months_back = 6
   filters.start_month = ''
   filters.end_month = ''
-  filters.per_page = 25
+  filters.per_page = 10
   updateDateRange()
 }
 
