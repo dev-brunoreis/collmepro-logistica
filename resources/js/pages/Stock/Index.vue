@@ -171,13 +171,61 @@
         <div class="table-header">
           <div class="header-cell product-col">Produto</div>
           <div class="header-cell system-col">Sistema</div>
-          <div class="header-cell stock-col">Estoque Atual</div>
+          <div 
+            class="header-cell stock-col sortable-header"
+            @click.stop.prevent="toggleSort('current_stock')"
+          >
+            <div class="flex items-center justify-center gap-1 cursor-pointer hover:opacity-80">
+              <span>Estoque Atual</span>
+              <svg 
+                v-if="sortColumn === 'current_stock'"
+                class="w-4 h-4" 
+                :class="sortDirection === 'asc' ? 'rotate-0' : 'rotate-180'"
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+              </svg>
+              <svg 
+                v-else
+                class="w-4 h-4 opacity-30" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+              </svg>
+            </div>
+          </div>
           <div 
             v-for="month in months" 
             :key="month"
-            class="header-cell month-col"
+            class="header-cell month-col sortable-header"
+            @click.stop.prevent="toggleSort(month)"
           >
-            {{ formatMonth(month) }}
+            <div class="flex items-center justify-center gap-1 cursor-pointer hover:opacity-80">
+              <span>{{ formatMonth(month) }}</span>
+              <svg 
+                v-if="sortColumn === month"
+                class="w-4 h-4" 
+                :class="sortDirection === 'asc' ? 'rotate-0' : 'rotate-180'"
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+              </svg>
+              <svg 
+                v-else
+                class="w-4 h-4 opacity-30" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+              </svg>
+            </div>
           </div>
         </div>
         
@@ -292,6 +340,10 @@ const error = ref(null)
 const showExportDropdown = ref(false)
 const exportDropdownRef = ref(null)
 
+// Sorting state
+const sortColumn = ref(props.filters?.sort_column || '')
+const sortDirection = ref(props.filters?.sort_direction || 'asc')
+
 // Local filters state
 const filters = reactive({
   search: props.filters?.search || '',
@@ -300,6 +352,8 @@ const filters = reactive({
   start_month: props.filters?.start_month || '',
   end_month: props.filters?.end_month || '',
   per_page: props.filters?.per_page || 10,
+  sort_column: props.filters?.sort_column || '',
+  sort_direction: props.filters?.sort_direction || 'asc',
 })
 
 // Methods
@@ -309,6 +363,8 @@ const applyFilters = debounce(() => {
   
   router.get('/dashboard/stock', filters, {
     preserveState: true,
+    preserveScroll: true,
+    only: ['products', 'filters', 'months'],
     onSuccess: () => {
       loading.value = false
     },
@@ -354,6 +410,24 @@ const getSourceBadgeClass = (source) => {
 }
 
 
+const toggleSort = (column) => {
+  // If clicking the same column, toggle direction
+  if (sortColumn.value === column) {
+    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    // If clicking a different column, set it and default to ascending
+    sortColumn.value = column
+    sortDirection.value = 'asc'
+  }
+  
+  // Update filters
+  filters.sort_column = sortColumn.value
+  filters.sort_direction = sortDirection.value
+  
+  // Apply filters with sorting
+  applyFilters()
+}
+
 const resetFilters = () => {
   filters.search = ''
   filters.source = ''
@@ -361,6 +435,10 @@ const resetFilters = () => {
   filters.start_month = ''
   filters.end_month = ''
   filters.per_page = 10
+  filters.sort_column = ''
+  filters.sort_direction = 'asc'
+  sortColumn.value = ''
+  sortDirection.value = 'asc'
   updateDateRange()
 }
 
@@ -370,6 +448,8 @@ const goToPage = (page) => {
   loading.value = true
   router.get('/dashboard/stock', { ...filters, page }, {
     preserveState: true,
+    preserveScroll: true,
+    only: ['products', 'filters', 'months'],
     onSuccess: () => {
       loading.value = false
     },
@@ -451,6 +531,16 @@ const exportToCSV = (exportType = 'all') => {
   // Open in new window/tab to trigger download
   window.open(exportUrl, '_blank')
 }
+
+// Sync sorting state with props
+watch(() => props.filters, (newFilters) => {
+  if (newFilters) {
+    sortColumn.value = newFilters.sort_column || ''
+    sortDirection.value = newFilters.sort_direction || 'asc'
+    filters.sort_column = newFilters.sort_column || ''
+    filters.sort_direction = newFilters.sort_direction || 'asc'
+  }
+}, { immediate: true })
 
 // Watch for filter changes
 watch(filters, () => {
@@ -603,6 +693,15 @@ onMounted(() => {
 .header-cell.stock-col {
   background-color: hsl(var(--muted) / 0.5);
   font-weight: 600;
+}
+
+.sortable-header {
+  user-select: none;
+  transition: background-color 0.15s ease-in-out;
+}
+
+.sortable-header:hover {
+  background-color: hsl(var(--muted) / 0.5);
 }
 
 .data-cell.stock-col {

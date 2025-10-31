@@ -30,6 +30,8 @@ class StockController extends Controller
             'start_month' => 'nullable|date_format:Y-m',
             'end_month' => 'nullable|date_format:Y-m|after_or_equal:start_month',
             'per_page' => 'nullable|integer|min:10|max:100',
+            'sort_column' => 'nullable|string',
+            'sort_direction' => 'nullable|in:asc,desc',
         ]);
 
         // Always filter to show only Pro and Atacadista, ignore Beauty
@@ -50,17 +52,21 @@ class StockController extends Controller
             $endMonth = $validated['end_month'] ?? now()->format('Y-m');
         }
 
-        // Get paginated results - always filter to show only Pro and Atacadista
-        $products = $this->buildStockQuery($source, $startMonth, $endMonth, $search, true, true);
+        // Get sorting parameters
+        $sortColumn = $validated['sort_column'] ?? null;
+        $sortDirection = $validated['sort_direction'] ?? 'asc';
+
+        // Get all results (not paginated) to fetch stocks and sort properly
+        $allProducts = $this->buildStockQuery($source, $startMonth, $endMonth, $search, true, false);
 
         // Get available months for the table headers
         $months = $this->getAvailableMonths($startMonth, $endMonth);
 
-        // Fetch stocks for all products in the current page
-        $productStocks = $this->fetchProductStocksForPage($products->items(), $pro, $atacadista);
+        // Fetch stocks for all products (not just current page)
+        $productStocks = $this->fetchProductStocksForPage($allProducts->all(), $pro, $atacadista);
 
         // Transform the data for the frontend
-        $transformedProducts = $products->through(function ($product) use ($months, $productStocks) {
+        $transformedProducts = $allProducts->map(function ($product) use ($months, $productStocks) {
             $salesByMonth = [];
             
             // Initialize all months with 0
@@ -90,8 +96,37 @@ class StockController extends Controller
             ];
         });
 
+        // Apply sorting if specified
+        if ($sortColumn) {
+            $transformedProducts = $this->applySorting($transformedProducts, $sortColumn, $sortDirection);
+        }
+
+        // Apply pagination after sorting
+        $page = $request->input('page', 1);
+        $perPage = $validated['per_page'] ?? 10;
+        $total = $transformedProducts->count();
+        $offset = ($page - 1) * $perPage;
+        
+        $paginatedItems = $transformedProducts->slice($offset, $perPage);
+        
+        // Create a paginator instance
+        $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+            $paginatedItems->values(),
+            $total,
+            $perPage,
+            $page,
+            [
+                'path' => request()->url(),
+                'pageName' => 'page',
+            ]
+        );
+        
+        $paginator->appends(request()->query());
+        
+        $products = $paginator;
+
         return Inertia::render('Stock/Index', [
-            'products' => $transformedProducts,
+            'products' => $products,
             'months' => $months,
             'filters' => [
                 'search' => $search,
@@ -100,6 +135,8 @@ class StockController extends Controller
                 'start_month' => $startMonth,
                 'end_month' => $endMonth,
                 'per_page' => (int) $perPage,
+                'sort_column' => $sortColumn,
+                'sort_direction' => $sortDirection,
             ],
             'sources' => [
                 'Pro' => 'Pro',
@@ -569,6 +606,36 @@ class StockController extends Controller
         $month = (int) $parts[1];
         
         return $monthNames[$month - 1] . '/' . $year;
+    }
+
+    /**
+     * Apply sorting to transformed products collection
+     */
+    private function applySorting($products, $sortColumn, $sortDirection)
+    {
+        return $products->sort(function ($a, $b) use ($sortColumn, $sortDirection) {
+            $valueA = null;
+            $valueB = null;
+
+            if ($sortColumn === 'current_stock') {
+                $valueA = $a['current_stock'] ?? 0;
+                $valueB = $b['current_stock'] ?? 0;
+            } else {
+                // Sorting by month (format: Y-m, e.g., "2024-01")
+                $valueA = $a['sales_by_month'][$sortColumn] ?? 0;
+                $valueB = $b['sales_by_month'][$sortColumn] ?? 0;
+            }
+
+            // Compare values
+            if ($valueA == $valueB) {
+                return 0;
+            }
+
+            $result = $valueA < $valueB ? -1 : 1;
+            
+            // Reverse if descending
+            return $sortDirection === 'desc' ? -$result : $result;
+        })->values();
     }
 
     /**
