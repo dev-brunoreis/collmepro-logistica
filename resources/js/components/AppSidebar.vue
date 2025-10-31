@@ -26,7 +26,8 @@ import {
     FileText,
     BarChart3,
     SquareKanban,
-    Box as BoxIcon
+    Box as BoxIcon,
+    ShoppingCart
 } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
@@ -42,7 +43,7 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Pedidos',
         href: '/dashboard/orders',
-        icon: Package,
+        icon: ShoppingCart,
         visible: user?.permissions?.some(p => p.name === 'orders.view') || false,
     },
     {
