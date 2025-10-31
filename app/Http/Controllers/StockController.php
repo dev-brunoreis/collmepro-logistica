@@ -3,8 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\OrderSummary;
+use App\Services\CollmeProBlingService;
+use App\Services\CollmeAtacadistaBlingService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\RateLimiter;
 use Inertia\Inertia;
 
 class StockController extends Controller
@@ -12,8 +17,11 @@ class StockController extends Controller
     /**
      * Display the stock page
      */
-    public function index(Request $request)
-    {
+    public function index(
+        Request $request,
+        CollmeProBlingService $pro,
+        CollmeAtacadistaBlingService $atacadista
+    ) {
         // Validate request parameters
         $validated = $request->validate([
             'search' => 'nullable|string|max:255',
@@ -48,8 +56,11 @@ class StockController extends Controller
         // Get available months for the table headers
         $months = $this->getAvailableMonths($startMonth, $endMonth);
 
+        // Fetch stocks for all products in the current page
+        $productStocks = $this->fetchProductStocksForPage($products->items(), $pro, $atacadista);
+
         // Transform the data for the frontend
-        $transformedProducts = $products->through(function ($product) use ($months) {
+        $transformedProducts = $products->through(function ($product) use ($months, $productStocks) {
             $salesByMonth = [];
             
             // Initialize all months with 0
@@ -65,12 +76,16 @@ class StockController extends Controller
                 }
             }
 
+            // Get stock for this product (convert to int to match array key)
+            $productId = (int) $product->product_id;
+            $stock = $productStocks[$productId] ?? 0;
+
             return [
                 'product_id' => $product->product_id,
                 'product_code' => $product->product_code,
                 'product_name' => $product->product_name,
                 'source' => $product->source ?? 'Unknown',
-                'current_stock' => 0, // Hardcoded as requested
+                'current_stock' => $stock,
                 'sales_by_month' => $salesByMonth,
             ];
         });
@@ -286,8 +301,11 @@ class StockController extends Controller
     /**
      * Export stock data to CSV
      */
-    public function export(Request $request)
-    {
+    public function export(
+        Request $request,
+        CollmeProBlingService $pro,
+        CollmeAtacadistaBlingService $atacadista
+    ) {
         // Validate request parameters (same as index)
         $validated = $request->validate([
             'search' => 'nullable|string|max:255',
@@ -317,6 +335,9 @@ class StockController extends Controller
         // Get available months for the CSV headers
         $months = $this->getAvailableMonths($startMonth, $endMonth);
 
+        // Fetch stock for all products
+        $productStocks = $this->fetchProductStocksForExport($products, $pro, $atacadista);
+
         // Transform the data for CSV
         $csvData = [];
         foreach ($products as $product) {
@@ -334,11 +355,15 @@ class StockController extends Controller
                 }
             }
 
+            // Get stock for this product (convert to int to match array key)
+            $productId = (int) $product->product_id;
+            $stock = $productStocks[$productId] ?? 0;
+
             $row = [
                 'Produto' => $product->product_name,
                 'Código' => $product->product_code,
                 'Sistema' => $product->source ?? 'Unknown',
-                'Estoque Atual' => 0, // Hardcoded as requested
+                'Estoque Atual' => $stock,
             ];
 
             // Add monthly sales data
@@ -362,6 +387,142 @@ class StockController extends Controller
             ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
             ->header('Pragma', 'no-cache')
             ->header('Expires', '0');
+    }
+
+    /**
+     * Fetch product stocks for page display
+     * Groups products by source and fetches stocks from Bling API
+     */
+    private function fetchProductStocksForPage(
+        $products,
+        CollmeProBlingService $pro,
+        CollmeAtacadistaBlingService $atacadista
+    ): array {
+        // Group products by source
+        $productsBySource = [
+            'Pro' => [],
+            'Atacadista' => []
+        ];
+        
+        foreach ($products as $product) {
+            if ($product->source && $product->product_id) {
+                $source = $product->source;
+                if (isset($productsBySource[$source])) {
+                    $productsBySource[$source][] = (int) $product->product_id;
+                }
+            }
+        }
+        
+        // Fetch stocks for each source
+        $allStocks = [];
+        
+        foreach ($productsBySource as $source => $ids) {
+            if (empty($ids)) {
+                continue;
+            }
+            
+            // Remove duplicate IDs and reindex
+            $ids = array_values(array_unique($ids));
+            
+            // Throttle to protect upstream
+            $rateKey = 'stock_page:' . $source;
+            if (!RateLimiter::attempt($rateKey, $perMinute = 30, function () {})) {
+                continue; // Skip this source if rate limited
+            }
+            
+            $service = $source === 'Pro' ? $pro : $atacadista;
+            
+            // Use cache similar to API endpoint
+            $cacheTtl = (int) config('bling.defaults.stock_ttl', 1800); // 30 minutes
+            $cacheKey = "stock_by_ids:{$source}:" . md5(implode(',', $ids));
+            
+            try {
+                $stocks = Cache::remember($cacheKey, $cacheTtl, function () use ($service, $ids) {
+                    return $service->getProductStockByIds($ids);
+                });
+                
+                // Merge stocks into allStocks array
+                foreach ($stocks as $productId => $stock) {
+                    $allStocks[$productId] = $stock;
+                }
+            } catch (\Exception $e) {
+                // Log error but continue with other sources
+                Log::error("Failed to fetch stock for page - source: {$source}", [
+                    'error' => $e->getMessage(),
+                    'product_ids_count' => count($ids)
+                ]);
+            }
+        }
+        
+        return $allStocks;
+    }
+
+    /**
+     * Fetch product stocks for export
+     * Groups products by source and fetches stocks from Bling API
+     */
+    private function fetchProductStocksForExport(
+        $products,
+        CollmeProBlingService $pro,
+        CollmeAtacadistaBlingService $atacadista
+    ): array {
+        // Group products by source
+        $productsBySource = [
+            'Pro' => [],
+            'Atacadista' => []
+        ];
+        
+        foreach ($products as $product) {
+            if ($product->source && $product->product_id) {
+                $source = $product->source;
+                if (isset($productsBySource[$source])) {
+                    $productsBySource[$source][] = (int) $product->product_id;
+                }
+            }
+        }
+        
+        // Fetch stocks for each source
+        $allStocks = [];
+        
+        foreach ($productsBySource as $source => $ids) {
+            if (empty($ids)) {
+                continue;
+            }
+            
+            // Remove duplicate IDs and reindex
+            $ids = array_values(array_unique($ids));
+            
+            // Throttle to protect upstream
+            $rateKey = 'stock_export:' . $source;
+            if (!RateLimiter::attempt($rateKey, $perMinute = 30, function () {})) {
+                continue; // Skip this source if rate limited
+            }
+            
+            $service = $source === 'Pro' ? $pro : $atacadista;
+            
+            // Use cache similar to API endpoint
+            $cacheTtl = (int) config('bling.defaults.stock_ttl', 1800); // 30 minutes
+            $cacheKey = "stock_by_ids:{$source}:" . md5(implode(',', $ids));
+            
+            try {
+                $stocks = Cache::remember($cacheKey, $cacheTtl, function () use ($service, $ids) {
+                    return $service->getProductStockByIds($ids);
+                });
+                
+                // Merge stocks into allStocks array
+                foreach ($stocks as $productId => $stock) {
+                    $allStocks[$productId] = $stock;
+                }
+            } catch (\Exception $e) {
+                // Log error but continue with other sources
+                Log::error("Failed to fetch stock for export - source: {$source}", [
+                    'error' => $e->getMessage(),
+                    'product_ids_count' => count($ids)
+                ]);
+            }
+        }
+        
+        return $allStocks;
     }
 
     /**

@@ -165,9 +165,8 @@
               </span>
             </div>
             <div class="data-cell stock-col">
-              <span v-if="loadingStocks" class="text-muted-foreground">...</span>
-              <span v-else class="text-muted-foreground font-medium">
-                {{ getProductStock(product.product_id) }}
+              <span class="text-muted-foreground font-medium">
+                {{ product.current_stock ?? 0 }}
               </span>
             </div>
             <div 
@@ -258,8 +257,6 @@ const props = defineProps({
 // Reactive data
 const loading = ref(false)
 const error = ref(null)
-const productStocks = ref({}) // { product_id: stock_value }
-const loadingStocks = ref(false)
 
 // Local filters state
 const filters = reactive({
@@ -280,7 +277,6 @@ const applyFilters = debounce(() => {
     preserveState: true,
     onSuccess: () => {
       loading.value = false
-      fetchProductStocks()
     },
     onError: (errors) => {
       loading.value = false
@@ -323,58 +319,6 @@ const getSourceBadgeClass = (source) => {
   return classes[source] || 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
 }
 
-const getProductStock = (productId) => {
-  return productStocks.value[productId] ?? 0
-}
-
-const fetchProductStocks = async () => {
-  if (!props.products.data || Object.keys(props.products.data).length === 0) {
-    return
-  }
-  
-  loadingStocks.value = true
-  
-  // Group products by source
-  const productsBySource = {
-    'Pro': [],
-    'Atacadista': []
-  }
-  
-  Object.values(props.products.data).forEach(product => {
-    if (product.source && product.product_id) {
-      if (productsBySource[product.source]) {
-        productsBySource[product.source].push(product.product_id)
-      }
-    }
-  })
-  
-  // Fetch stocks for each source
-  const promises = []
-  
-  for (const [source, ids] of Object.entries(productsBySource)) {
-    if (ids.length > 0) {
-      promises.push(
-        fetch(`/api/stock/by-ids?source=${source}&${ids.map(id => `ids[]=${id}`).join('&')}`, {
-          headers: {
-            'Accept': 'application/json',
-          }
-        })
-          .then(res => res.json())
-          .then(data => {
-            if (data.data) {
-              Object.assign(productStocks.value, data.data)
-            }
-          })
-          .catch(err => {
-            console.error(`Error fetching stock for ${source}:`, err)
-          })
-      )
-    }
-  }
-  
-  await Promise.all(promises)
-  loadingStocks.value = false
-}
 
 const resetFilters = () => {
   filters.search = ''
@@ -394,7 +338,6 @@ const goToPage = (page) => {
     preserveState: true,
     onSuccess: () => {
       loading.value = false
-      fetchProductStocks()
     },
     onError: (errors) => {
       loading.value = false
@@ -474,8 +417,6 @@ onMounted(() => {
   if (!filters.start_month || !filters.end_month) {
     updateDateRange()
   }
-  // Fetch stocks after products are loaded
-  fetchProductStocks()
 })
 </script>
 
