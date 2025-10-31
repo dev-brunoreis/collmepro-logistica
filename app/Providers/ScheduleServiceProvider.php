@@ -50,7 +50,7 @@ class ScheduleServiceProvider extends ServiceProvider
 
                 // Refresh tracking for orders with invoices (last 30 days)
                 $schedule->job(new RefreshTrackingsJob())
-                    ->everyThreeHours()
+                    ->everySixHours()
                     ->name('refresh-trackings')
                     ->withoutOverlapping(180)
                     ->onFailure(function () {
