@@ -80,6 +80,44 @@ class StockApiController extends Controller
 
         return response()->json(['data' => $result]);
     }
+
+    /**
+     * Get stock for multiple products by their Bling IDs
+     * Query params:
+     * - source: Pro|Atacadista (required)
+     * - ids[]: array of Bling product IDs (required)
+     */
+    public function getStockByIds(Request $request, CollmeProBlingService $pro, CollmeAtacadistaBlingService $atacadista)
+    {
+        $validated = $request->validate([
+            'source' => 'required|in:Pro,Atacadista',
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|min:1',
+        ]);
+
+        $source = $validated['source'];
+        $ids = $validated['ids'];
+        $service = $source === 'Pro' ? $pro : $atacadista;
+
+        // Throttle to protect upstream
+        $rateKey = 'stock_ids_api:' . $source;
+        if (!RateLimiter::attempt($rateKey, $perMinute = 30, function () {})) {
+            return response()->json(['message' => 'Too Many Requests'], 429);
+        }
+
+        $cacheTtl = (int) config('bling.defaults.stock_ttl', 1800); // 30 minutes
+        $cacheKey = "stock_by_ids:{$source}:" . md5(implode(',', $ids));
+
+        $stocks = Cache::remember($cacheKey, $cacheTtl, function () use ($service, $ids) {
+            return $service->getProductStockByIds($ids);
+        });
+
+        return response()->json([
+            'data' => $stocks,
+            'cached_at' => now()->toIso8601String(),
+            'ttl_seconds' => $cacheTtl,
+        ]);
+    }
 }
 
 

@@ -1051,7 +1051,7 @@ abstract class BlingService
     /**
      * Extract logistics provider from tracking data
      */
-    protected function extractLogisticsProvider(array $trackingData, array $invoiceData = null): ?string
+    protected function extractLogisticsProvider(array $trackingData, ?array $invoiceData = null): ?string
     {
         // Extract service name from tracking data
         $serviceName = $trackingData['servico']['nome'] ?? 
@@ -1395,5 +1395,46 @@ abstract class BlingService
             $this->getAccountType(),
             $this->getClientId()
         );
+    }
+
+    /**
+     * Get product stock by Bling product IDs
+     * 
+     * @param array $productIds Array of Bling product IDs
+     * @return array Associative array [product_id => stock_quantity]
+     */
+    public function getProductStockByIds(array $productIds): array
+    {
+        if (empty($productIds)) {
+            return [];
+        }
+
+        try {
+            $response = $this->makeRequest('get', '/produtos', [
+                'idsProdutos' => $productIds,
+                'criterio' => 5 // 5 = Todos (required when filtering by IDs)
+            ]);
+
+            $result = [];
+            if (isset($response['data']) && is_array($response['data'])) {
+                foreach ($response['data'] as $product) {
+                    $productId = $product['id'] ?? null;
+                    $stock = $product['estoque']['saldoVirtualTotal'] ?? 0;
+                    
+                    if ($productId) {
+                        $result[$productId] = (float) $stock;
+                    }
+                }
+            }
+
+            return $result;
+        } catch (Exception $e) {
+            Log::error("Failed to fetch product stock by IDs", [
+                'error' => $e->getMessage(),
+                'account' => $this->getAccountType(),
+                'product_ids_count' => count($productIds)
+            ]);
+            return [];
+        }
     }
 }

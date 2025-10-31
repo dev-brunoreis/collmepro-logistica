@@ -15,7 +15,8 @@ class BlingAuthorizeCommand extends Command
     protected $signature = 'bling:authorize 
                             {account : Account to authorize (pro|atacadista)}
                             {--code= : Authorization code from callback}
-                            {--state= : State parameter from callback}';
+                            {--state= : State parameter from callback}
+                            {--skip-state-validation : Skip state validation (use if cache expired)}';
 
     /**
      * The console command description.
@@ -102,12 +103,15 @@ class BlingAuthorizeCommand extends Command
                 ? app(CollmeProBlingService::class)
                 : app(CollmeAtacadistaBlingService::class);
 
+            $skipStateValidation = $this->option('skip-state-validation');
+
             $tokenData = $oauthService->exchangeCodeForToken(
                 $code,
                 $state,
                 $account,
                 $service->getPublicClientId(),
-                $service->getPublicClientSecret()
+                $service->getPublicClientSecret(),
+                $skipStateValidation
             );
 
             $this->info('✅ Authorization successful!');

@@ -124,12 +124,19 @@ class BlingOAuthService
         string $state,
         string $accountType,
         string $clientId,
-        string $clientSecret
+        string $clientSecret,
+        bool $skipStateValidation = false
     ): array {
-        // Validate state
-        $storedState = cache()->get("bling_auth_state_{$accountType}");
-        if (!$storedState || $storedState !== $state) {
-            throw new Exception('Invalid state parameter');
+        // Validate state (skip if explicitly requested)
+        if (!$skipStateValidation) {
+            $storedState = cache()->get("bling_auth_state_{$accountType}");
+            if (!$storedState || $storedState !== $state) {
+                throw new Exception(
+                    'Invalid state parameter. If the cache expired, use --skip-state-validation flag. ' .
+                    'Original command: php artisan bling:authorize ' . $accountType . 
+                    ' --code=' . $code . ' --state=' . $state . ' --skip-state-validation'
+                );
+            }
         }
 
         // Remove state from cache
