@@ -173,7 +173,7 @@
     </div>
 
     <!-- Sales Report Table -->
-    <div v-if="props.products.data && Object.keys(props.products.data).length > 0 && !loading" class="rounded-lg border border-sidebar-border/70 dark:border-sidebar-border">
+    <div v-if="props.products.data && Object.keys(props.products.data).length > 0 && !loading" class="rounded-lg border border-sidebar-border/30 dark:border-sidebar-border/30">
       <div class="table-container">
         <!-- Table Header -->
         <div class="table-header">
@@ -205,7 +205,7 @@
               </span>
             </div>
             <div class="data-cell stock-col">
-              <span class="text-muted-foreground font-medium">
+              <span>
                 {{ product.current_stock ?? 0 }}
               </span>
             </div>
@@ -223,7 +223,7 @@
       </div>
 
       <!-- Pagination -->
-      <div v-if="props.products.last_page > 1" class="flex items-center justify-between px-4 py-3 border-t border-sidebar-border/70 dark:border-sidebar-border">
+      <div v-if="props.products.last_page > 1" class="flex items-center justify-between px-4 py-3 border-t border-sidebar-border/30 dark:border-sidebar-border/30">
         <div class="text-sm text-muted-foreground">
           Página {{ props.products.current_page }} de {{ props.products.last_page }}
         </div>
@@ -528,7 +528,7 @@ onMounted(() => {
 .table-header {
   display: flex;
   background-color: hsl(var(--muted) / 0.3);
-  border-bottom: 1px solid hsl(var(--sidebar-border) / 0.7);
+  border-bottom: 1px solid hsl(var(--sidebar-border) / 0.3);
   flex-shrink: 0;
   min-width: max-content;
   position: sticky;
@@ -546,13 +546,14 @@ onMounted(() => {
 
 .table-row {
   display: flex;
-  border-bottom: 1px solid hsl(var(--sidebar-border) / 0.7);
-  transition: background-color 0.2s;
+  border-bottom: 1px solid hsl(var(--sidebar-border) / 0.3);
+  transition: background-color 0.15s ease-in-out;
   min-width: max-content;
+  cursor: default;
 }
 
 .table-row:hover {
-  background-color: hsl(var(--muted) / 0.5);
+  background-color: hsl(var(--muted) / 0.6);
 }
 
 /* Header and data cells */
@@ -561,7 +562,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   padding: 12px 16px;
-  border-right: 1px solid hsl(var(--sidebar-border) / 0.7);
+  border-right: 1px solid hsl(var(--sidebar-border) / 0.3);
   font-size: 0.875rem;
   line-height: 1.25rem;
 }
@@ -590,6 +591,26 @@ onMounted(() => {
 .stock-col {
   width: 128px; /* 8rem */
   justify-content: center;
+  background-color: hsl(var(--muted) / 0.4);
+  border-left: 2px solid hsl(var(--sidebar-border) / 0.5);
+  border-right: 2px solid hsl(var(--sidebar-border) / 0.5);
+  position: relative;
+  text-align: center;
+}
+
+.header-cell.stock-col {
+  background-color: hsl(var(--muted) / 0.5);
+  font-weight: 600;
+}
+
+.data-cell.stock-col {
+  background-color: hsl(var(--muted) / 0.4);
+}
+
+.data-cell.stock-col span {
+  font-weight: 700;
+  color: hsl(var(--foreground));
+  font-size: 0.9375rem;
 }
 
 .month-col {
@@ -608,7 +629,6 @@ onMounted(() => {
 /* Mobile responsive adjustments */
 @media (max-width: 768px) {
   .table-container {
-    height: 300px;
     overflow-x: auto;
     overflow-y: hidden;
   }
