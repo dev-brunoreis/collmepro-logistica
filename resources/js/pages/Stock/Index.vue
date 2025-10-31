@@ -91,13 +91,53 @@
           Limpar
         </button>
       </div>
-        <button 
-          @click="exportToCSV"
-          :disabled="loading || !props.products.data || Object.keys(props.products.data).length === 0"
-          class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Exportar
-        </button>
+        <!-- Export Dropdown -->
+        <div class="relative" ref="exportDropdownRef">
+          <button 
+            @click.stop="toggleExportDropdown"
+            :disabled="loading || !props.products.data || Object.keys(props.products.data).length === 0"
+            class="relative px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+          >
+            Exportar
+            <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-180': showExportDropdown }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <Transition
+            enter-active-class="transition ease-out duration-100"
+            enter-from-class="transform opacity-0 scale-95"
+            enter-to-class="transform opacity-100 scale-100"
+            leave-active-class="transition ease-in duration-75"
+            leave-from-class="transform opacity-100 scale-100"
+            leave-to-class="transform opacity-0 scale-95"
+          >
+            <div 
+              v-if="showExportDropdown" 
+              class="absolute right-0 mt-2 w-52 bg-background border border-sidebar-border/70 rounded-lg shadow-xl z-50 overflow-hidden"
+            >
+              <div class="py-1">
+                <button 
+                  @click="exportToCSV('page')"
+                  class="w-full text-left px-4 py-2.5 text-foreground hover:bg-muted/80 flex items-center gap-3 transition-colors"
+                >
+                  <svg class="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16h10M7 8h10m-9 4h8m-9 4h8" />
+                  </svg>
+                  <span class="text-sm">Exportar Página Atual</span>
+                </button>
+                <button 
+                  @click="exportToCSV('all')"
+                  class="w-full text-left px-4 py-2.5 text-foreground hover:bg-muted/80 flex items-center gap-3 transition-colors border-t border-sidebar-border/50"
+                >
+                  <svg class="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  <span class="text-sm">Exportar Todos</span>
+                </button>
+              </div>
+            </div>
+          </Transition>
+        </div>
       </div>
     </div>
 
@@ -257,6 +297,8 @@ const props = defineProps({
 // Reactive data
 const loading = ref(false)
 const error = ref(null)
+const showExportDropdown = ref(false)
+const exportDropdownRef = ref(null)
 
 // Local filters state
 const filters = reactive({
@@ -382,10 +424,18 @@ const formatMonth = (monthString) => {
   return `${monthNames[parseInt(month) - 1]}/${year}`
 }
 
-const exportToCSV = () => {
+const toggleExportDropdown = () => {
+  showExportDropdown.value = !showExportDropdown.value
+}
+
+const closeExportDropdown = () => {
+  showExportDropdown.value = false
+}
+
+const exportToCSV = (exportType = 'all') => {
   if (!props.products.data || Object.keys(props.products.data).length === 0) return
   
-  loading.value = true
+  showExportDropdown.value = false
   
   // Build query string with filters
   const queryParams = new URLSearchParams()
@@ -395,13 +445,19 @@ const exportToCSV = () => {
     }
   })
   
+  // Add current page number for 'page' export type
+  if (exportType === 'page') {
+    queryParams.append('page', props.products.current_page)
+  }
+  
+  // Add export type
+  queryParams.append('export_type', exportType)
+  
   // Create export URL with filters as query parameters
   const exportUrl = `/dashboard/stock/export?${queryParams.toString()}`
   
   // Open in new window/tab to trigger download
   window.open(exportUrl, '_blank')
-  
-  loading.value = false
 }
 
 // Watch for filter changes
@@ -412,11 +468,18 @@ watch(filters, () => {
   }
 }, { deep: true })
 
-// Initialize with default period
+// Close dropdown when clicking outside
 onMounted(() => {
   if (!filters.start_month || !filters.end_month) {
     updateDateRange()
   }
+  
+  // Add global click listener to close dropdown
+  document.addEventListener('click', (e) => {
+    if (exportDropdownRef.value && !exportDropdownRef.value.contains(e.target) && showExportDropdown.value) {
+      closeExportDropdown()
+    }
+  })
 })
 </script>
 

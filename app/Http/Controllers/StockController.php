@@ -313,11 +313,15 @@ class StockController extends Controller
             'months_back' => 'nullable|integer|min:1|max:60',
             'start_month' => 'nullable|date_format:Y-m',
             'end_month' => 'nullable|date_format:Y-m|after_or_equal:start_month',
+            'per_page' => 'nullable|integer|min:10|max:100',
+            'page' => 'nullable|integer|min:1',
+            'export_type' => 'nullable|in:page,all',
         ]);
 
         // Set default values
         $source = $validated['source'] ?? null;
         $search = $validated['search'] ?? null;
+        $exportType = $validated['export_type'] ?? 'all'; // 'page' or 'all'
         
         // Calculate date range based on months_back or use provided dates
         if (isset($validated['months_back'])) {
@@ -329,8 +333,15 @@ class StockController extends Controller
             $endMonth = $validated['end_month'] ?? now()->format('Y-m');
         }
 
-        // Get all results (no pagination for export)
-        $products = $this->buildStockQuery($source, $startMonth, $endMonth, $search, true, false);
+        // Get products based on export type
+        if ($exportType === 'page') {
+            // Export only current page
+            $products = $this->buildStockQuery($source, $startMonth, $endMonth, $search, true, true);
+            $products = $products->items(); // Convert to collection of items
+        } else {
+            // Export all results
+            $products = $this->buildStockQuery($source, $startMonth, $endMonth, $search, true, false);
+        }
 
         // Get available months for the CSV headers
         $months = $this->getAvailableMonths($startMonth, $endMonth);
@@ -378,8 +389,9 @@ class StockController extends Controller
         // Generate CSV content
         $csvContent = $this->arrayToCsv($csvData);
 
-        // Generate filename with date range
-        $filename = 'estoque_' . $startMonth . '_a_' . $endMonth . '_' . now()->format('Y-m-d_H-i-s') . '.csv';
+        // Generate filename with date range and export type
+        $exportTypeSuffix = $exportType === 'page' ? '_pagina' : '_todos';
+        $filename = 'estoque_' . $startMonth . '_a_' . $endMonth . $exportTypeSuffix . '_' . now()->format('Y-m-d_H-i-s') . '.csv';
 
         return response($csvContent)
             ->header('Content-Type', 'text/csv; charset=UTF-8')
