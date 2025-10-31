@@ -73,20 +73,12 @@
       </div>
 
       <!-- Action Buttons -->
-      <div class="flex gap-2 mt-4 justify-between">
-        <div class="flex gap-2">
-        <button 
-          @click="applyFilters"
-          :disabled="loading"
-          class="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50"
-        >
-          <span v-if="loading" class="animate-spin mr-2">⟳</span>
-          Aplicar Filtros
-        </button>
+      <div class="flex gap-2 mt-4 items-center">
+        <div class="flex gap-2 items-center">
         <button 
           @click="resetFilters"
           :disabled="loading"
-          class="px-4 py-2 border border-input text-foreground rounded-md hover:bg-muted disabled:opacity-50"
+          class="px-4 py-2 border border-input text-foreground rounded-md hover:bg-muted disabled:opacity-50 flex items-center"
         >
           Limpar
         </button>
@@ -96,7 +88,7 @@
           <button 
             @click.stop="toggleExportDropdown"
             :disabled="loading || !props.products.data || Object.keys(props.products.data).length === 0"
-            class="relative px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+            class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
           >
             Exportar
             <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-180': showExportDropdown }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -547,13 +539,22 @@ onMounted(() => {
 .table-row {
   display: flex;
   border-bottom: 1px solid hsl(var(--sidebar-border) / 0.3);
-  transition: background-color 0.15s ease-in-out;
+  transition: all 0.15s ease-in-out;
   min-width: max-content;
   cursor: default;
+  position: relative;
 }
 
 .table-row:hover {
   background-color: hsl(var(--muted) / 0.6);
+}
+
+.table-row:hover .data-cell {
+  background-color: transparent;
+}
+
+.table-row:hover .data-cell.stock-col {
+  background-color: hsl(var(--muted) / 0.7);
 }
 
 /* Header and data cells */
@@ -575,6 +576,7 @@ onMounted(() => {
 
 .data-cell {
   color: hsl(var(--foreground));
+  background-color: transparent;
 }
 
 /* Column widths */
