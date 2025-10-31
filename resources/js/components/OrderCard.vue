@@ -7,15 +7,15 @@
         <span class="text-sm">{{ order.numero }}</span>
             <ExternalLink class="h-3 w-3" />
         </a>
-        <span 
-          :class="[
-            'px-2 py-1 rounded-full text-xs font-bold',
-            getSystemBadgeColor(order.source)
-          ]"
-        >
-          {{ order.source }}
-        </span>
       </div>
+      <!-- <span 
+        :class="[
+          'px-2 py-1 rounded-full text-xs font-bold',
+          getSystemBadgeColor(order.source)
+        ]"
+      >
+        {{ order.source }}
+      </span> -->
       <span class="text-sm text-gray-700 font-bold">{{ formatDateOnly(order.data) }}</span>
     </div>
 

@@ -84,23 +84,42 @@ const formatRelativeTime = (dateString: string | null): string => {
 const formatTimeUntil = (dateString: string | null): string => {
   const now = currentTime.value
   
-  // Calculate next sync time (every 30 minutes: 00:00, 00:30, 01:00, etc.)
+  // Calculate next sync time (every 2 hours: 00:00, 02:00, 04:00, 06:00, etc.)
+  const currentHours = now.getHours()
   const currentMinutes = now.getMinutes()
   const currentSeconds = now.getSeconds()
   
-  // Calculate minutes until next 30-minute interval
-  let minutesUntilNext = 30 - (currentMinutes % 30)
-  if (minutesUntilNext === 30) minutesUntilNext = 0
+  // Get the next even hour (sync runs at 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22)
+  let nextSyncHour = Math.ceil((currentHours + 1) / 2) * 2
   
-  // If we're exactly at a 30-minute mark, next sync is in 30 minutes
-  if (minutesUntilNext === 0) {
-    minutesUntilNext = 30
+  // Handle day rollover (if next hour would be 24, wrap to 0)
+  if (nextSyncHour >= 24) {
+    nextSyncHour = 0
   }
   
-  // Subtract current seconds from the total
-  const totalSecondsUntilNext = (minutesUntilNext * 60) - currentSeconds
-  const finalMinutes = Math.floor(totalSecondsUntilNext / 60)
-  const finalSeconds = totalSecondsUntilNext % 60
+  // Calculate target date for next sync
+  const nextSyncDate = new Date(now)
+  nextSyncDate.setHours(nextSyncHour, 0, 0, 0)
+  
+  // If we've rolled over to next day, add one day
+  if (nextSyncHour === 0 && (currentHours > 0 || currentMinutes > 0 || currentSeconds > 0)) {
+    nextSyncDate.setDate(nextSyncDate.getDate() + 1)
+  }
+  
+  // Calculate difference in seconds
+  const diffInSeconds = Math.max(0, Math.floor((nextSyncDate.getTime() - now.getTime()) / 1000))
+  
+  const finalHours = Math.floor(diffInSeconds / 3600)
+  const remainingSeconds = diffInSeconds % 3600
+  const finalMinutes = Math.floor(remainingSeconds / 60)
+  const finalSeconds = remainingSeconds % 60
+  
+  if (finalHours > 0) {
+    if (finalMinutes > 0) {
+      return `Próxima sincronização em ${finalHours}h ${finalMinutes}m ${finalSeconds}s`
+    }
+    return `Próxima sincronização em ${finalHours}h ${finalSeconds}s`
+  }
   
   if (finalMinutes > 0) {
     return `Próxima sincronização em ${finalMinutes}m ${finalSeconds}s`

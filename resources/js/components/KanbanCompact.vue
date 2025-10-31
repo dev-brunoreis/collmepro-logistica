@@ -50,6 +50,8 @@
                       <!-- Linha 3: Data e Tag do Sistema juntas -->
                       <div class="flex items-center justify-between gap-1 text-xs opacity-90">
                         <span>{{ formatDateOnly(order.data) }}</span>
+                      </div>
+                      <div class="flex items-center justify-between gap-1 text-xs opacity-90">
                         <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{ getOrderSource(order) }}</span>
                       </div>
                       
@@ -105,6 +107,8 @@
                       <!-- Linha 3: Data e Tag do Sistema juntas -->
                       <div class="flex items-center justify-between gap-1 text-xs opacity-90">
                         <span>{{ formatDateOnly(order.data) }}</span>
+                      </div>
+                      <div class="flex items-center justify-between gap-1 text-xs opacity-90">
                         <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{ getOrderSource(order) }}</span>
                       </div>
                       
@@ -160,6 +164,8 @@
                       <!-- Linha 3: Data e Tag do Sistema juntas -->
                       <div class="flex items-center justify-between gap-1 text-xs opacity-90">
                         <span>{{ formatDateOnly(order.data) }}</span>
+                      </div>
+                      <div class="flex items-center justify-between gap-1 text-xs opacity-90">
                         <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{ getOrderSource(order) }}</span>
                       </div>
                       
@@ -215,7 +221,9 @@
                   
                   <!-- Linha 3: Data e Tag do Sistema juntas -->
                   <div class="flex items-center justify-between gap-1 text-xs opacity-90">
-                    <span>{{ formatDateOnly(order.data) }}</span>
+                        <span>{{ formatDateOnly(order.data) }}</span>
+                  </div>
+                  <div class="flex items-center justify-between gap-1 text-xs opacity-90">
                     <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{ getOrderSource(order) }}</span>
                   </div>
                   
@@ -269,7 +277,9 @@
                   
                   <!-- Linha 3: Data e Tag do Sistema juntas -->
                   <div class="flex items-center justify-between gap-1 text-xs opacity-90">
-                    <span>{{ formatDateOnly(order.data) }}</span>
+                        <span>{{ formatDateOnly(order.data) }}</span>
+                  </div>
+                  <div class="flex items-center justify-between gap-1 text-xs opacity-90">
                     <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{ getOrderSource(order) }}</span>
                   </div>
                   
@@ -323,7 +333,9 @@
                   
                   <!-- Linha 3: Data e Tag do Sistema juntas -->
                   <div class="flex items-center justify-between gap-1 text-xs opacity-90">
-                    <span>{{ formatDateOnly(order.data) }}</span>
+                        <span>{{ formatDateOnly(order.data) }}</span>
+                  </div>
+                  <div class="flex items-center justify-between gap-1 text-xs opacity-90">
                     <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{ getOrderSource(order) }}</span>
                   </div>
                   
@@ -378,6 +390,8 @@
                   <!-- Linha 3: Data e Tag do Sistema juntas -->
                   <div class="flex items-center justify-between gap-1 text-xs opacity-90">
                     <span>{{ formatDateOnly(order.data) }}</span>
+                  </div>
+                  <div class="flex items-center justify-between gap-1 text-xs opacity-90">
                     <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{ getOrderSource(order) }}</span>
                   </div>
                   
@@ -439,6 +453,8 @@
                       <!-- Linha 3: Data e Tag do Sistema juntas -->
                       <div class="flex items-center justify-between gap-1 text-xs opacity-90">
                         <span>{{ formatDateOnly(order.data) }}</span>
+                      </div>
+                      <div class="flex items-center justify-between gap-1 text-xs opacity-90">
                         <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{ getOrderSource(order) }}</span>
                       </div>
                       
@@ -494,6 +510,8 @@
                       <!-- Linha 3: Data e Tag do Sistema juntas -->
                       <div class="flex items-center justify-between gap-1 text-xs opacity-90">
                         <span>{{ formatDateOnly(order.data) }}</span>
+                      </div>
+                      <div class="flex items-center justify-between gap-1 text-xs opacity-90">
                         <span :class="['text-xs font-semibold px-1 py-0.5 rounded border', getSystemBadgeColor(order.source)]">{{ getOrderSource(order) }}</span>
                       </div>
                       
