@@ -24,4 +24,5 @@ Route::get('/metrics', [MetricsController::class, 'index']);
 // Stock API routes (authenticated with web session)
 Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/stock/by-ids', [StockApiController::class, 'getStockByIds']);
+    Route::post('/stock/fetch-stocks', [StockApiController::class, 'fetchStocks']);
 });

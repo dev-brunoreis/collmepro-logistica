@@ -56,17 +56,15 @@ class StockController extends Controller
         $sortColumn = $validated['sort_column'] ?? null;
         $sortDirection = $validated['sort_direction'] ?? 'asc';
 
-        // Get all results (not paginated) to fetch stocks and sort properly
-        $allProducts = $this->buildStockQuery($source, $startMonth, $endMonth, $search, true, false);
-
         // Get available months for the table headers
         $months = $this->getAvailableMonths($startMonth, $endMonth);
 
-        // Fetch stocks for all products (not just current page)
-        $productStocks = $this->fetchProductStocksForPage($allProducts->all(), $pro, $atacadista);
+        // Paginate products at database level FIRST for instant loading
+        // Stock data will be fetched progressively on the frontend
+        $products = $this->buildStockQuery($source, $startMonth, $endMonth, $search, true, true, $sortColumn, $sortDirection);
 
-        // Transform the data for the frontend
-        $transformedProducts = $allProducts->map(function ($product) use ($months, $productStocks) {
+        // Transform the paginated data for the frontend
+        $transformedProducts = collect($products->items())->map(function ($product) use ($months) {
             $salesByMonth = [];
             
             // Initialize all months with 0
@@ -82,48 +80,29 @@ class StockController extends Controller
                 }
             }
 
-            // Get stock for this product (convert to int to match array key)
-            $productId = (int) $product->product_id;
-            $stock = $productStocks[$productId] ?? 0;
-
             return [
                 'product_id' => $product->product_id,
                 'product_code' => $product->product_code,
                 'product_name' => $product->product_name,
                 'source' => $product->source ?? 'Unknown',
-                'current_stock' => $stock,
+                'current_stock' => null, // Will be fetched progressively by frontend
                 'sales_by_month' => $salesByMonth,
             ];
         });
 
-        // Apply sorting if specified
-        if ($sortColumn) {
-            $transformedProducts = $this->applySorting($transformedProducts, $sortColumn, $sortDirection);
-        }
-
-        // Apply pagination after sorting
-        $page = $request->input('page', 1);
-        $perPage = $validated['per_page'] ?? 10;
-        $total = $transformedProducts->count();
-        $offset = ($page - 1) * $perPage;
-        
-        $paginatedItems = $transformedProducts->slice($offset, $perPage);
-        
-        // Create a paginator instance
-        $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
-            $paginatedItems->values(),
-            $total,
-            $perPage,
-            $page,
+        // Create a new paginator with transformed data
+        $products = new \Illuminate\Pagination\LengthAwarePaginator(
+            $transformedProducts,
+            $products->total(),
+            $products->perPage(),
+            $products->currentPage(),
             [
-                'path' => request()->url(),
+                'path' => $products->path(),
                 'pageName' => 'page',
             ]
         );
         
-        $paginator->appends(request()->query());
-        
-        $products = $paginator;
+        $products->appends(request()->query());
 
         return Inertia::render('Stock/Index', [
             'products' => $products,
@@ -148,7 +127,7 @@ class StockController extends Controller
     /**
      * Build the complex query to extract and aggregate products from JSON
      */
-    private function buildStockQuery($source, $startMonth, $endMonth, $search = null, $filterProAtacadista = false, $paginate = true)
+    private function buildStockQuery($source, $startMonth, $endMonth, $search = null, $filterProAtacadista = false, $paginate = true, $sortColumn = null, $sortDirection = 'asc')
     {
         $startDate = $startMonth . '-01';
         $endDate = $endMonth . '-' . date('t', strtotime($endMonth . '-01'));
@@ -157,16 +136,16 @@ class StockController extends Controller
         $isMySQL = DB::getDriverName() === 'mysql';
         
         if ($isMySQL) {
-            return $this->buildMySQLQuery($source, $startDate, $endDate, $search, $filterProAtacadista, $paginate);
+            return $this->buildMySQLQuery($source, $startDate, $endDate, $search, $filterProAtacadista, $paginate, $sortColumn, $sortDirection);
         } else {
-            return $this->buildSQLiteQuery($source, $startDate, $endDate, $search, $filterProAtacadista, $paginate);
+            return $this->buildSQLiteQuery($source, $startDate, $endDate, $search, $filterProAtacadista, $paginate, $sortColumn, $sortDirection);
         }
     }
 
     /**
      * Build query for MySQL using JSON_TABLE
      */
-    private function buildMySQLQuery($source, $startDate, $endDate, $search = null, $filterProAtacadista = false, $paginate = true)
+    private function buildMySQLQuery($source, $startDate, $endDate, $search = null, $filterProAtacadista = false, $paginate = true, $sortColumn = null, $sortDirection = 'asc')
     {
         // Raw SQL to extract JSON data and aggregate from raw_order_data
         $rawQuery = "
@@ -185,7 +164,10 @@ class StockController extends Controller
                 AND os.data <= ?
                 AND os.source IN ('Pro', 'Atacadista')
                 " . ($source ? "AND os.source = ?" : "") . "
-                " . ($search ? "AND JSON_UNQUOTE(JSON_EXTRACT(item.value, '$.descricao')) LIKE ?" : "") . "
+                " . ($search ? "AND (
+                    LOWER(JSON_UNQUOTE(JSON_EXTRACT(item.value, '$.descricao'))) LIKE LOWER(?) OR
+                    LOWER(JSON_UNQUOTE(JSON_EXTRACT(item.value, '$.codigo'))) LIKE LOWER(?)
+                )" : "") . "
         ";
 
         $params = [$startDate, $endDate];
@@ -193,19 +175,21 @@ class StockController extends Controller
             $params[] = $source;
         }
         if ($search) {
-            $params[] = '%' . $search . '%';
+            $searchPattern = '%' . $search . '%';
+            $params[] = $searchPattern; // For product name
+            $params[] = $searchPattern; // For product code/SKU
         }
 
         // Get the raw data
         $rawData = DB::select($rawQuery, $params);
 
-        return $this->processRawData($rawData, $search, $paginate);
+        return $this->processRawData($rawData, $search, $paginate, $sortColumn, $sortDirection);
     }
 
     /**
      * Build query for SQLite using a simpler approach
      */
-    private function buildSQLiteQuery($source, $startDate, $endDate, $search = null, $filterProAtacadista = false, $paginate = true)
+    private function buildSQLiteQuery($source, $startDate, $endDate, $search = null, $filterProAtacadista = false, $paginate = true, $sortColumn = null, $sortDirection = 'asc')
     {
         // For SQLite, we'll get all orders and process the JSON in PHP
         $query = DB::table('order_summary as os')
@@ -229,9 +213,15 @@ class StockController extends Controller
             
             if (isset($rawDataDecoded['itens']) && is_array($rawDataDecoded['itens'])) {
                 foreach ($rawDataDecoded['itens'] as $item) {
-                    // Apply search filter in PHP for SQLite
-                    if ($search && stripos($item['descricao'] ?? '', $search) === false) {
-                        continue;
+                    // Apply search filter in PHP for SQLite - search in both name and SKU (case-insensitive)
+                    if ($search) {
+                        $searchLower = mb_strtolower($search);
+                        $productName = mb_strtolower($item['descricao'] ?? '');
+                        $productCode = mb_strtolower($item['codigo'] ?? '');
+                        
+                        if (stripos($productName, $searchLower) === false && stripos($productCode, $searchLower) === false) {
+                            continue;
+                        }
                     }
 
                     $rawData[] = (object) [
@@ -246,13 +236,13 @@ class StockController extends Controller
             }
         }
 
-        return $this->processRawData($rawData, $search, $paginate);
+        return $this->processRawData($rawData, $search, $paginate, $sortColumn, $sortDirection);
     }
 
     /**
      * Process raw data and return paginated results
      */
-    private function processRawData($rawData, $search = null, $paginate = true)
+    private function processRawData($rawData, $search = null, $paginate = true, $sortColumn = null, $sortDirection = 'asc')
     {
         // Group by product and month
         $groupedData = [];
@@ -261,9 +251,15 @@ class StockController extends Controller
                 continue;
             }
             
-            // Apply search filter
-            if ($search && stripos($row->product_name, $search) === false) {
-                continue;
+            // Apply search filter - search in both name and SKU (case-insensitive)
+            if ($search) {
+                $searchLower = mb_strtolower($search);
+                $productName = mb_strtolower($row->product_name ?? '');
+                $productCode = mb_strtolower($row->product_code ?? '');
+                
+                if (stripos($productName, $searchLower) === false && stripos($productCode, $searchLower) === false) {
+                    continue;
+                }
             }
             
             $key = $row->product_id . '_' . $row->product_code;
@@ -285,7 +281,7 @@ class StockController extends Controller
             $groupedData[$key]['sales_data'][$row->month] += (int) $row->quantity;
         }
 
-        // Convert to collection for pagination
+        // Convert to collection
         $collection = collect($groupedData)->map(function ($item) {
             $salesData = [];
             foreach ($item['sales_data'] as $month => $quantity) {
@@ -302,7 +298,39 @@ class StockController extends Controller
                 'source' => $item['source'],
                 'sales_data' => json_encode($salesData)
             ];
-        })->sortBy('product_name')->values();
+        });
+
+        // Apply sorting if specified
+        if ($sortColumn && $sortColumn !== 'current_stock') {
+            // Sort by month sales
+            $collection = $collection->sort(function ($a, $b) use ($sortColumn, $sortDirection) {
+                $salesA = json_decode($a->sales_data, true);
+                $salesB = json_decode($b->sales_data, true);
+                
+                $valueA = 0;
+                $valueB = 0;
+                
+                foreach ($salesA as $sale) {
+                    if ($sale['month'] === $sortColumn) {
+                        $valueA = $sale['total_quantity'];
+                        break;
+                    }
+                }
+                
+                foreach ($salesB as $sale) {
+                    if ($sale['month'] === $sortColumn) {
+                        $valueB = $sale['total_quantity'];
+                        break;
+                    }
+                }
+                
+                $result = $valueA <=> $valueB;
+                return $sortDirection === 'desc' ? -$result : $result;
+            })->values();
+        } else {
+            // Default sort by product name
+            $collection = $collection->sortBy('product_name')->values();
+        }
 
         // Return paginated or all results based on $paginate parameter
         if ($paginate) {
@@ -373,11 +401,11 @@ class StockController extends Controller
         // Get products based on export type
         if ($exportType === 'page') {
             // Export only current page
-            $products = $this->buildStockQuery($source, $startMonth, $endMonth, $search, true, true);
+            $products = $this->buildStockQuery($source, $startMonth, $endMonth, $search, true, true, null, 'asc');
             $products = $products->items(); // Convert to collection of items
         } else {
             // Export all results
-            $products = $this->buildStockQuery($source, $startMonth, $endMonth, $search, true, false);
+            $products = $this->buildStockQuery($source, $startMonth, $endMonth, $search, true, false, null, 'asc');
         }
 
         // Get available months for the CSV headers
@@ -608,35 +636,6 @@ class StockController extends Controller
         return $monthNames[$month - 1] . '/' . $year;
     }
 
-    /**
-     * Apply sorting to transformed products collection
-     */
-    private function applySorting($products, $sortColumn, $sortDirection)
-    {
-        return $products->sort(function ($a, $b) use ($sortColumn, $sortDirection) {
-            $valueA = null;
-            $valueB = null;
-
-            if ($sortColumn === 'current_stock') {
-                $valueA = $a['current_stock'] ?? 0;
-                $valueB = $b['current_stock'] ?? 0;
-            } else {
-                // Sorting by month (format: Y-m, e.g., "2024-01")
-                $valueA = $a['sales_by_month'][$sortColumn] ?? 0;
-                $valueB = $b['sales_by_month'][$sortColumn] ?? 0;
-            }
-
-            // Compare values
-            if ($valueA == $valueB) {
-                return 0;
-            }
-
-            $result = $valueA < $valueB ? -1 : 1;
-            
-            // Reverse if descending
-            return $sortDirection === 'desc' ? -$result : $result;
-        })->values();
-    }
 
     /**
      * Convert array to CSV string

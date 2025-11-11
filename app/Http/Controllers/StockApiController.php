@@ -118,6 +118,102 @@ class StockApiController extends Controller
             'ttl_seconds' => $cacheTtl,
         ]);
     }
+
+    /**
+     * Fetch stocks for multiple products from different sources
+     * Used by the Stock page for progressive loading
+     * 
+     * Expected payload:
+     * {
+     *   "products": [
+     *     {"product_id": 123, "source": "Pro"},
+     *     {"product_id": 456, "source": "Atacadista"}
+     *   ]
+     * }
+     */
+    public function fetchStocks(Request $request, CollmeProBlingService $pro, CollmeAtacadistaBlingService $atacadista)
+    {
+        $validated = $request->validate([
+            'products' => 'required|array|min:1|max:100',
+            'products.*.product_id' => 'required|integer|min:1',
+            'products.*.source' => 'required|in:Pro,Atacadista',
+        ]);
+
+        $products = $validated['products'];
+        
+        // Group products by source
+        $productsBySource = [
+            'Pro' => [],
+            'Atacadista' => []
+        ];
+        
+        foreach ($products as $product) {
+            $source = $product['source'];
+            $productsBySource[$source][] = (int) $product['product_id'];
+        }
+
+        $allStocks = [];
+        $cacheTtl = (int) config('bling.defaults.stock_ttl', 1800); // 30 minutes
+
+        // Fetch stocks for each source
+        foreach ($productsBySource as $source => $ids) {
+            if (empty($ids)) {
+                continue;
+            }
+
+            // Remove duplicates
+            $ids = array_values(array_unique($ids));
+
+            // Throttle to protect upstream
+            $rateKey = 'stock_fetch:' . $source;
+            if (!RateLimiter::attempt($rateKey, $perMinute = 30, function () {})) {
+                // Skip this source if rate limited, but don't fail the whole request
+                continue;
+            }
+
+            $service = $source === 'Pro' ? $pro : $atacadista;
+            $cacheKey = "stock_by_ids:{$source}:" . md5(implode(',', $ids));
+
+            try {
+                $stocks = Cache::remember($cacheKey, $cacheTtl, function () use ($service, $ids) {
+                    return $service->getProductStockByIds($ids);
+                });
+
+                // Merge stocks into result with source prefix to avoid conflicts
+                foreach ($stocks as $productId => $stock) {
+                    $allStocks[$productId] = [
+                        'product_id' => $productId,
+                        'source' => $source,
+                        'current_stock' => is_numeric($stock) ? (float) $stock : 0.0,
+                    ];
+                }
+            } catch (\Exception $e) {
+                // Log error but continue with other sources
+                \Log::error("Failed to fetch stocks for source: {$source}", [
+                    'error' => $e->getMessage(),
+                    'product_ids_count' => count($ids)
+                ]);
+                
+                // Return 0 stock for failed products
+                foreach ($ids as $productId) {
+                    if (!isset($allStocks[$productId])) {
+                        $allStocks[$productId] = [
+                            'product_id' => $productId,
+                            'source' => $source,
+                            'current_stock' => 0.0,
+                            'error' => true,
+                        ];
+                    }
+                }
+            }
+        }
+
+        return response()->json([
+            'data' => array_values($allStocks),
+            'cached_at' => now()->toIso8601String(),
+            'ttl_seconds' => $cacheTtl,
+        ]);
+    }
 }
 
 

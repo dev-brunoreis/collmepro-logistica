@@ -246,7 +246,7 @@
             </div>
             <div class="data-cell stock-col">
               <span>
-                {{ product.current_stock ?? 0 }}
+                {{ getStockValue(product) }}
               </span>
             </div>
             <div 
@@ -339,10 +339,15 @@ const loading = ref(false)
 const error = ref(null)
 const showExportDropdown = ref(false)
 const exportDropdownRef = ref(null)
+const stocksLoading = ref(false)
+const stocksError = ref(null)
 
 // Sorting state
 const sortColumn = ref(props.filters?.sort_column || '')
 const sortDirection = ref(props.filters?.sort_direction || 'asc')
+
+// Local stocks cache (reactive)
+const localStocks = ref({})
 
 // Local filters state
 const filters = reactive({
@@ -367,13 +372,15 @@ const applyFilters = debounce(() => {
     only: ['products', 'filters', 'months'],
     onSuccess: () => {
       loading.value = false
+      // Fetch stocks for the new page
+      fetchStocksForCurrentPage()
     },
     onError: (errors) => {
       loading.value = false
       error.value = 'Erro ao carregar relatório. Tente novamente.'
     }
   })
-}, 500)
+}, 800)
 
 const updateDateRange = () => {
   const now = new Date()
@@ -452,12 +459,74 @@ const goToPage = (page) => {
     only: ['products', 'filters', 'months'],
     onSuccess: () => {
       loading.value = false
+      // Fetch stocks for the new page
+      fetchStocksForCurrentPage()
     },
     onError: (errors) => {
       loading.value = false
       error.value = 'Erro ao carregar página. Tente novamente.'
     }
   })
+}
+
+const fetchStocksForCurrentPage = async () => {
+  if (!props.products.data || Object.keys(props.products.data).length === 0) {
+    return
+  }
+
+  stocksLoading.value = true
+  stocksError.value = null
+
+  // Extract product IDs and sources from current page
+  const productsToFetch = Object.values(props.products.data).map(product => ({
+    product_id: parseInt(product.product_id),
+    source: product.source
+  }))
+
+  try {
+    const response = await fetch('/api/stock/fetch-stocks', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+      },
+      body: JSON.stringify({
+        products: productsToFetch
+      })
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch stocks')
+    }
+
+    const result = await response.json()
+    
+    // Update local stocks cache
+    if (result.data) {
+      const newStocks = {}
+      result.data.forEach(item => {
+        newStocks[item.product_id] = item.current_stock
+      })
+      localStocks.value = { ...localStocks.value, ...newStocks }
+    }
+  } catch (err) {
+    console.error('Error fetching stocks:', err)
+    stocksError.value = 'Erro ao carregar estoques'
+  } finally {
+    stocksLoading.value = false
+  }
+}
+
+const getStockValue = (product) => {
+  if (stocksLoading.value && localStocks.value[product.product_id] === undefined) {
+    return '...'
+  }
+  
+  if (stocksError.value && localStocks.value[product.product_id] === undefined) {
+    return 'N/A'
+  }
+  
+  return localStocks.value[product.product_id] ?? product.current_stock ?? 0
 }
 
 const getVisiblePages = () => {
@@ -542,13 +611,12 @@ watch(() => props.filters, (newFilters) => {
   }
 }, { immediate: true })
 
-// Watch for filter changes
-watch(filters, () => {
-  // Don't auto-apply filters on mount
-  if (filters.start_month && filters.end_month) {
-    applyFilters()
+// Watch for products change to fetch stocks
+watch(() => props.products, (newProducts) => {
+  if (newProducts && newProducts.data && Object.keys(newProducts.data).length > 0) {
+    fetchStocksForCurrentPage()
   }
-}, { deep: true })
+}, { immediate: true })
 
 // Close dropdown when clicking outside
 onMounted(() => {
