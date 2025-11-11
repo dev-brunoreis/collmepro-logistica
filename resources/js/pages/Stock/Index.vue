@@ -372,8 +372,7 @@ const applyFilters = debounce(() => {
     only: ['products', 'filters', 'months'],
     onSuccess: () => {
       loading.value = false
-      // Fetch stocks for the new page
-      fetchStocksForCurrentPage()
+      // Stocks will be fetched automatically by the watch
     },
     onError: (errors) => {
       loading.value = false
@@ -459,8 +458,7 @@ const goToPage = (page) => {
     only: ['products', 'filters', 'months'],
     onSuccess: () => {
       loading.value = false
-      // Fetch stocks for the new page
-      fetchStocksForCurrentPage()
+      // Stocks will be fetched automatically by the watch
     },
     onError: (errors) => {
       loading.value = false
@@ -482,6 +480,8 @@ const fetchStocksForCurrentPage = async () => {
     product_id: parseInt(product.product_id),
     source: product.source
   }))
+
+  console.log(`📦 Buscando estoque de ${productsToFetch.length} produtos da página ${props.products.current_page} de ${props.products.last_page}`)
 
   try {
     const response = await fetch('/api/stock/fetch-stocks', {
