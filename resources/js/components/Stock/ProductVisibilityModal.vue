@@ -33,18 +33,19 @@
       <div v-if="!loading && !error" class="flex-1 overflow-y-auto border border-sidebar-border/30 rounded-lg">
         <div class="divide-y divide-sidebar-border/30">
           <div
-            v-for="product in filteredAndSortedProducts"
-            :key="`${product.product_id}_${product.source}`"
+            v-for="(product, index) in filteredAndSortedProducts"
+            :key="`${product.product_id}_${product.source}_${index}`"
             class="p-3 hover:bg-muted/50 transition-colors"
           >
             <label class="flex items-center gap-3 cursor-pointer">
               <input
                 type="checkbox"
                 :checked="isProductHidden(product)"
-                @change="toggleProduct(product)"
-                class="w-4 h-4 rounded border-input text-primary focus:ring-primary"
+                @change="handleToggleProduct(product, $event)"
+                @click.stop
+                class="w-4 h-4 rounded border-input text-primary focus:ring-primary cursor-pointer"
               />
-              <div class="flex-1">
+              <div class="flex-1" @click="handleToggleProduct(product, $event)">
                 <div class="font-medium text-foreground">{{ product.product_name }}</div>
                 <div class="text-sm text-muted-foreground">
                   Código: {{ product.product_code }} • Sistema: 
@@ -66,7 +67,7 @@
       <!-- Footer Actions -->
       <div class="flex items-center justify-between pt-4 border-t border-sidebar-border/30">
         <div class="text-sm text-muted-foreground">
-          {{ selectedCount }} de {{ allProducts.length }} produtos selecionados
+          {{ selectedCount }} de {{ uniqueProductsCount }} produtos selecionados
         </div>
         <div class="flex gap-2">
           <Button
@@ -142,9 +143,26 @@ const toggleProduct = (product) => {
   emit('toggle-product', product)
 }
 
+// Handle checkbox change with event
+const handleToggleProduct = (product, event) => {
+  // Prevent event bubbling to avoid multiple toggles
+  if (event) {
+    event.stopPropagation()
+  }
+  toggleProduct(product)
+}
+
 // Filter and sort products
 const filteredAndSortedProducts = computed(() => {
-  let filtered = props.allProducts
+  // First, deduplicate products by product_id + source
+  const productsMap = new Map()
+  props.allProducts.forEach(product => {
+    const key = `${product.product_id}_${product.source}`
+    if (!productsMap.has(key)) {
+      productsMap.set(key, product)
+    }
+  })
+  let filtered = Array.from(productsMap.values())
 
   // Apply search filter
   if (searchQuery.value) {
@@ -170,6 +188,18 @@ const filteredAndSortedProducts = computed(() => {
     const bName = (b.product_name || '').toLowerCase()
     return aName.localeCompare(bName)
   })
+})
+
+// Count unique products (deduplicated)
+const uniqueProductsCount = computed(() => {
+  const productsMap = new Map()
+  props.allProducts.forEach(product => {
+    const key = `${product.product_id}_${product.source}`
+    if (!productsMap.has(key)) {
+      productsMap.set(key, product)
+    }
+  })
+  return productsMap.size
 })
 
 // Count selected products

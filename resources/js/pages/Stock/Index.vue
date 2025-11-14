@@ -682,19 +682,27 @@ const loadAllProducts = async () => {
   try {
     const response = await fetch('/dashboard/stock/products', {
       headers: {
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
       }
     })
     
-    if (!response.ok) {
-      throw new Error('Failed to load products')
+    const contentType = response.headers.get('content-type')
+    if (!contentType || !contentType.includes('application/json')) {
+      throw new Error('Resposta inválida do servidor')
     }
     
     const data = await response.json()
+    
+    if (!response.ok) {
+      throw new Error(data.error || data.message || 'Erro ao carregar produtos')
+    }
+    
     allProducts.value = data
   } catch (err) {
     console.error('Error loading products:', err)
-    productsError.value = 'Erro ao carregar produtos. Tente novamente.'
+    productsError.value = err.message || 'Erro ao carregar produtos. Tente novamente.'
   } finally {
     productsLoading.value = false
   }
@@ -704,19 +712,27 @@ const loadHiddenProducts = async () => {
   try {
     const response = await fetch('/dashboard/stock/hidden-products', {
       headers: {
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
       }
     })
     
-    if (!response.ok) {
-      throw new Error('Failed to load hidden products')
+    const contentType = response.headers.get('content-type')
+    if (!contentType || !contentType.includes('application/json')) {
+      throw new Error('Resposta inválida do servidor')
     }
     
     const data = await response.json()
+    
+    if (!response.ok) {
+      throw new Error(data.error || data.message || 'Erro ao carregar produtos ocultos')
+    }
+    
     hiddenProducts.value = data
   } catch (err) {
     console.error('Error loading hidden products:', err)
-    productsError.value = 'Erro ao carregar produtos ocultos. Tente novamente.'
+    productsError.value = err.message || 'Erro ao carregar produtos ocultos. Tente novamente.'
   }
 }
 
@@ -745,23 +761,46 @@ const saveHiddenProducts = async () => {
   productsError.value = null
   
   try {
+    // Ensure products is always an array (even if empty)
+    const productsToSave = Array.isArray(hiddenProducts.value) ? hiddenProducts.value : []
+    
+    // Debug log
+    console.log('Saving products:', productsToSave)
+    console.log('Products count:', productsToSave.length)
+    console.log('Request body will be:', { products: productsToSave })
+    
+    const requestBody = {
+      products: productsToSave
+    }
+    
+    const requestBodyString = JSON.stringify(requestBody)
+    console.log('Request body string:', requestBodyString)
+    
     const response = await fetch('/dashboard/stock/hidden-products', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
       },
-      body: JSON.stringify({
-        products: hiddenProducts.value
-      })
+      body: requestBodyString
     })
     
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || 'Failed to save hidden products')
+    const contentType = response.headers.get('content-type')
+    if (!contentType || !contentType.includes('application/json')) {
+      throw new Error('Resposta inválida do servidor')
     }
     
     const data = await response.json()
+    
+    if (!response.ok) {
+      // Handle validation errors
+      if (data.errors) {
+        const errorMessages = Object.values(data.errors).flat()
+        throw new Error(errorMessages.join(', ') || data.message || 'Erro ao salvar produtos ocultos')
+      }
+      throw new Error(data.error || data.message || 'Erro ao salvar produtos ocultos')
+    }
     
     // Close modal
     showProductModal.value = false

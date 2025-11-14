@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class StockController extends Controller
@@ -685,73 +686,100 @@ class StockController extends Controller
         // Check if user is admin or developer
         $user = $request->user();
         if (!$user || (!$user->isAdmin() && !$user->isDeveloper())) {
-            abort(403, 'Access denied. Only admin and developer can access this.');
+            return response()->json([
+                'error' => 'Access denied. Only admin and developer can access this.'
+            ], 403);
         }
 
         $isMySQL = DB::getDriverName() === 'mysql';
 
-        if ($isMySQL) {
-            // MySQL query to extract unique products
-            $products = DB::select("
-                SELECT DISTINCT
-                    JSON_UNQUOTE(JSON_EXTRACT(item.value, '$.produto.id')) as product_id,
-                    JSON_UNQUOTE(JSON_EXTRACT(item.value, '$.codigo')) as product_code,
-                    JSON_UNQUOTE(JSON_EXTRACT(item.value, '$.descricao')) as product_name,
-                    os.source
-                FROM order_summary os
-                JOIN JSON_TABLE(os.raw_order_data, '$.itens[*]' COLUMNS (
-                    value JSON PATH '$'
-                )) AS item
-                WHERE os.source IN ('Pro', 'Atacadista')
-                    AND JSON_UNQUOTE(JSON_EXTRACT(item.value, '$.produto.id')) IS NOT NULL
-                    AND JSON_UNQUOTE(JSON_EXTRACT(item.value, '$.codigo')) IS NOT NULL
-                ORDER BY os.source, product_name
-            ");
-        } else {
-            // SQLite: get all orders and process in PHP
-            $orders = DB::table('order_summary')
-                ->whereIn('source', ['Pro', 'Atacadista'])
-                ->whereNotNull('raw_order_data')
-                ->select('source', 'raw_order_data')
-                ->get();
+        try {
+            if ($isMySQL) {
+                // MySQL query to extract unique products (grouped by product_id + source)
+                $products = DB::select("
+                    SELECT 
+                        JSON_UNQUOTE(JSON_EXTRACT(item.value, '$.produto.id')) as product_id,
+                        JSON_UNQUOTE(JSON_EXTRACT(item.value, '$.codigo')) as product_code,
+                        JSON_UNQUOTE(JSON_EXTRACT(item.value, '$.descricao')) as product_name,
+                        os.source
+                    FROM order_summary os
+                    JOIN JSON_TABLE(os.raw_order_data, '$.itens[*]' COLUMNS (
+                        value JSON PATH '$'
+                    )) AS item
+                    WHERE os.source IN ('Pro', 'Atacadista')
+                        AND JSON_UNQUOTE(JSON_EXTRACT(item.value, '$.produto.id')) IS NOT NULL
+                        AND JSON_UNQUOTE(JSON_EXTRACT(item.value, '$.codigo')) IS NOT NULL
+                    GROUP BY 
+                        JSON_UNQUOTE(JSON_EXTRACT(item.value, '$.produto.id')),
+                        os.source,
+                        JSON_UNQUOTE(JSON_EXTRACT(item.value, '$.codigo')),
+                        JSON_UNQUOTE(JSON_EXTRACT(item.value, '$.descricao'))
+                    ORDER BY os.source, product_name
+                ");
+            } else {
+                // SQLite: get all orders and process in PHP
+                $orders = DB::table('order_summary')
+                    ->whereIn('source', ['Pro', 'Atacadista'])
+                    ->whereNotNull('raw_order_data')
+                    ->select('source', 'raw_order_data')
+                    ->get();
 
-            $productsMap = [];
-            foreach ($orders as $order) {
-                $rawData = json_decode($order->raw_order_data, true);
-                if (isset($rawData['itens']) && is_array($rawData['itens'])) {
-                    foreach ($rawData['itens'] as $item) {
-                        $productId = $item['produto']['id'] ?? null;
-                        $productCode = $item['codigo'] ?? null;
-                        $productName = $item['descricao'] ?? null;
+                $productsMap = [];
+                foreach ($orders as $order) {
+                    $rawData = json_decode($order->raw_order_data, true);
+                    if (isset($rawData['itens']) && is_array($rawData['itens'])) {
+                        foreach ($rawData['itens'] as $item) {
+                            $productId = $item['produto']['id'] ?? null;
+                            $productCode = $item['codigo'] ?? null;
+                            $productName = $item['descricao'] ?? null;
 
-                        if ($productId && $productCode) {
-                            $key = $productId . '_' . $order->source;
-                            if (!isset($productsMap[$key])) {
-                                $productsMap[$key] = (object) [
-                                    'product_id' => (string) $productId,
-                                    'product_code' => $productCode,
-                                    'product_name' => $productName,
-                                    'source' => $order->source,
-                                ];
+                            if ($productId && $productCode) {
+                                $key = $productId . '_' . $order->source;
+                                if (!isset($productsMap[$key])) {
+                                    $productsMap[$key] = (object) [
+                                        'product_id' => (string) $productId,
+                                        'product_code' => $productCode,
+                                        'product_name' => $productName,
+                                        'source' => $order->source,
+                                    ];
+                                }
                             }
                         }
                     }
                 }
+                $products = array_values($productsMap);
             }
-            $products = array_values($productsMap);
+
+            // Convert to array format and deduplicate by product_id + source
+            $productsMap = [];
+            foreach ($products as $product) {
+                $key = (int) $product->product_id . '_' . ($product->source ?? 'Unknown');
+                if (!isset($productsMap[$key])) {
+                    $productsMap[$key] = [
+                        'product_id' => (int) $product->product_id,
+                        'product_code' => $product->product_code ?? '',
+                        'product_name' => $product->product_name ?? '',
+                        'source' => $product->source ?? 'Unknown',
+                    ];
+                }
+            }
+
+            // Sort by source and product name
+            $result = collect($productsMap)->values()->sortBy(function ($product) {
+                return $product['source'] . '_' . strtolower($product['product_name']);
+            })->values()->toArray();
+
+            return response()->json($result);
+        } catch (\Exception $e) {
+            Log::error('Error fetching all products for stock modal', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'error' => 'Erro ao carregar produtos. Tente novamente mais tarde.'
+            ], 500);
         }
-
-        // Convert to array format for JSON response
-        $result = collect($products)->map(function ($product) {
-            return [
-                'product_id' => (int) $product->product_id,
-                'product_code' => $product->product_code ?? '',
-                'product_name' => $product->product_name ?? '',
-                'source' => $product->source ?? 'Unknown',
-            ];
-        })->sortBy(['source', 'product_name'])->values()->toArray();
-
-        return response()->json($result);
     }
 
     /**
@@ -763,7 +791,9 @@ class StockController extends Controller
         // Check if user is admin or developer
         $user = $request->user();
         if (!$user || (!$user->isAdmin() && !$user->isDeveloper())) {
-            abort(403, 'Access denied. Only admin and developer can access this.');
+            return response()->json([
+                'error' => 'Access denied. Only admin and developer can access this.'
+            ], 403);
         }
 
         $hiddenProducts = HiddenStockProduct::orderBy('source')
@@ -791,34 +821,58 @@ class StockController extends Controller
         // Check if user is admin or developer
         $user = $request->user();
         if (!$user || (!$user->isAdmin() && !$user->isDeveloper())) {
-            abort(403, 'Access denied. Only admin and developer can access this.');
+            return response()->json([
+                'error' => 'Access denied. Only admin and developer can access this.'
+            ], 403);
         }
 
-        $validated = $request->validate([
-            'products' => 'required|array',
-            'products.*.product_id' => 'required|integer',
-            'products.*.source' => 'required|in:Pro,Atacadista',
-            'products.*.product_name' => 'nullable|string|max:255',
-            'products.*.product_code' => 'nullable|string|max:255',
-        ]);
+        // Get products from request - can be empty array
+        $products = $request->input('products', []);
+        
+        // Ensure products is an array
+        if (!is_array($products)) {
+            return response()->json([
+                'error' => 'O campo produtos deve ser um array.',
+            ], 422);
+        }
+        
+        // Validate each product if array is not empty
+        if (!empty($products)) {
+            $validated = $request->validate([
+                'products' => 'array',
+                'products.*.product_id' => 'required|integer',
+                'products.*.source' => 'required|in:Pro,Atacadista',
+                'products.*.product_name' => 'nullable|string|max:255',
+                'products.*.product_code' => 'nullable|string|max:255',
+            ], [
+                'products.array' => 'O campo produtos deve ser um array.',
+                'products.*.product_id.required' => 'O ID do produto é obrigatório.',
+                'products.*.product_id.integer' => 'O ID do produto deve ser um número inteiro.',
+                'products.*.source.required' => 'A fonte do produto é obrigatória.',
+                'products.*.source.in' => 'A fonte do produto deve ser Pro ou Atacadista.',
+            ]);
+            $validatedProducts = $validated['products'];
+        } else {
+            // Empty array is valid - means no products should be hidden
+            $validatedProducts = [];
+        }
 
         // Delete all existing hidden products
         HiddenStockProduct::truncate();
 
-        // Insert new hidden products
+        // Insert new hidden products (if any)
         $productsToInsert = [];
-        foreach ($validated['products'] as $product) {
-            $productsToInsert[] = [
-                'product_id' => $product['product_id'],
-                'source' => $product['source'],
-                'product_name' => $product['product_name'] ?? null,
-                'product_code' => $product['product_code'] ?? null,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
-        }
-
-        if (!empty($productsToInsert)) {
+        if (!empty($validatedProducts)) {
+            foreach ($validatedProducts as $product) {
+                $productsToInsert[] = [
+                    'product_id' => $product['product_id'],
+                    'source' => $product['source'],
+                    'product_name' => $product['product_name'] ?? null,
+                    'product_code' => $product['product_code'] ?? null,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
             HiddenStockProduct::insert($productsToInsert);
         }
 
