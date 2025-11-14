@@ -73,22 +73,22 @@
       </div>
 
       <!-- Action Buttons -->
-      <div class="flex gap-2 mt-4 items-center">
-        <div class="flex gap-2 items-center">
-        <button 
-          @click="resetFilters"
-          :disabled="loading"
-          class="px-4 py-2 border border-input text-foreground rounded-md hover:bg-muted disabled:opacity-50 flex items-center"
-        >
-          Limpar
-        </button>
-      </div>
+      <div class="flex flex-col md:flex-row gap-2 mt-4">
+        <div class="flex gap-2 w-full md:w-auto">
+          <button 
+            @click="resetFilters"
+            :disabled="loading"
+            class="w-full md:w-auto px-4 py-2 border border-input text-foreground rounded-md hover:bg-muted disabled:opacity-50 flex items-center justify-center"
+          >
+            Limpar
+          </button>
+        </div>
         <!-- Manage Products Button (Admin/Developer only) -->
         <button
           v-if="canManageProducts"
           @click="openProductModal"
           :disabled="loading"
-          class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+          class="w-full md:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
         >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
@@ -96,11 +96,11 @@
           Gerenciar Produtos
         </button>
         <!-- Export Dropdown -->
-        <div class="relative" ref="exportDropdownRef">
+        <div class="relative w-full md:w-auto" ref="exportDropdownRef">
           <button 
             @click.stop="toggleExportDropdown"
             :disabled="loading || !props.products.data || Object.keys(props.products.data).length === 0"
-            class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+            class="w-full md:w-auto px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
           >
             Exportar
             <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-180': showExportDropdown }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
