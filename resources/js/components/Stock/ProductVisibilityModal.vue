@@ -5,6 +5,10 @@
         <DialogTitle>Gerenciar Produtos Ocultos</DialogTitle>
         <DialogDescription>
           Selecione os produtos que deseja ocultar do relatório de estoque. Produtos marcados aparecerão primeiro na lista.
+          <br />
+          <span class="text-xs text-muted-foreground mt-1 block">
+            Nota: Esta lista mostra todos os produtos do banco de dados, independente do período filtrado no relatório.
+          </span>
         </DialogDescription>
       </DialogHeader>
 
