@@ -18,6 +18,19 @@
         />
       </div>
 
+      <!-- System Filter -->
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-foreground mb-2">Filtrar por Sistema</label>
+        <select
+          v-model="sourceFilter"
+          class="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground"
+        >
+          <option value="">Todos</option>
+          <option value="Pro">Pro</option>
+          <option value="Atacadista">Atacadista</option>
+        </select>
+      </div>
+
       <!-- Loading State -->
       <div v-if="loading" class="flex items-center justify-center py-12">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -125,6 +138,7 @@ const props = defineProps({
 const emit = defineEmits(['update:show', 'save', 'toggle-product'])
 
 const searchQuery = ref('')
+const sourceFilter = ref('')
 
 // Create a Set of hidden product keys for quick lookup
 const hiddenProductKeys = computed(() => {
@@ -163,6 +177,13 @@ const filteredAndSortedProducts = computed(() => {
     }
   })
   let filtered = Array.from(productsMap.values())
+
+  // Apply source filter
+  if (sourceFilter.value) {
+    filtered = filtered.filter(product => {
+      return product.source === sourceFilter.value
+    })
+  }
 
   // Apply search filter
   if (searchQuery.value) {
@@ -222,10 +243,11 @@ const getSourceBadgeClass = (source) => {
   return classes[source] || 'text-gray-600 dark:text-gray-400'
 }
 
-// Reset search when modal closes
+// Reset filters when modal closes
 watch(() => props.show, (isOpen) => {
   if (!isOpen) {
     searchQuery.value = ''
+    sourceFilter.value = ''
   }
 })
 </script>
