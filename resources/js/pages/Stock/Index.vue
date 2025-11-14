@@ -83,6 +83,18 @@
           Limpar
         </button>
       </div>
+        <!-- Manage Products Button (Admin/Developer only) -->
+        <button
+          v-if="canManageProducts"
+          @click="openProductModal"
+          :disabled="loading"
+          class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+          </svg>
+          Gerenciar Produtos
+        </button>
         <!-- Export Dropdown -->
         <div class="relative" ref="exportDropdownRef">
           <button 
@@ -314,15 +326,28 @@
     </div>
 
   </div>
+
+  <!-- Product Visibility Modal -->
+  <ProductVisibilityModal
+    v-model:show="showProductModal"
+    :all-products="allProducts"
+    :hidden-products="hiddenProducts"
+    :loading="productsLoading"
+    :saving="productsSaving"
+    :error="productsError"
+    @save="saveHiddenProducts"
+    @toggle-product="toggleProduct"
+  />
 </AppLayout>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted, watch, computed } from 'vue'
-import { router } from '@inertiajs/vue3'
+import { router, usePage } from '@inertiajs/vue3'
 import { debounce } from 'lodash-es'
 import AppLayout from '@/layouts/AppLayout.vue'
 import { Head } from '@inertiajs/vue3'
+import ProductVisibilityModal from '@/components/Stock/ProductVisibilityModal.vue'
 
 const breadcrumbs = computed(() => [
     {
@@ -330,6 +355,14 @@ const breadcrumbs = computed(() => [
         href: '/dashboard/stock',
     },
 ])
+
+const page = usePage()
+const user = computed(() => page.props.auth?.user)
+
+// Check if user can manage products (admin or developer)
+const canManageProducts = computed(() => {
+  return user.value && (user.value.role === 'admin' || user.value.role === 'developer')
+})
 
 // Props
 const props = defineProps({
@@ -354,6 +387,14 @@ const sortDirection = ref(props.filters?.sort_direction || 'asc')
 
 // Local stocks cache (reactive)
 const localStocks = ref({})
+
+// Product visibility modal state
+const showProductModal = ref(false)
+const allProducts = ref([])
+const hiddenProducts = ref([])
+const productsLoading = ref(false)
+const productsSaving = ref(false)
+const productsError = ref(null)
 
 // Local filters state
 const filters = reactive({
@@ -621,6 +662,119 @@ watch(() => props.products, (newProducts) => {
     fetchStocksForCurrentPage()
   }
 }, { immediate: true })
+
+// Product visibility methods
+const openProductModal = async () => {
+  showProductModal.value = true
+  productsError.value = null
+  
+  // Load products and hidden products
+  await Promise.all([
+    loadAllProducts(),
+    loadHiddenProducts()
+  ])
+}
+
+const loadAllProducts = async () => {
+  productsLoading.value = true
+  productsError.value = null
+  
+  try {
+    const response = await fetch('/dashboard/stock/products', {
+      headers: {
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+      }
+    })
+    
+    if (!response.ok) {
+      throw new Error('Failed to load products')
+    }
+    
+    const data = await response.json()
+    allProducts.value = data
+  } catch (err) {
+    console.error('Error loading products:', err)
+    productsError.value = 'Erro ao carregar produtos. Tente novamente.'
+  } finally {
+    productsLoading.value = false
+  }
+}
+
+const loadHiddenProducts = async () => {
+  try {
+    const response = await fetch('/dashboard/stock/hidden-products', {
+      headers: {
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+      }
+    })
+    
+    if (!response.ok) {
+      throw new Error('Failed to load hidden products')
+    }
+    
+    const data = await response.json()
+    hiddenProducts.value = data
+  } catch (err) {
+    console.error('Error loading hidden products:', err)
+    productsError.value = 'Erro ao carregar produtos ocultos. Tente novamente.'
+  }
+}
+
+const toggleProduct = (product) => {
+  const key = `${product.product_id}_${product.source}`
+  const index = hiddenProducts.value.findIndex(
+    p => `${p.product_id}_${p.source}` === key
+  )
+  
+  if (index >= 0) {
+    // Remove from hidden products
+    hiddenProducts.value.splice(index, 1)
+  } else {
+    // Add to hidden products
+    hiddenProducts.value.push({
+      product_id: product.product_id,
+      source: product.source,
+      product_name: product.product_name,
+      product_code: product.product_code,
+    })
+  }
+}
+
+const saveHiddenProducts = async () => {
+  productsSaving.value = true
+  productsError.value = null
+  
+  try {
+    const response = await fetch('/dashboard/stock/hidden-products', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+      },
+      body: JSON.stringify({
+        products: hiddenProducts.value
+      })
+    })
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || 'Failed to save hidden products')
+    }
+    
+    const data = await response.json()
+    
+    // Close modal
+    showProductModal.value = false
+    
+    // Reload the report
+    applyFilters()
+  } catch (err) {
+    console.error('Error saving hidden products:', err)
+    productsError.value = err.message || 'Erro ao salvar produtos ocultos. Tente novamente.'
+  } finally {
+    productsSaving.value = false
+  }
+}
 
 // Close dropdown when clicking outside
 onMounted(() => {

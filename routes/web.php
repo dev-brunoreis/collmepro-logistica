@@ -31,6 +31,13 @@ Route::group(['prefix' => 'dashboard', 'middleware' => ['auth', 'verified']], fu
         Route::get('stock/export', [StockController::class, 'export'])->name('stock.export');
     });
     
+    // Stock hidden products routes (only admin and developer)
+    Route::middleware(['auth'])->group(function () {
+        Route::get('stock/products', [StockController::class, 'getAllProducts'])->name('stock.products');
+        Route::get('stock/hidden-products', [StockController::class, 'getHiddenProducts'])->name('stock.hidden-products');
+        Route::post('stock/hidden-products', [StockController::class, 'saveHiddenProducts'])->name('stock.save-hidden-products');
+    });
+    
     Route::middleware(['permission:users.create'])->group(function () {
         Route::get('users/create', [UserController::class, 'create'])->name('users.create');
         Route::post('users', [UserController::class, 'store'])->name('users.store');

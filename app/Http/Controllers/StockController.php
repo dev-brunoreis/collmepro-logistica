@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\HiddenStockProduct;
 use App\Models\OrderSummary;
 use App\Services\CollmeProBlingService;
 use App\Services\CollmeAtacadistaBlingService;
@@ -244,10 +245,19 @@ class StockController extends Controller
      */
     private function processRawData($rawData, $search = null, $paginate = true, $sortColumn = null, $sortDirection = 'asc')
     {
+        // Get hidden product keys for filtering
+        $hiddenKeys = $this->getHiddenProductKeys();
+        
         // Group by product and month
         $groupedData = [];
         foreach ($rawData as $row) {
             if (!$row->product_id || !$row->product_code) {
+                continue;
+            }
+            
+            // Filter out hidden products
+            $productKey = $row->product_id . '_' . $row->source;
+            if (in_array($productKey, $hiddenKeys)) {
                 continue;
             }
             
@@ -664,5 +674,170 @@ class StockController extends Controller
         fclose($output);
         
         return $csv;
+    }
+
+    /**
+     * Get all unique products from order_summary for the product selector
+     * Only accessible by admin or developer
+     */
+    public function getAllProducts(Request $request)
+    {
+        // Check if user is admin or developer
+        $user = $request->user();
+        if (!$user || (!$user->isAdmin() && !$user->isDeveloper())) {
+            abort(403, 'Access denied. Only admin and developer can access this.');
+        }
+
+        $isMySQL = DB::getDriverName() === 'mysql';
+
+        if ($isMySQL) {
+            // MySQL query to extract unique products
+            $products = DB::select("
+                SELECT DISTINCT
+                    JSON_UNQUOTE(JSON_EXTRACT(item.value, '$.produto.id')) as product_id,
+                    JSON_UNQUOTE(JSON_EXTRACT(item.value, '$.codigo')) as product_code,
+                    JSON_UNQUOTE(JSON_EXTRACT(item.value, '$.descricao')) as product_name,
+                    os.source
+                FROM order_summary os
+                JOIN JSON_TABLE(os.raw_order_data, '$.itens[*]' COLUMNS (
+                    value JSON PATH '$'
+                )) AS item
+                WHERE os.source IN ('Pro', 'Atacadista')
+                    AND JSON_UNQUOTE(JSON_EXTRACT(item.value, '$.produto.id')) IS NOT NULL
+                    AND JSON_UNQUOTE(JSON_EXTRACT(item.value, '$.codigo')) IS NOT NULL
+                ORDER BY os.source, product_name
+            ");
+        } else {
+            // SQLite: get all orders and process in PHP
+            $orders = DB::table('order_summary')
+                ->whereIn('source', ['Pro', 'Atacadista'])
+                ->whereNotNull('raw_order_data')
+                ->select('source', 'raw_order_data')
+                ->get();
+
+            $productsMap = [];
+            foreach ($orders as $order) {
+                $rawData = json_decode($order->raw_order_data, true);
+                if (isset($rawData['itens']) && is_array($rawData['itens'])) {
+                    foreach ($rawData['itens'] as $item) {
+                        $productId = $item['produto']['id'] ?? null;
+                        $productCode = $item['codigo'] ?? null;
+                        $productName = $item['descricao'] ?? null;
+
+                        if ($productId && $productCode) {
+                            $key = $productId . '_' . $order->source;
+                            if (!isset($productsMap[$key])) {
+                                $productsMap[$key] = (object) [
+                                    'product_id' => (string) $productId,
+                                    'product_code' => $productCode,
+                                    'product_name' => $productName,
+                                    'source' => $order->source,
+                                ];
+                            }
+                        }
+                    }
+                }
+            }
+            $products = array_values($productsMap);
+        }
+
+        // Convert to array format for JSON response
+        $result = collect($products)->map(function ($product) {
+            return [
+                'product_id' => (int) $product->product_id,
+                'product_code' => $product->product_code ?? '',
+                'product_name' => $product->product_name ?? '',
+                'source' => $product->source ?? 'Unknown',
+            ];
+        })->sortBy(['source', 'product_name'])->values()->toArray();
+
+        return response()->json($result);
+    }
+
+    /**
+     * Get list of hidden products
+     * Only accessible by admin or developer
+     */
+    public function getHiddenProducts(Request $request)
+    {
+        // Check if user is admin or developer
+        $user = $request->user();
+        if (!$user || (!$user->isAdmin() && !$user->isDeveloper())) {
+            abort(403, 'Access denied. Only admin and developer can access this.');
+        }
+
+        $hiddenProducts = HiddenStockProduct::orderBy('source')
+            ->orderBy('product_name')
+            ->get()
+            ->map(function ($product) {
+                return [
+                    'product_id' => $product->product_id,
+                    'source' => $product->source,
+                    'product_name' => $product->product_name,
+                    'product_code' => $product->product_code,
+                ];
+            })
+            ->toArray();
+
+        return response()->json($hiddenProducts);
+    }
+
+    /**
+     * Save hidden products
+     * Only accessible by admin or developer
+     */
+    public function saveHiddenProducts(Request $request)
+    {
+        // Check if user is admin or developer
+        $user = $request->user();
+        if (!$user || (!$user->isAdmin() && !$user->isDeveloper())) {
+            abort(403, 'Access denied. Only admin and developer can access this.');
+        }
+
+        $validated = $request->validate([
+            'products' => 'required|array',
+            'products.*.product_id' => 'required|integer',
+            'products.*.source' => 'required|in:Pro,Atacadista',
+            'products.*.product_name' => 'nullable|string|max:255',
+            'products.*.product_code' => 'nullable|string|max:255',
+        ]);
+
+        // Delete all existing hidden products
+        HiddenStockProduct::truncate();
+
+        // Insert new hidden products
+        $productsToInsert = [];
+        foreach ($validated['products'] as $product) {
+            $productsToInsert[] = [
+                'product_id' => $product['product_id'],
+                'source' => $product['source'],
+                'product_name' => $product['product_name'] ?? null,
+                'product_code' => $product['product_code'] ?? null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+
+        if (!empty($productsToInsert)) {
+            HiddenStockProduct::insert($productsToInsert);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Produtos ocultos salvos com sucesso.',
+            'count' => count($productsToInsert),
+        ]);
+    }
+
+    /**
+     * Get hidden product keys for filtering (product_id_source format)
+     */
+    private function getHiddenProductKeys(): array
+    {
+        return HiddenStockProduct::all()
+            ->map(function ($product) {
+                return $product->product_id . '_' . $product->source;
+            })
+            ->toArray();
     }
 }
