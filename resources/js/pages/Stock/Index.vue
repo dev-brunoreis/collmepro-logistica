@@ -680,12 +680,22 @@ const loadAllProducts = async () => {
   productsError.value = null
   
   try {
+    // Get CSRF token dynamically
+    const csrfTokenMeta = document.head.querySelector('meta[name="csrf-token"]') || document.querySelector('meta[name="csrf-token"]')
+    const csrfToken = csrfTokenMeta?.getAttribute('content')
+    
+    if (!csrfToken) {
+      throw new Error('Token CSRF não encontrado. Por favor, recarregue a página.')
+    }
+    
     const response = await fetch('/dashboard/stock/products', {
       headers: {
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+        'X-CSRF-TOKEN': csrfToken,
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-      }
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      credentials: 'same-origin'
     })
     
     const contentType = response.headers.get('content-type')
@@ -710,12 +720,22 @@ const loadAllProducts = async () => {
 
 const loadHiddenProducts = async () => {
   try {
+    // Get CSRF token dynamically
+    const csrfTokenMeta = document.head.querySelector('meta[name="csrf-token"]') || document.querySelector('meta[name="csrf-token"]')
+    const csrfToken = csrfTokenMeta?.getAttribute('content')
+    
+    if (!csrfToken) {
+      throw new Error('Token CSRF não encontrado. Por favor, recarregue a página.')
+    }
+    
     const response = await fetch('/dashboard/stock/hidden-products', {
       headers: {
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+        'X-CSRF-TOKEN': csrfToken,
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-      }
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      credentials: 'same-origin'
     })
     
     const contentType = response.headers.get('content-type')
@@ -764,25 +784,29 @@ const saveHiddenProducts = async () => {
     // Ensure products is always an array (even if empty)
     const productsToSave = Array.isArray(hiddenProducts.value) ? hiddenProducts.value : []
     
-    // Debug log
-    console.log('Saving products:', productsToSave)
-    console.log('Products count:', productsToSave.length)
-    console.log('Request body will be:', { products: productsToSave })
+    // Get CSRF token dynamically - try multiple selectors
+    const csrfTokenMeta = document.head.querySelector('meta[name="csrf-token"]') || document.querySelector('meta[name="csrf-token"]')
+    const csrfToken = csrfTokenMeta?.getAttribute('content')
+    
+    if (!csrfToken) {
+      throw new Error('Token CSRF não encontrado. Por favor, recarregue a página.')
+    }
     
     const requestBody = {
       products: productsToSave
     }
     
     const requestBodyString = JSON.stringify(requestBody)
-    console.log('Request body string:', requestBodyString)
     
     const response = await fetch('/dashboard/stock/hidden-products', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        'X-CSRF-TOKEN': csrfToken,
+        'X-Requested-With': 'XMLHttpRequest'
       },
+      credentials: 'same-origin',
       body: requestBodyString
     })
     

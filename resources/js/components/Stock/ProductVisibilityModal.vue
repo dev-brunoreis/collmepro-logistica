@@ -2,9 +2,9 @@
   <Dialog :open="show" @update:open="$emit('update:show', $event)">
     <DialogContent class="sm:max-w-3xl max-h-[90vh] flex flex-col">
       <DialogHeader>
-        <DialogTitle>Gerenciar Produtos Ocultos</DialogTitle>
+        <DialogTitle>Gerenciar Produtos Visíveis</DialogTitle>
         <DialogDescription>
-          Selecione os produtos que deseja ocultar do relatório de estoque. Produtos marcados aparecerão primeiro na lista.
+          Selecione os produtos que deseja exibir no relatório de estoque.
           <br />
           <span class="text-xs text-muted-foreground mt-1 block">
             Nota: Esta lista mostra todos os produtos do banco de dados, independente do período filtrado no relatório.
@@ -46,23 +46,41 @@
         <p class="text-destructive">{{ error }}</p>
       </div>
 
+      <!-- Toggle All Checkbox -->
+      <div v-if="!loading && !error" class="mb-3 flex items-center gap-2">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            :checked="allFilteredSelected"
+            @change="handleToggleAll"
+            :disabled="filteredAndSortedProducts.length === 0"
+            class="w-4 h-4 rounded border-input text-primary focus:ring-primary cursor-pointer"
+          />
+          <span class="text-sm text-foreground">
+            <span v-if="allFilteredSelected">Desmarcar Todos</span>
+            <span v-else>Marcar Todos</span>
+          </span>
+        </label>
+      </div>
+
       <!-- Products List -->
       <div v-if="!loading && !error" class="flex-1 overflow-y-auto border border-sidebar-border/30 rounded-lg">
         <div class="divide-y divide-sidebar-border/30">
           <div
             v-for="(product, index) in filteredAndSortedProducts"
             :key="`${product.product_id}_${product.source}_${index}`"
-            class="p-3 hover:bg-muted/50 transition-colors"
+            class="p-3 hover:bg-muted/50 transition-colors cursor-pointer"
+            @click="handleItemClick(product, $event)"
           >
-            <label class="flex items-center gap-3 cursor-pointer">
+            <label class="flex items-center gap-3 cursor-pointer" @click.stop>
               <input
                 type="checkbox"
-                :checked="isProductHidden(product)"
-                @change="handleToggleProduct(product, $event)"
+                :checked="isProductVisible(product)"
+                @change="toggleProduct(product)"
                 @click.stop
                 class="w-4 h-4 rounded border-input text-primary focus:ring-primary cursor-pointer"
               />
-              <div class="flex-1" @click="handleToggleProduct(product, $event)">
+              <div class="flex-1">
                 <div class="font-medium text-foreground">{{ product.product_name }}</div>
                 <div class="text-sm text-muted-foreground">
                   Código: {{ product.product_code }} • Sistema: 
@@ -84,7 +102,7 @@
       <!-- Footer Actions -->
       <div class="flex items-center justify-between pt-4 border-t border-sidebar-border/30">
         <div class="text-sm text-muted-foreground">
-          {{ selectedCount }} de {{ uniqueProductsCount }} produtos selecionados
+          {{ visibleCount }} de {{ uniqueProductsCount }} produtos visíveis
         </div>
         <div class="flex gap-2">
           <Button
@@ -151,9 +169,9 @@ const hiddenProductKeys = computed(() => {
   )
 })
 
-// Check if a product is hidden
-const isProductHidden = (product) => {
-  return hiddenProductKeys.value.has(`${product.product_id}_${product.source}`)
+// Check if a product is visible (inverted logic: visible = not hidden)
+const isProductVisible = (product) => {
+  return !hiddenProductKeys.value.has(`${product.product_id}_${product.source}`)
 }
 
 // Toggle product visibility
@@ -161,13 +179,12 @@ const toggleProduct = (product) => {
   emit('toggle-product', product)
 }
 
-// Handle checkbox change with event
-const handleToggleProduct = (product, event) => {
-  // Prevent event bubbling to avoid multiple toggles
-  if (event) {
-    event.stopPropagation()
+// Handle click on the entire item (div container)
+const handleItemClick = (product, event) => {
+  // Only toggle if the click is not on the checkbox or label (they handle themselves)
+  if (event.target.type !== 'checkbox' && event.target.tagName !== 'LABEL') {
+    toggleProduct(product)
   }
-  toggleProduct(product)
 }
 
 // Filter and sort products
@@ -199,16 +216,8 @@ const filteredAndSortedProducts = computed(() => {
     })
   }
 
-  // Sort: hidden products first, then alphabetical
+  // Sort alphabetically by name (no special sorting for selected products)
   return filtered.sort((a, b) => {
-    const aHidden = isProductHidden(a)
-    const bHidden = isProductHidden(b)
-
-    // If one is hidden and the other isn't, hidden comes first
-    if (aHidden && !bHidden) return -1
-    if (!aHidden && bHidden) return 1
-
-    // If both have same hidden status, sort alphabetically by name
     const aName = (a.product_name || '').toLowerCase()
     const bName = (b.product_name || '').toLowerCase()
     return aName.localeCompare(bName)
@@ -227,14 +236,60 @@ const uniqueProductsCount = computed(() => {
   return productsMap.size
 })
 
-// Count selected products
-const selectedCount = computed(() => {
-  return props.hiddenProducts.length
+// Count visible products (products that are NOT hidden)
+const visibleCount = computed(() => {
+  const productsMap = new Map()
+  props.allProducts.forEach(product => {
+    const key = `${product.product_id}_${product.source}`
+    if (!productsMap.has(key)) {
+      productsMap.set(key, product)
+    }
+  })
+  const totalProducts = productsMap.size
+  return totalProducts - props.hiddenProducts.length
+})
+
+// Check if all filtered products are selected (visible)
+const allFilteredSelected = computed(() => {
+  if (filteredAndSortedProducts.value.length === 0) return false
+  return filteredAndSortedProducts.value.every(product => isProductVisible(product))
 })
 
 // Handle save
 const handleSave = () => {
   emit('save', props.hiddenProducts)
+}
+
+// Handle toggle all filtered products
+const handleToggleAll = (event) => {
+  const filtered = filteredAndSortedProducts.value
+  if (filtered.length === 0) return
+  
+  // Get the checked state from the checkbox
+  const shouldSelectAll = event.target.checked
+  
+  // Use current hidden products state
+  const currentHiddenKeys = new Set(
+    props.hiddenProducts.map(p => `${p.product_id}_${p.source}`)
+  )
+  
+  if (shouldSelectAll) {
+    // Select all: remove all filtered products from hidden products
+    filtered.forEach(product => {
+      const key = `${product.product_id}_${product.source}`
+      if (currentHiddenKeys.has(key)) {
+        emit('toggle-product', product)
+      }
+    })
+  } else {
+    // Deselect all: add all filtered products to hidden products
+    filtered.forEach(product => {
+      const key = `${product.product_id}_${product.source}`
+      if (!currentHiddenKeys.has(key)) {
+        emit('toggle-product', product)
+      }
+    })
+  }
 }
 
 // Get source badge class
